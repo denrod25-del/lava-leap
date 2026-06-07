@@ -9,10 +9,15 @@ export class Player {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private keyA: Phaser.Input.Keyboard.Key;
   private keyD: Phaser.Input.Keyboard.Key;
+  private keyDash!: Phaser.Input.Keyboard.Key;
+  private keyDashAlt!: Phaser.Input.Keyboard.Key;
   private jumpHeldLast = false;
   private jumpsUsed = 0;
   private coyoteTimer = 0;
   private bufferTimer = 0;
+  private dashTimer = 0;
+  private dashAvailable = true;
+  private dashDir = 1;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
@@ -31,6 +36,8 @@ export class Player {
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.keyA = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.keyD = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    this.keyDash = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    this.keyDashAlt = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);
   }
 
   update(): void {
@@ -38,11 +45,6 @@ export class Player {
     const body = this.sprite.body as Body;
     const left = this.cursors.left!.isDown || this.keyA.isDown;
     const right = this.cursors.right!.isDown || this.keyD.isDown;
-
-    if (left && !right) this.sprite.setVelocityX(-TUNING.moveSpeed);
-    else if (right && !left) this.sprite.setVelocityX(TUNING.moveSpeed);
-    else this.sprite.setVelocityX(0);
-
     const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
     const onGround = body.blocked.down || body.touching.down;
 
@@ -50,10 +52,42 @@ export class Player {
     const onWallRight = body.blocked.right || body.touching.right;
     const onWall = (onWallLeft || onWallRight) && !onGround;
 
+    if (onGround || onWall) this.dashAvailable = true;
+
+    // Maintain an active dash (overrides normal horizontal movement & gravity).
+    if (this.dashTimer > 0) {
+      this.dashTimer -= dt;
+      this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed);
+      this.sprite.setVelocityY(0);
+      (body as Body).setAllowGravity(false);
+      this.jumpHeldLast = jumpDown;
+      return; // skip the rest while dashing
+    }
+    (body as Body).setAllowGravity(true);
+
+    // Horizontal movement (track facing for dash direction fallback).
+    if (left && !right) {
+      this.sprite.setVelocityX(-TUNING.moveSpeed);
+      this.sprite.setFlipX(true);
+    } else if (right && !left) {
+      this.sprite.setVelocityX(TUNING.moveSpeed);
+      this.sprite.setFlipX(false);
+    } else {
+      this.sprite.setVelocityX(0);
+    }
+
     // Wall slide: cap downward speed when pressing into a wall.
     const pressingIntoWall = (onWallLeft && left) || (onWallRight && right);
     if (onWall && pressingIntoWall && body.velocity.y > TUNING.wallSlideMax) {
       this.sprite.setVelocityY(TUNING.wallSlideMax);
+    }
+
+    // Dash trigger (airborne only, once per airtime).
+    const dashPressed = Phaser.Input.Keyboard.JustDown(this.keyDash) || Phaser.Input.Keyboard.JustDown(this.keyDashAlt);
+    if (dashPressed && this.dashAvailable && !onGround) {
+      this.dashDir = right ? 1 : left ? -1 : this.sprite.flipX ? -1 : 1;
+      this.dashTimer = TUNING.dashDurationMs;
+      this.dashAvailable = false;
     }
 
     if (onGround) {
