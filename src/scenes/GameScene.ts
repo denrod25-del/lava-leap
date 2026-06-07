@@ -36,6 +36,12 @@ export class GameScene extends Phaser.Scene {
     for (const p of added) this.platforms.spawn(p);
     for (const p of removed) this.platforms.despawn(p);
 
+    const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+    if (body.blocked.down) {
+      const id = this.platforms.platformUnder(this.player.sprite);
+      if (id !== null) this.platforms.touch(id, time);
+    }
+
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }

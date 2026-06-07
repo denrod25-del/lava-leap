@@ -7,6 +7,8 @@ const COLORS: Record<string, number> = {
   moving: 0x3aa0c9,
 };
 const PLATFORM_H = 16;
+const CRUMBLE_DELAY_MS = 400;
+const CRUMBLE_RESPAWN_MS = 2500;
 
 interface PlatformView {
   desc: PlatformDescriptor;
@@ -46,6 +48,27 @@ export class PlatformManager {
     (v.rect.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
   }
 
+  /** Call when the player is standing on a platform; starts the crumble timer. */
+  touch(id: number, time: number): void {
+    const v = this.views.get(id);
+    if (!v || v.desc.type !== 'crumbling' || v.crumbleAt !== null) return;
+    v.crumbleAt = time + CRUMBLE_DELAY_MS;
+  }
+
+  /** Find the platform id the player is currently resting on, if any. */
+  platformUnder(sprite: Phaser.GameObjects.Sprite): number | null {
+    for (const v of this.views.values()) {
+      const b = v.rect;
+      const halfW = (b.width as number) / 2;
+      const top = b.y - 8;
+      if (
+        sprite.x >= b.x - halfW && sprite.x <= b.x + halfW &&
+        Math.abs((sprite.y + 16) - top) < 6
+      ) return v.desc.id;
+    }
+    return null;
+  }
+
   update(time: number): void {
     for (const v of this.views.values()) {
       if (v.desc.type === 'moving' && v.desc.movement) {
@@ -53,6 +76,17 @@ export class PlatformManager {
         const offset = Math.sin((time / 1000) * (m.speed / Math.max(1, m.range))) * m.range;
         v.rect.x = v.originX + offset;
         this.syncBody(v);
+      }
+      if (v.desc.type === 'crumbling') {
+        if (v.crumbleAt !== null && v.rect.visible && time >= v.crumbleAt) {
+          v.rect.setVisible(false);
+          (v.rect.body as Phaser.Physics.Arcade.StaticBody).enable = false;
+          v.crumbleAt = time + CRUMBLE_RESPAWN_MS; // reuse field as respawn time
+        } else if (!v.rect.visible && v.crumbleAt !== null && time >= v.crumbleAt) {
+          v.rect.setVisible(true);
+          (v.rect.body as Phaser.Physics.Arcade.StaticBody).enable = true;
+          v.crumbleAt = null;
+        }
       }
     }
   }
