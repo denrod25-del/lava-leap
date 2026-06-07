@@ -15,12 +15,67 @@ export class GameScene extends Phaser.Scene {
   private lava!: Lava;
   private score = new ScoreTracker();
   private dead = false;
+  private bgFar!: Phaser.GameObjects.TileSprite;
+  private bgNear!: Phaser.GameObjects.TileSprite;
 
   constructor() { super('Game'); }
+
+  /** Build two procedural parallax background textures (no external assets). */
+  private buildBackground(): void {
+    const w = TUNING.width;
+    const h = TUNING.height;
+
+    if (!this.textures.exists('bg-far')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Deep purple -> navy vertical gradient.
+      const top = Phaser.Display.Color.ValueToColor(0x140820);
+      const bot = Phaser.Display.Color.ValueToColor(0x05030f);
+      for (let y = 0; y < h; y++) {
+        const t = y / (h - 1);
+        const c = Phaser.Display.Color.Interpolate.ColorWithColor(top, bot, 100, t * 100);
+        g.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
+        g.fillRect(0, y, w, 1);
+      }
+      // A few faint stars.
+      const rnd = new Phaser.Math.RandomDataGenerator(['lavaleap-bg-far']);
+      for (let i = 0; i < 70; i++) {
+        const x = rnd.between(0, w - 1);
+        const y = rnd.between(0, h - 1);
+        const a = rnd.realInRange(0.15, 0.5);
+        g.fillStyle(0x9aa6ff, a);
+        g.fillRect(x, y, 1, 1);
+      }
+      g.generateTexture('bg-far', w, h);
+      g.destroy();
+    }
+
+    if (!this.textures.exists('bg-near')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      // Mostly transparent layer of lighter scattered specks / dust.
+      const rnd = new Phaser.Math.RandomDataGenerator(['lavaleap-bg-near']);
+      for (let i = 0; i < 110; i++) {
+        const x = rnd.between(0, w - 1);
+        const y = rnd.between(0, h - 1);
+        const a = rnd.realInRange(0.08, 0.28);
+        const size = rnd.between(1, 2);
+        g.fillStyle(0x6b5a8a, a);
+        g.fillRect(x, y, size, size);
+      }
+      g.generateTexture('bg-near', w, h);
+      g.destroy();
+    }
+
+    this.bgFar = this.add.tileSprite(0, 0, w, h, 'bg-far')
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+    this.bgNear = this.add.tileSprite(0, 0, w, h, 'bg-near')
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
+  }
 
   create(): void {
     this.score = new ScoreTracker();
     this.dead = false;
+
+    this.buildBackground();
 
     this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
     this.platforms = new PlatformManager(this);
@@ -34,7 +89,7 @@ export class GameScene extends Phaser.Scene {
     this.coins = new CoinManager(this);
     for (const p of this.stream.active) this.coins.spawn(p);
     this.physics.add.overlap(this.player.sprite, this.coins.group, (_pl, coin) => {
-      (coin as Phaser.GameObjects.Arc).destroy();
+      (coin as Phaser.GameObjects.Image).destroy();
       this.onCoin();
     });
 
@@ -50,6 +105,10 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     this.player.update();
     this.platforms.update(time);
+
+    // Parallax: scroll background layers at fractions of the camera.
+    this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
+    this.bgNear.tilePositionY = this.cameras.main.scrollY * 0.5;
 
     const cameraTopY = this.cameras.main.scrollY;
     const pruneBelowY = this.cameras.main.scrollY + TUNING.height + 100;
