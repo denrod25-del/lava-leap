@@ -46,6 +46,16 @@ export class Player {
     const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
     const onGround = body.blocked.down || body.touching.down;
 
+    const onWallLeft = body.blocked.left || body.touching.left;
+    const onWallRight = body.blocked.right || body.touching.right;
+    const onWall = (onWallLeft || onWallRight) && !onGround;
+
+    // Wall slide: cap downward speed when pressing into a wall.
+    const pressingIntoWall = (onWallLeft && left) || (onWallRight && right);
+    if (onWall && pressingIntoWall && body.velocity.y > TUNING.wallSlideMax) {
+      this.sprite.setVelocityY(TUNING.wallSlideMax);
+    }
+
     if (onGround) {
       this.jumpsUsed = 0;
       this.coyoteTimer = TUNING.coyoteMs;
@@ -63,6 +73,12 @@ export class Player {
         this.jumpsUsed = 1;
         this.bufferTimer = 0;
         this.coyoteTimer = 0;
+      } else if (onWall) {
+        const dir = onWallLeft ? 1 : -1; // push away from wall
+        this.sprite.setVelocityX(dir * TUNING.wallJumpX);
+        this.sprite.setVelocityY(-TUNING.wallJumpY);
+        this.jumpsUsed = 1; // allow one air jump after a wall jump
+        this.bufferTimer = 0;
       } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
         this.jumpsUsed = 2;
