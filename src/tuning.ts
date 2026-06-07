@@ -35,4 +35,12 @@ export const REACH = {
   maxPlatformWidth: 150,
   difficultySpan: 4000,     // height (px) over which difficulty ramps 0 -> 1
   coinChance: 0.28,
+  movingRangeBase: 60,
+  movingRangeSpan: 60,
+  movingSpeedBase: 40,
+  movingSpeedSpan: 50,
+} as const;
+
+export const STREAM = {
+  generateMargin: 200,
 } as const;

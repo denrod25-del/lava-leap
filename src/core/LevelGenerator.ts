@@ -76,24 +76,41 @@ export class LevelGenerator {
       maxCenter = TUNING.width - width / 2;
     }
     const center = randRange(this.rng, minCenter, maxCenter);
-    const x = Math.round(center - width / 2);
+
+    // Fix 2: round width once, then clamp x after rounding to guarantee p.x + p.width <= TUNING.width.
+    const w = Math.round(width);
+    const x = Math.max(0, Math.min(TUNING.width - w, Math.round(center - width / 2)));
 
     const p: PlatformDescriptor = {
       id: this.nextId++,
       x,
       y: Math.round(y),
-      width: Math.round(width),
+      width: w,
       type,
       hasCoin: false,
     };
     if (type === 'moving') {
-      const maxRange = Math.max(0, Math.floor((TUNING.width - width) / 2) - 4);
-      p.movement = {
-        axis: 'horizontal',
-        range: Math.min(60 + Math.round(60 * t), maxRange || 1),
-        speed: 40 + Math.round(50 * t),
-      };
+      // Fix 1: derive travel headroom from this platform's actual on-screen position,
+      // not a centered assumption, so edge platforms never slide off-screen.
+      const leftRoom = p.x;
+      const rightRoom = TUNING.width - (p.x + p.width);
+      const headroom = Math.max(0, Math.min(leftRoom, rightRoom));
+      const desiredRange = REACH.movingRangeBase + Math.round(REACH.movingRangeSpan * t);
+      const range = Math.min(desiredRange, headroom);
+      if (range > 0) {
+        p.movement = {
+          axis: 'horizontal',
+          range,
+          speed: REACH.movingSpeedBase + Math.round(REACH.movingSpeedSpan * t),
+        };
+      } else {
+        // Platform spans almost the full width — demote to static so the invariant
+        // "type==='moving' ⇒ movement defined with range>0" always holds.
+        p.type = 'static';
+      }
     }
+    // Fix 4: coin assignment consumes one RNG draw ONLY for non-crumbling platforms,
+    // so reordering or changing this rule reshuffles all downstream generation (determinism caveat).
     p.hasCoin = p.type !== 'crumbling' && this.rng() < REACH.coinChance;
     this.last = p;
     return p;

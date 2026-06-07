@@ -1,7 +1,6 @@
 import { LevelGenerator } from './LevelGenerator';
+import { STREAM } from '../tuning';
 import type { PlatformDescriptor } from './types';
-
-const GENERATE_MARGIN = 200; // generate this far above the requested cameraTop
 
 export class LevelStream {
   readonly active: PlatformDescriptor[] = [];
@@ -22,7 +21,7 @@ export class LevelStream {
    */
   update(cameraTopY: number, pruneBelowY: number): { added: PlatformDescriptor[]; removed: PlatformDescriptor[] } {
     const added: PlatformDescriptor[] = [];
-    while (this.topY > cameraTopY - GENERATE_MARGIN) {
+    while (this.topY > cameraTopY - STREAM.generateMargin) {
       const p = this.gen.next();
       this.active.push(p);
       this.topY = p.y;

@@ -93,6 +93,27 @@ describe('LevelGenerator type mix', () => {
   });
 });
 
+describe('LevelGenerator moving platform bounds', () => {
+  it('moving platforms never travel off-screen through their full range (3000 platforms, multiple seeds)', () => {
+    for (const seed of [1, 7, 42, 99, 314]) {
+      const gen = new LevelGenerator(seed);
+      gen.first();
+      for (let i = 0; i < 3000; i++) {
+        const p = gen.next();
+        if (p.type === 'moving') {
+          expect(p.movement).toBeDefined();
+          const range = p.movement!.range;
+          expect(range).toBeGreaterThan(0);
+          // Left travel must stay on-screen
+          expect(p.x - range).toBeGreaterThanOrEqual(0);
+          // Right travel must stay on-screen
+          expect(p.x + p.width + range).toBeLessThanOrEqual(TUNING.width);
+        }
+      }
+    }
+  });
+});
+
 describe('LevelGenerator coins', () => {
   it('places coins on a minority of platforms, deterministically', () => {
     const count = (seed: number) => {
