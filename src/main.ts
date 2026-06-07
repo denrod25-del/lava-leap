@@ -15,5 +15,15 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, MenuScene, GameScene, GameOverScene],
 };
 
-// eslint-disable-next-line @typescript-eslint/no-new
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Dispose the game on HMR so editing source during development doesn't
+// stack multiple Phaser.Game instances into #game.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => game.destroy(true));
+}
+
+// Expose the game in dev for debugging/automated verification (stripped in prod build).
+if (import.meta.env.DEV) {
+  (window as unknown as { __game: Phaser.Game }).__game = game;
+}
