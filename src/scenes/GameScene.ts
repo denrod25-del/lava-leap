@@ -132,6 +132,7 @@ export class GameScene extends Phaser.Scene {
     this.lava.update(delta, heightClimbed);
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
       this.dead = true;
+      this.sound.play('sfx-death', { volume: 0.6 });
       const finalScore = this.score.score;
       saveHighScore(finalScore, window.localStorage);
       this.scene.stop('Hud');
@@ -142,5 +143,8 @@ export class GameScene extends Phaser.Scene {
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }
 
-  private onCoin(): void { this.score.addCoin(); }
+  private onCoin(): void {
+    this.score.addCoin();
+    this.sound.play('sfx-coin', { volume: 0.5 });
+  }
 }
