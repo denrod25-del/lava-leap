@@ -21,17 +21,15 @@ export class Player {
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
-    // Placeholder texture: a 24x32 rectangle generated at runtime.
-    const key = 'player-rect';
-    if (!scene.textures.exists(key)) {
-      const g = scene.make.graphics({ x: 0, y: 0 }, false);
-      g.fillStyle(0xffec27, 1).fillRect(0, 0, 24, 32);
-      g.generateTexture(key, 24, 32);
-      g.destroy();
-    }
-    this.sprite = scene.physics.add.sprite(x, y, key);
+    this.sprite = scene.physics.add.sprite(x, y, 'player');
     this.sprite.setCollideWorldBounds(false);
-    (this.sprite.body as Body).setSize(24, 32);
+    // Source art is 48x48; display it at the gameplay footprint (~24x32).
+    this.sprite.setDisplaySize(24, 32);
+    // Arcade body size is in source pixels and is scaled by the sprite, so a full
+    // 48x48 source body becomes 24x32 in world space — matching the old placeholder.
+    const body = this.sprite.body as Body;
+    body.setSize(48, 48);
+    body.setOffset(0, 0);
 
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.keyA = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -107,16 +105,19 @@ export class Player {
         this.jumpsUsed = 1;
         this.bufferTimer = 0;
         this.coyoteTimer = 0;
+        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (onWall) {
         const dir = onWallLeft ? 1 : -1; // push away from wall
         this.sprite.setVelocityX(dir * TUNING.wallJumpX);
         this.sprite.setVelocityY(-TUNING.wallJumpY);
         this.jumpsUsed = 1; // allow one air jump after a wall jump
         this.bufferTimer = 0;
+        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
         this.jumpsUsed = 2;
         this.bufferTimer = 0;
+        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       }
     }
     // Variable height: cut upward velocity on release.

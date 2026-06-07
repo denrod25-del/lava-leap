@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import type { PlatformDescriptor } from '../core/types';
 
-const COLORS: Record<string, number> = {
-  static: 0x6abe30,
-  crumbling: 0xc98a3a,
-  moving: 0x3aa0c9,
+// Tints differentiate platform types while keeping the pixel-art texture readable.
+const TINTS: Record<string, number> = {
+  static: 0xffffff,   // no tint
+  crumbling: 0xffa040, // orange
+  moving: 0x66ddff,    // cyan
 };
 const PLATFORM_H = 16;
 const CRUMBLE_DELAY_MS = 400;
@@ -12,7 +13,7 @@ const CRUMBLE_RESPAWN_MS = 2500;
 
 interface PlatformView {
   desc: PlatformDescriptor;
-  rect: Phaser.GameObjects.Rectangle;
+  rect: Phaser.GameObjects.TileSprite;
   originX: number;
   crumbleAt: number | null;
 }
@@ -30,7 +31,8 @@ export class PlatformManager {
   spawn(desc: PlatformDescriptor): void {
     const cx = desc.x + desc.width / 2;
     const cy = desc.y + PLATFORM_H / 2;
-    const rect = this.scene.add.rectangle(cx, cy, desc.width, PLATFORM_H, COLORS[desc.type]);
+    const rect = this.scene.add.tileSprite(cx, cy, desc.width, PLATFORM_H, 'platform');
+    rect.setTint(TINTS[desc.type]);
     this.scene.physics.add.existing(rect, true);
     this.group.add(rect);
     this.views.set(desc.id, { desc, rect, originX: cx, crumbleAt: null });

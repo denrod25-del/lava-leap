@@ -5,13 +5,13 @@ const BASE_SPEED = 55;        // px/s upward (y decreases)
 const SPEED_PER_HEIGHT = 0.012; // extra px/s per px climbed
 
 export class Lava {
-  readonly rect: Phaser.GameObjects.Rectangle;
+  readonly rect: Phaser.GameObjects.TileSprite;
   /** World y of the lava surface (top). Smaller = higher. */
   surfaceY: number;
 
   constructor(scene: Phaser.Scene) {
     this.surfaceY = TUNING.groundY + 260; // starts below the screen
-    this.rect = scene.add.rectangle(TUNING.width / 2, this.surfaceY, TUNING.width, 4000, 0xff4d00)
+    this.rect = scene.add.tileSprite(TUNING.width / 2, this.surfaceY, TUNING.width, 4000, 'lava')
       .setOrigin(0.5, 0);
     this.rect.setDepth(5);
   }
