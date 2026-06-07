@@ -5,13 +5,14 @@ type Body = Phaser.Physics.Arcade.Body;
 
 export class Player {
   readonly sprite: Phaser.Physics.Arcade.Sprite;
-  /** Stored for use in Milestone 3 (coyote/buffer timers need game.loop.delta). */
   private scene: Phaser.Scene;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private keyA: Phaser.Input.Keyboard.Key;
   private keyD: Phaser.Input.Keyboard.Key;
   private jumpHeldLast = false;
   private jumpsUsed = 0;
+  private coyoteTimer = 0;
+  private bufferTimer = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
@@ -33,7 +34,7 @@ export class Player {
   }
 
   update(): void {
-    void this.scene; // referenced in Milestone 3 for game.loop.delta
+    const dt = this.scene.game.loop.delta; // ms
     const body = this.sprite.body as Body;
     const left = this.cursors.left!.isDown || this.keyA.isDown;
     const right = this.cursors.right!.isDown || this.keyD.isDown;
@@ -45,15 +46,27 @@ export class Player {
     const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
     const onGround = body.blocked.down || body.touching.down;
 
-    if (onGround) this.jumpsUsed = 0;
+    if (onGround) {
+      this.jumpsUsed = 0;
+      this.coyoteTimer = TUNING.coyoteMs;
+    } else {
+      this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
+    }
 
-    if (jumpDown && !this.jumpHeldLast) {
-      if (onGround) {
+    if (jumpDown && !this.jumpHeldLast) this.bufferTimer = TUNING.jumpBufferMs;
+    else this.bufferTimer = Math.max(0, this.bufferTimer - dt);
+
+    const canGroundJump = this.coyoteTimer > 0 && this.jumpsUsed === 0;
+    if (this.bufferTimer > 0) {
+      if (canGroundJump) {
         this.sprite.setVelocityY(-TUNING.jumpVelocity);
         this.jumpsUsed = 1;
-      } else if (this.jumpsUsed < 2) {
+        this.bufferTimer = 0;
+        this.coyoteTimer = 0;
+      } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
         this.jumpsUsed = 2;
+        this.bufferTimer = 0;
       }
     }
     // Variable height: cut upward velocity on release.
