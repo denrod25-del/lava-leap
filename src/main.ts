@@ -9,9 +9,14 @@ import { GameOverScene } from './scenes/GameOverScene';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
-  width: TUNING.width,
-  height: TUNING.height,
   backgroundColor: '#10101a',
+  pixelArt: true, // crisp upscaling of the pixel-art sprites
+  scale: {
+    mode: Phaser.Scale.FIT, // scale the 480x720 design space up to fill the window
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: TUNING.width,
+    height: TUNING.height,
+  },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: TUNING.gravityY }, debug: false } },
   scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene],
 };
