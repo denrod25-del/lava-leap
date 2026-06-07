@@ -1,31 +1,41 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { Player } from '../entities/Player';
+import { LevelStream } from '../core/LevelStream';
+import { PlatformManager } from '../entities/PlatformManager';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
+  private stream!: LevelStream;
+  private platforms!: PlatformManager;
 
   constructor() { super('Game'); }
 
   create(): void {
-    // Temporary static ground so the player has something to stand on.
-    const ground = this.physics.add.staticGroup();
-    const g = this.add.rectangle(TUNING.width / 2, TUNING.groundY + 8, 200, 16, 0x6abe30);
-    this.physics.add.existing(g, true);
-    ground.add(g);
+    this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
+    this.platforms = new PlatformManager(this);
+
+    // Spawn the initial platform(s).
+    for (const p of this.stream.active) this.platforms.spawn(p);
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40);
-    this.physics.add.collider(this.player.sprite, ground);
+    this.physics.add.collider(this.player.sprite, this.platforms.group);
 
-    // Camera: world is tall and grows upward (negative y). Follow only upward.
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
-    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
-    this.cameras.main.setDeadzone(TUNING.width, 200);
+    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
+    this.cameras.main.setDeadzone(TUNING.width, 180);
   }
 
-  update(): void {
+  update(time: number): void {
     this.player.update();
-    // Lock camera so it never scrolls below its lowest point (never reveals below start).
+    this.platforms.update(time);
+
+    const cameraTopY = this.cameras.main.scrollY;
+    const pruneBelowY = this.cameras.main.scrollY + TUNING.height + 100;
+    const { added, removed } = this.stream.update(cameraTopY, pruneBelowY);
+    for (const p of added) this.platforms.spawn(p);
+    for (const p of removed) this.platforms.despawn(p);
+
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }
