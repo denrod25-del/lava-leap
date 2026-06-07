@@ -3,11 +3,13 @@ import { TUNING } from '../tuning';
 import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
+import { CoinManager } from '../entities/CoinManager';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private stream!: LevelStream;
   private platforms!: PlatformManager;
+  private coins!: CoinManager;
 
   constructor() { super('Game'); }
 
@@ -17,6 +19,13 @@ export class GameScene extends Phaser.Scene {
 
     // Spawn the initial platform(s).
     for (const p of this.stream.active) this.platforms.spawn(p);
+
+    this.coins = new CoinManager(this);
+    for (const p of this.stream.active) this.coins.spawn(p);
+    this.physics.add.overlap(this.player.sprite, this.coins.group, (_pl, coin) => {
+      (coin as Phaser.GameObjects.Arc).destroy();
+      this.onCoin();
+    });
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40);
     this.physics.add.collider(this.player.sprite, this.platforms.group);
@@ -35,6 +44,8 @@ export class GameScene extends Phaser.Scene {
     const { added, removed } = this.stream.update(cameraTopY, pruneBelowY);
     for (const p of added) this.platforms.spawn(p);
     for (const p of removed) this.platforms.despawn(p);
+    for (const p of added) this.coins.spawn(p);
+    for (const p of removed) this.coins.despawn(p);
 
     const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
     if (body.blocked.down) {
@@ -45,4 +56,6 @@ export class GameScene extends Phaser.Scene {
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }
+
+  private onCoin(): void {}
 }
