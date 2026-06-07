@@ -11,6 +11,7 @@ export class Player {
   private keyA: Phaser.Input.Keyboard.Key;
   private keyD: Phaser.Input.Keyboard.Key;
   private jumpHeldLast = false;
+  private jumpsUsed = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
@@ -44,9 +45,16 @@ export class Player {
     const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
     const onGround = body.blocked.down || body.touching.down;
 
-    // Initial jump on press.
-    if (jumpDown && !this.jumpHeldLast && onGround) {
-      this.sprite.setVelocityY(-TUNING.jumpVelocity);
+    if (onGround) this.jumpsUsed = 0;
+
+    if (jumpDown && !this.jumpHeldLast) {
+      if (onGround) {
+        this.sprite.setVelocityY(-TUNING.jumpVelocity);
+        this.jumpsUsed = 1;
+      } else if (this.jumpsUsed < 2) {
+        this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
+        this.jumpsUsed = 2;
+      }
     }
     // Variable height: cut upward velocity on release.
     if (!jumpDown && this.jumpHeldLast && body.velocity.y < 0) {
