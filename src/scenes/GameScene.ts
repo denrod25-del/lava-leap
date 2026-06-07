@@ -4,16 +4,24 @@ import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
 import { CoinManager } from '../entities/CoinManager';
+import { Lava } from '../entities/Lava';
+import { ScoreTracker, saveHighScore } from '../core/ScoreTracker';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private stream!: LevelStream;
   private platforms!: PlatformManager;
   private coins!: CoinManager;
+  private lava!: Lava;
+  private score = new ScoreTracker();
+  private dead = false;
 
   constructor() { super('Game'); }
 
   create(): void {
+    this.score = new ScoreTracker();
+    this.dead = false;
+
     this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
     this.platforms = new PlatformManager(this);
 
@@ -30,12 +38,16 @@ export class GameScene extends Phaser.Scene {
       this.onCoin();
     });
 
+    this.lava = new Lava(this);
+
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
     this.cameras.main.setDeadzone(TUNING.width, 180);
+
+    this.scene.launch('Hud');
   }
 
-  update(time: number): void {
+  update(time: number, delta: number): void {
     this.player.update();
     this.platforms.update(time);
 
@@ -53,9 +65,23 @@ export class GameScene extends Phaser.Scene {
       if (id !== null) this.platforms.touch(id, time);
     }
 
+    const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
+    this.score.updateHeight(heightClimbed);
+    this.registry.set('height', Math.floor(this.score.maxHeight));
+    this.registry.set('coins', this.score.coins);
+
+    this.lava.update(delta, heightClimbed);
+    if (!this.dead && this.lava.catches(this.player.sprite.y)) {
+      this.dead = true;
+      const finalScore = this.score.score;
+      saveHighScore(finalScore, window.localStorage);
+      this.scene.stop('Hud');
+      this.scene.start('GameOver', { score: finalScore });
+    }
+
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }
 
-  private onCoin(): void {}
+  private onCoin(): void { this.score.addCoin(); }
 }
