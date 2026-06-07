@@ -20,15 +20,15 @@ export class GameScene extends Phaser.Scene {
     // Spawn the initial platform(s).
     for (const p of this.stream.active) this.platforms.spawn(p);
 
+    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40);
+    this.physics.add.collider(this.player.sprite, this.platforms.group);
+
     this.coins = new CoinManager(this);
     for (const p of this.stream.active) this.coins.spawn(p);
     this.physics.add.overlap(this.player.sprite, this.coins.group, (_pl, coin) => {
       (coin as Phaser.GameObjects.Arc).destroy();
       this.onCoin();
     });
-
-    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40);
-    this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
