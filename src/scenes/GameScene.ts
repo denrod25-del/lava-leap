@@ -74,6 +74,9 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.score = new ScoreTracker();
     this.dead = false;
+    // Reset HUD-facing values so a retry can't flash the previous run's score.
+    this.registry.set('height', 0);
+    this.registry.set('coins', 0);
 
     this.buildBackground();
 
