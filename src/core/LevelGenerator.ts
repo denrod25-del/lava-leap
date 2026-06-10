@@ -1,15 +1,19 @@
-import { TUNING, REACH } from '../tuning';
+import { TUNING, REACH, SETPIECE } from '../tuning';
 import { makeRng, randRange, type Rng } from './rng';
 import type { PlatformDescriptor, PlatformType } from './types';
 import { zoneForHeight } from './zones';
+import { SET_PIECES } from './setpieces';
 
 export class LevelGenerator {
   private rng: Rng;
   private nextId = 0;
   private last!: PlatformDescriptor;
+  private pendingChunk: PlatformDescriptor[] = [];
+  private untilChunk: number;
 
   constructor(seed: number) {
     this.rng = makeRng(seed);
+    this.untilChunk = this.chunkInterval();
   }
 
   /** The starting platform — wide, static, centered under the spawn. */
@@ -45,7 +49,44 @@ export class LevelGenerator {
     return 'static';
   }
 
+  private chunkInterval(): number {
+    return SETPIECE.minInterval +
+      Math.floor(this.rng() * (SETPIECE.maxInterval - SETPIECE.minInterval + 1));
+  }
+
+  private queueChunk(): void {
+    const tpl = SET_PIECES[Math.floor(this.rng() * SET_PIECES.length)];
+    const entryGap = randRange(this.rng, REACH.minVerticalGap, REACH.maxVerticalGap);
+    let y = this.last.y - entryGap;
+    for (const cp of tpl.platforms) {
+      const desc: PlatformDescriptor = {
+        id: this.nextId++, x: cp.x, y: Math.round(y), width: cp.width,
+        type: cp.type, hasCoin: cp.hasCoin,
+      };
+      if (cp.type === 'moving' && cp.movement) {
+        const headroom = Math.max(0, Math.min(desc.x, TUNING.width - (desc.x + desc.width)));
+        const range = Math.min(cp.movement.range, headroom);
+        if (range > 0) desc.movement = { axis: 'horizontal', range, speed: cp.movement.speed };
+        else desc.type = 'static';
+      }
+      this.pendingChunk.push(desc);
+      y -= cp.dyToNext;
+    }
+    this.untilChunk = this.chunkInterval();
+  }
+
   next(): PlatformDescriptor {
+    if (this.pendingChunk.length > 0) {
+      const p = this.pendingChunk.shift()!;
+      this.last = p;
+      return p;
+    }
+    if (this.untilChunk <= 0) {
+      this.queueChunk();
+      return this.next();
+    }
+    this.untilChunk--;
+
     const t = this.difficulty();
 
     // Type picked first (consumes one rng value).

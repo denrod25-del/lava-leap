@@ -45,6 +45,11 @@ export const STREAM = {
   generateMargin: 200,
 } as const;
 
+export const SETPIECE = {
+  minInterval: 15, // parametric platforms between chunks (inclusive)
+  maxInterval: 25,
+} as const;
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,

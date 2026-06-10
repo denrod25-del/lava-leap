@@ -139,6 +139,36 @@ describe('LevelGenerator coins', () => {
   });
 });
 
+describe('set-piece injection', () => {
+  it('injects chunks (chunk platform signatures appear) and stays fully reachable over 5000 platforms', () => {
+    const gen = new LevelGenerator(123);
+    let prev = gen.first();
+    let sawChunkEntry = 0;
+    for (let i = 0; i < 5000; i++) {
+      const p = gen.next();
+      const vGap = prev.y - p.y;
+      expect(vGap).toBeGreaterThanOrEqual(REACH.minVerticalGap - 0.001);
+      expect(vGap).toBeLessThanOrEqual(REACH.maxVerticalGap + 0.001);
+      expect(horizontalEdgeGap(prev, p)).toBeLessThanOrEqual(REACH.maxHorizontalEdgeGap + 0.001);
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x + p.width).toBeLessThanOrEqual(TUNING.width);
+      if (p.x === 140 && p.width === 150) sawChunkEntry++; // entry platform of every template
+      prev = p;
+    }
+    expect(sawChunkEntry).toBeGreaterThan(50); // ~5000/20 chunks, most have 1-2 such rows
+  });
+
+  it('is deterministic per seed with chunks enabled', () => {
+    const run = (seed: number) => {
+      const g = new LevelGenerator(seed);
+      g.first();
+      return Array.from({ length: 200 }, () => { const p = g.next(); return `${p.x},${p.y},${p.width},${p.type}`; }).join('|');
+    };
+    expect(run(55)).toBe(run(55));
+    expect(run(55)).not.toBe(run(56));
+  });
+});
+
 describe('zone type-mix bias', () => {
   it('produces more hazard platforms in Obsidian Crown than Magma Vault at equal ramp difficulty', () => {
     // Compare hazard share in zone 0 (0-1000) vs zone 3 (3000-4000): the ramp rises too,

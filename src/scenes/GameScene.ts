@@ -9,6 +9,7 @@ import { ScoreTracker } from '../core/ScoreTracker';
 import { save } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
+import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -22,69 +23,87 @@ export class GameScene extends Phaser.Scene {
   private bgNear!: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
+  private zoneIndex = 0;
 
   constructor() { super('Game'); }
 
-  /** Build two procedural parallax background textures (no external assets). */
-  private buildBackground(): void {
+  private bgKeys(zone: ZoneDef): { far: string; near: string } {
+    return { far: `bg-far-z${zone.index}`, near: `bg-near-z${zone.index}` };
+  }
+
+  /** Build two procedural parallax background textures for the given zone. */
+  private buildBackground(zone: ZoneDef): void {
     const w = TUNING.width;
     const h = TUNING.height;
+    const { far, near } = this.bgKeys(zone);
 
-    if (!this.textures.exists('bg-far')) {
+    if (!this.textures.exists(far)) {
       const g = this.make.graphics({ x: 0, y: 0 }, false);
-      // Deep purple -> navy vertical gradient.
-      const top = Phaser.Display.Color.ValueToColor(0x140820);
-      const bot = Phaser.Display.Color.ValueToColor(0x05030f);
+      const top = Phaser.Display.Color.ValueToColor(zone.bgTop);
+      const bot = Phaser.Display.Color.ValueToColor(zone.bgBottom);
       for (let y = 0; y < h; y++) {
         const t = y / (h - 1);
         const c = Phaser.Display.Color.Interpolate.ColorWithColor(top, bot, 100, t * 100);
         g.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
         g.fillRect(0, y, w, 1);
       }
-      // A few faint stars.
-      const rnd = new Phaser.Math.RandomDataGenerator(['lavaleap-bg-far']);
+      // A few faint stars tinted per-zone.
+      const rnd = new Phaser.Math.RandomDataGenerator([`lavaleap-${far}`]);
       for (let i = 0; i < 70; i++) {
         const x = rnd.between(0, w - 1);
         const y = rnd.between(0, h - 1);
         const a = rnd.realInRange(0.15, 0.5);
-        g.fillStyle(0x9aa6ff, a);
+        g.fillStyle(zone.starTint, a);
         g.fillRect(x, y, 1, 1);
       }
-      g.generateTexture('bg-far', w, h);
+      g.generateTexture(far, w, h);
       g.destroy();
     }
 
-    if (!this.textures.exists('bg-near')) {
+    if (!this.textures.exists(near)) {
+      // Scattered specks / dust tinted per-zone.
       const g = this.make.graphics({ x: 0, y: 0 }, false);
-      // Mostly transparent layer of lighter scattered specks / dust.
-      const rnd = new Phaser.Math.RandomDataGenerator(['lavaleap-bg-near']);
+      const rnd = new Phaser.Math.RandomDataGenerator([`lavaleap-${near}`]);
       for (let i = 0; i < 110; i++) {
         const x = rnd.between(0, w - 1);
         const y = rnd.between(0, h - 1);
         const a = rnd.realInRange(0.08, 0.28);
         const size = rnd.between(1, 2);
-        g.fillStyle(0x6b5a8a, a);
+        g.fillStyle(zone.starTint, a * 0.5);
         g.fillRect(x, y, size, size);
       }
-      g.generateTexture('bg-near', w, h);
+      g.generateTexture(near, w, h);
       g.destroy();
     }
+  }
 
-    this.bgFar = this.add.tileSprite(0, 0, w, h, 'bg-far')
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
-    this.bgNear = this.add.tileSprite(0, 0, w, h, 'bg-near')
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
+  private crossfadeBg(farKey: string, nearKey: string): void {
+    const oldFar = this.bgFar, oldNear = this.bgNear;
+    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, farKey)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10).setAlpha(0);
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, nearKey)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-9).setAlpha(0);
+    this.tweens.add({
+      targets: [this.bgFar, this.bgNear], alpha: 1, duration: 1200,
+      onComplete: () => { oldFar.destroy(); oldNear.destroy(); },
+    });
   }
 
   create(): void {
     this.gameEvents = new GameEvents();
     this.score = new ScoreTracker();
     this.dead = false;
+    this.zoneIndex = 0;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
 
-    this.buildBackground();
+    this.buildBackground(ZONES[0]);
+    const zone0Keys = this.bgKeys(ZONES[0]);
+    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.far)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.near)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
     this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
     this.platforms = new PlatformManager(this, this.gameEvents);
@@ -143,12 +162,23 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('height', Math.floor(this.score.maxHeight));
     this.registry.set('coins', this.score.coins);
 
+    // Zone tracking — crossfade background and emit event on zone change.
+    const zone = zoneForHeight(heightClimbed);
+    if (zone.index !== this.zoneIndex) {
+      this.zoneIndex = zone.index;
+      this.buildBackground(zone);
+      const keys = this.bgKeys(zone);
+      this.crossfadeBg(keys.far, keys.near);
+      this.gameEvents.emit('zoneEntered', { zoneIndex: zone.index, name: zone.name });
+      this.registry.set('zoneBanner', zone.name);
+    }
+
     this.lava.update(delta, heightClimbed);
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
       this.dead = true;
       const finalScore = this.score.score;
       if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
-      this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: 0 });
+      this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
       this.sound.play('sfx-death', { volume: 0.6 });
       this.time.delayedCall(450, () => {
         this.scene.stop('Hud');

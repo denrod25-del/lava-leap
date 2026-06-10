@@ -21,7 +21,8 @@ export const SET_PIECES: SetPiece[] = [
   {
     id: 'staggered-shaft',
     platforms: [
-      { x: 140, width: 200, type: 'static', hasCoin: false, dyToNext: 115 },
+      // Note: entry width capped at maxPlatformWidth (150) so v1 width invariant holds.
+      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 115 },
       { x: 60, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
       { x: 310, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
       { x: 60, width: 110, type: 'crumbling', hasCoin: false, dyToNext: 115 },
@@ -31,22 +32,23 @@ export const SET_PIECES: SetPiece[] = [
   {
     id: 'crumbling-staircase',
     platforms: [
-      { x: 140, width: 200, type: 'static', hasCoin: false, dyToNext: 95 },
+      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 95 },
       { x: 50, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      { x: 160, width: 80, type: 'crumbling', hasCoin: true, dyToNext: 95 },
+      // hasCoin forced false on crumbling platforms: v1 invariant "no coins on crumbling" must hold.
+      { x: 160, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
       { x: 270, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      { x: 350, width: 80, type: 'crumbling', hasCoin: true, dyToNext: 95 },
+      { x: 350, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
       { x: 200, width: 140, type: 'static', hasCoin: false, dyToNext: 0 },
     ],
   },
   {
     id: 'coin-trail-crossing',
     platforms: [
-      { x: 140, width: 200, type: 'static', hasCoin: false, dyToNext: 120 },
+      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 120 },
       { x: 20, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
       { x: 185, width: 110, type: 'moving', hasCoin: true, movement: { range: 80, speed: 60 }, dyToNext: 120 },
       { x: 370, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
-      { x: 140, width: 200, type: 'static', hasCoin: false, dyToNext: 0 },
+      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 0 },
     ],
   },
 ];
