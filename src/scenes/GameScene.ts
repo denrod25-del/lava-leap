@@ -9,6 +9,7 @@ import { ScoreTracker } from '../core/ScoreTracker';
 import { save } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
+import { AudioDirector } from '../entities/AudioDirector';
 import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
@@ -26,6 +27,7 @@ export class GameScene extends Phaser.Scene {
   private bgNear!: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
+  private audio!: AudioDirector;
   private zoneIndex = 0;
   private tracker!: AchievementTracker;
   public daily = false;
@@ -143,6 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.lava = new Lava(this);
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
+    this.audio = new AudioDirector(this, this.gameEvents, save);
 
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
@@ -155,6 +158,7 @@ export class GameScene extends Phaser.Scene {
     this.player.update();
     this.platforms.update(time);
     this.juice.update();
+    this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
 
     // Parallax: scroll background layers at fractions of the camera.
     this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
@@ -198,7 +202,6 @@ export class GameScene extends Phaser.Scene {
       const finalScore = this.score.score;
       if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
       this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
-      this.sound.play('sfx-death', { volume: 0.6 });
       this.time.delayedCall(450, () => {
         const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
         save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex));
@@ -235,6 +238,5 @@ export class GameScene extends Phaser.Scene {
 
   private onCoin(): void {
     this.score.addCoin();
-    this.sound.play('sfx-coin', { volume: 0.5 });
   }
 }

@@ -5,6 +5,8 @@ import { save } from '../main';
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
   create(): void {
+    this.sound.stopAll();
+    this.sound.play('sfx-music-menu', { loop: true, volume: (save.get().settings.musicVol / 10) * 0.6 });
     const cx = TUNING.width / 2;
     this.add.text(cx, 180, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '48px', color: '#ff7b00' }).setOrigin(0.5);
     const hi = save.get().highScore;

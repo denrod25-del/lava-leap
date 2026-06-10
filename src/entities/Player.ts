@@ -139,7 +139,6 @@ export class Player {
         this.bufferTimer = 0;
         this.coyoteTimer = 0;
         this.events.emit('jump', {});
-        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (onWall) {
         const dir = onWallLeft ? 1 : -1; // push away from wall
         this.sprite.setVelocityX(dir * TUNING.wallJumpX);
@@ -147,13 +146,11 @@ export class Player {
         this.jumpsUsed = 1; // allow one air jump after a wall jump
         this.bufferTimer = 0;
         this.events.emit('wallJump', {});
-        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
         this.jumpsUsed = 2;
         this.bufferTimer = 0;
         this.events.emit('doubleJump', {});
-        this.scene.sound.play('sfx-jump', { volume: 0.4 });
       }
     }
     // Variable height: cut upward velocity on release.

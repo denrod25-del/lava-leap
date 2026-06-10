@@ -5,6 +5,7 @@ import { save } from '../main';
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
   create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[] }): void {
+    this.sound.stopAll();
     const cx = TUNING.width / 2;
     this.add.text(cx, 200, 'YOU MELTED', { fontFamily: 'monospace', fontSize: '40px', color: '#ff2d6b' }).setOrigin(0.5);
     this.add.text(cx, 280, `Score: ${data.score ?? 0}`, { fontFamily: 'monospace', fontSize: '24px', color: '#ffffff' }).setOrigin(0.5);
