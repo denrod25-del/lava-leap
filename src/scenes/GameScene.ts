@@ -7,6 +7,7 @@ import { CoinManager } from '../entities/CoinManager';
 import { Lava } from '../entities/Lava';
 import { ScoreTracker } from '../core/ScoreTracker';
 import { save } from '../main';
+import { GameEvents } from '../core/events';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -18,6 +19,7 @@ export class GameScene extends Phaser.Scene {
   private dead = false;
   private bgFar!: Phaser.GameObjects.TileSprite;
   private bgNear!: Phaser.GameObjects.TileSprite;
+  private gameEvents!: GameEvents;
 
   constructor() { super('Game'); }
 
@@ -73,6 +75,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.gameEvents = new GameEvents();
     this.score = new ScoreTracker();
     this.dead = false;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
@@ -82,18 +85,20 @@ export class GameScene extends Phaser.Scene {
     this.buildBackground();
 
     this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
-    this.platforms = new PlatformManager(this);
+    this.platforms = new PlatformManager(this, this.gameEvents);
 
     // Spawn the initial platform(s).
     for (const p of this.stream.active) this.platforms.spawn(p);
 
-    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40);
+    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
     for (const p of this.stream.active) this.coins.spawn(p);
     this.physics.add.overlap(this.player.sprite, this.coins.group, (_pl, coin) => {
-      (coin as Phaser.GameObjects.Image).destroy();
+      const c = coin as Phaser.GameObjects.Image;
+      this.gameEvents.emit('coinCollected', { x: c.x, y: c.y });
+      c.destroy();
       this.onCoin();
     });
 
@@ -136,11 +141,14 @@ export class GameScene extends Phaser.Scene {
     this.lava.update(delta, heightClimbed);
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
       this.dead = true;
-      this.sound.play('sfx-death', { volume: 0.6 });
       const finalScore = this.score.score;
       if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
-      this.scene.stop('Hud');
-      this.scene.start('GameOver', { score: finalScore });
+      this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: 0 });
+      this.sound.play('sfx-death', { volume: 0.6 });
+      this.time.delayedCall(450, () => {
+        this.scene.stop('Hud');
+        this.scene.start('GameOver', { score: finalScore });
+      });
     }
 
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;

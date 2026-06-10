@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
+import { GameEvents } from '../core/events';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -18,8 +19,12 @@ export class Player {
   private dashTimer = 0;
   private dashAvailable = true;
   private dashDir = 1;
+  private wasOnGround = true;
+  private _wallSliding = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  get wallSliding(): boolean { return this._wallSliding; }
+
+  constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents) {
     this.scene = scene;
     this.sprite = scene.physics.add.sprite(x, y, 'player');
     this.sprite.setCollideWorldBounds(false);
@@ -41,10 +46,21 @@ export class Player {
   update(): void {
     const dt = this.scene.game.loop.delta; // ms
     const body = this.sprite.body as Body;
+
+    // Capture velocity BEFORE any changes this frame (used for land impactVy).
+    const vyAtFrameStart = body.velocity.y;
+
+    // Reset wall-sliding flag before the dash early-return so it's always cleared.
+    this._wallSliding = false;
+
     const left = this.cursors.left!.isDown || this.keyA.isDown;
     const right = this.cursors.right!.isDown || this.keyD.isDown;
     const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
     const onGround = body.blocked.down || body.touching.down;
+
+    // Land detection: airborne last frame, grounded this frame.
+    if (onGround && !this.wasOnGround) this.events.emit('land', { impactVy: vyAtFrameStart });
+    this.wasOnGround = onGround;
 
     const onWallLeft = body.blocked.left || body.touching.left;
     const onWallRight = body.blocked.right || body.touching.right;
@@ -76,7 +92,8 @@ export class Player {
 
     // Wall slide: cap downward speed when pressing into a wall.
     const pressingIntoWall = (onWallLeft && left) || (onWallRight && right);
-    if (onWall && pressingIntoWall && body.velocity.y > TUNING.wallSlideMax) {
+    this._wallSliding = onWall && pressingIntoWall;
+    if (this._wallSliding && body.velocity.y > TUNING.wallSlideMax) {
       this.sprite.setVelocityY(TUNING.wallSlideMax);
     }
 
@@ -86,6 +103,7 @@ export class Player {
       this.dashDir = right ? 1 : left ? -1 : this.sprite.flipX ? -1 : 1;
       this.dashTimer = TUNING.dashDurationMs;
       this.dashAvailable = false;
+      this.events.emit('dash', {});
     }
 
     if (onGround) {
@@ -105,6 +123,7 @@ export class Player {
         this.jumpsUsed = 1;
         this.bufferTimer = 0;
         this.coyoteTimer = 0;
+        this.events.emit('jump', {});
         this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (onWall) {
         const dir = onWallLeft ? 1 : -1; // push away from wall
@@ -112,11 +131,13 @@ export class Player {
         this.sprite.setVelocityY(-TUNING.wallJumpY);
         this.jumpsUsed = 1; // allow one air jump after a wall jump
         this.bufferTimer = 0;
+        this.events.emit('wallJump', {});
         this.scene.sound.play('sfx-jump', { volume: 0.4 });
       } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
         this.jumpsUsed = 2;
         this.bufferTimer = 0;
+        this.events.emit('doubleJump', {});
         this.scene.sound.play('sfx-jump', { volume: 0.4 });
       }
     }

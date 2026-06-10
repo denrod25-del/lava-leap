@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { PlatformDescriptor } from '../core/types';
+import { GameEvents } from '../core/events';
 
 // Tints differentiate platform types while keeping the pixel-art texture readable.
 const TINTS: Record<string, number> = {
@@ -23,7 +24,7 @@ export class PlatformManager {
   private scene: Phaser.Scene;
   private views = new Map<number, PlatformView>();
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, private events: GameEvents) {
     this.scene = scene;
     this.group = scene.physics.add.staticGroup();
   }
@@ -81,6 +82,7 @@ export class PlatformManager {
       }
       if (v.desc.type === 'crumbling') {
         if (v.crumbleAt !== null && v.rect.visible && time >= v.crumbleAt) {
+          this.events.emit('platformCrumble', { x: v.rect.x, y: v.rect.y });
           v.rect.setVisible(false);
           (v.rect.body as Phaser.Physics.Arcade.StaticBody).enable = false;
           v.crumbleAt = time + CRUMBLE_RESPAWN_MS; // reuse field as respawn time
