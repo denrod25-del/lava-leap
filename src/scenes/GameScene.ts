@@ -116,6 +116,7 @@ export class GameScene extends Phaser.Scene {
     save.update((b) => recordRunStart(b.analytics, this.daily));
     this.tracker = new AchievementTracker(this.gameEvents, save, (a) => {
       this.registry.set('toast', `${a.name} — ${a.description}`);
+      this.sound.play('sfx-ding', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
     });
 
     this.buildBackground(ZONES[0]);

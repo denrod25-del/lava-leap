@@ -25,13 +25,6 @@ export class MenuScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '12px', color: '#9ef79e', lineSpacing: 5,
     });
     this.debugPanel = this.add.container(0, 0, [bg, text]).setDepth(100);
-    this.input.keyboard!.once('keydown-J', () => {
-      void navigator.clipboard.writeText(JSON.stringify(save.get().analytics, null, 2));
-    });
-    this.input.keyboard!.once('keydown-R', () => {
-      save.update((b) => { b.analytics = defaultAnalytics(); });
-      this.toggleDebug(); this.toggleDebug(); // rebuild with fresh numbers
-    });
   }
 
   create(): void {
@@ -61,5 +54,16 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-A', () => this.scene.start('Achievements'));
     kb.once('keydown-S', () => this.scene.start('Settings', { from: 'Menu' }));
     kb.on('keydown-F9', () => this.toggleDebug());
+    // Panel hotkeys registered ONCE (not per toggle, which stacked stale once-listeners);
+    // they no-op unless the panel is open.
+    kb.on('keydown-J', () => {
+      if (!this.debugPanel) return;
+      void navigator.clipboard.writeText(JSON.stringify(save.get().analytics, null, 2));
+    });
+    kb.on('keydown-R', () => {
+      if (!this.debugPanel) return;
+      save.update((b) => { b.analytics = defaultAnalytics(); });
+      this.toggleDebug(); this.toggleDebug(); // rebuild with fresh numbers
+    });
   }
 }

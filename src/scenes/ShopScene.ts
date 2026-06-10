@@ -42,12 +42,13 @@ export class ShopScene extends Phaser.Scene {
   private buyOrEquip(): void {
     const c = COSMETICS[this.idx];
     const blob = save.get();
+    const sfxMult = blob.settings.sfxVol / 10;
     if (blob.ownedCosmetics.includes(c.id)) {
       save.update((b) => { b.equippedCosmetic = c.id; });
-      this.sound.play('sfx-coin', { volume: 0.4 });
+      this.sound.play('sfx-ui-select', { volume: 0.4 * sfxMult });
     } else if (blob.coinBank >= c.price) {
       save.update((b) => { b.coinBank -= c.price; b.ownedCosmetics.push(c.id); b.equippedCosmetic = c.id; });
-      this.sound.play('sfx-coin', { volume: 0.6 });
+      this.sound.play('sfx-kaching', { volume: 0.6 * sfxMult });
     }
     this.render();
   }
