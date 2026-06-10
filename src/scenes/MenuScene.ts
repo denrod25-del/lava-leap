@@ -18,6 +18,7 @@ export class MenuScene extends Phaser.Scene {
       'D      Daily challenge',
       'C      Shop',
       'A      Achievements',
+      'S      Settings',
     ];
     items.forEach((line, i) => this.add.text(cx, 380 + i * 30, line, {
       fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0',
@@ -28,5 +29,6 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-D', () => this.scene.start('Game', { daily: true }));
     kb.once('keydown-C', () => this.scene.start('Shop'));
     kb.once('keydown-A', () => this.scene.start('Achievements'));
+    kb.once('keydown-S', () => this.scene.start('Settings', { from: 'Menu' }));
   }
 }

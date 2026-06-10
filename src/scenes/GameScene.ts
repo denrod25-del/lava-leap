@@ -23,6 +23,7 @@ export class GameScene extends Phaser.Scene {
   private lava!: Lava;
   private score = new ScoreTracker();
   private dead = false;
+  private booked = false;
   private bgFar!: Phaser.GameObjects.TileSprite;
   private bgNear!: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
@@ -105,6 +106,7 @@ export class GameScene extends Phaser.Scene {
     this.gameEvents = new GameEvents();
     this.score = new ScoreTracker();
     this.dead = false;
+    this.booked = false;
     this.zoneIndex = 0;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
@@ -152,6 +154,9 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(TUNING.width, 180);
 
     this.scene.launch('Hud');
+
+    this.input.keyboard!.on('keydown-ESC', () => this.pauseGame());
+    this.input.keyboard!.on('keydown-P', () => this.pauseGame());
   }
 
   update(time: number, delta: number): void {
@@ -220,8 +225,16 @@ export class GameScene extends Phaser.Scene {
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
   }
 
+  private pauseGame(): void {
+    if (this.dead || this.scene.isPaused()) return;
+    this.scene.launch('Pause');
+    this.scene.pause();
+  }
+
   /** Banks run coins + records analytics. Used by death, quit, and restart. */
   public endRunBookkeeping(finalHeight: number): { banked: number; bankTotal: number } {
+    if (this.booked) return { banked: 0, bankTotal: save.get().coinBank };
+    this.booked = true;
     const banked = this.score.coins;
     save.update((b) => {
       b.coinBank += banked;
