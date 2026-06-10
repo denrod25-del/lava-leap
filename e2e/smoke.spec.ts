@@ -23,3 +23,25 @@ test('boots to menu and starts a run without errors', async ({ page }) => {
 
   expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
 });
+
+test('pause and resume mid-run without errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  await page.goto('/');
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('Space');   // start run
+  await page.waitForTimeout(800);
+  await page.keyboard.press('Escape');  // pause
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');  // resume
+  await page.waitForTimeout(400);
+  await page.keyboard.down('ArrowRight');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(500);
+  await page.keyboard.up('ArrowRight');
+
+  expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
+});
