@@ -72,7 +72,6 @@ export class JuiceController {
 
   private squash(sx: number, sy: number): void {
     this.scene.tweens.killTweensOf(this.player);
-    this.player.setScale(this.player.scaleX < 0 ? -Math.abs(sx) : sx, sy);
     // Player display scale is 0.5 baseline (48px source shown at 24x32) — scale relative:
     const baseX = 24 / this.player.width, baseY = 32 / this.player.height;
     this.player.setScale(baseX * sx * Math.sign(this.player.scaleX || 1), baseY * sy);
