@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
+import { save } from '../main';
 
 const OPTIONS = ['Resume', 'Restart', 'Settings', 'Quit to Menu'] as const;
 
@@ -17,8 +18,9 @@ export class PauseScene extends Phaser.Scene {
       this.add.text(cx, 290 + i * 40, o, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5),
     );
     const kb = this.input.keyboard!;
-    kb.on('keydown-UP', () => { this.idx = (this.idx + OPTIONS.length - 1) % OPTIONS.length; this.render(); this.sound.play('sfx-ui-move', { volume: 0.3 }); });
-    kb.on('keydown-DOWN', () => { this.idx = (this.idx + 1) % OPTIONS.length; this.render(); this.sound.play('sfx-ui-move', { volume: 0.3 }); });
+    const uiVol = () => 0.3 * (save.get().settings.sfxVol / 10);
+    kb.on('keydown-UP', () => { this.idx = (this.idx + OPTIONS.length - 1) % OPTIONS.length; this.render(); this.sound.play('sfx-ui-move', { volume: uiVol() }); });
+    kb.on('keydown-DOWN', () => { this.idx = (this.idx + 1) % OPTIONS.length; this.render(); this.sound.play('sfx-ui-move', { volume: uiVol() }); });
     kb.on('keydown-ESC', () => this.resume());
     kb.on('keydown-ENTER', () => this.choose());
     kb.on('keydown-SPACE', () => this.choose());
@@ -36,7 +38,7 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private choose(): void {
-    this.sound.play('sfx-ui-select', { volume: 0.35 });
+    this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
     const pick = OPTIONS[this.idx];
     if (pick === 'Resume') this.resume();
     else if (pick === 'Settings') { this.scene.launch('Settings', { from: 'Pause' }); this.scene.pause(); }

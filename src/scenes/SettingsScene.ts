@@ -58,6 +58,8 @@ export class SettingsScene extends Phaser.Scene {
   private back(): void {
     this.scene.stop();
     if (this.from === 'Pause') this.scene.resume('Pause');
-    // from Menu: Menu was never paused; nothing to resume.
+    // From Menu, the Menu scene was STOPPED by scene.start('Settings') — it must
+    // be restarted, or no scene is left active (black screen).
+    else this.scene.start('Menu');
   }
 }
