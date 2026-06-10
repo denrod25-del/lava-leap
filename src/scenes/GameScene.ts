@@ -10,6 +10,9 @@ import { save } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
 import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
+import { AchievementTracker } from '../core/AchievementTracker';
+import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
+import { dailySeed, dateKey } from '../core/dailySeed';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -24,8 +27,15 @@ export class GameScene extends Phaser.Scene {
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
   private zoneIndex = 0;
+  private tracker!: AchievementTracker;
+  public daily = false;
+  private dateKeyToday = '';
 
   constructor() { super('Game'); }
+
+  init(data: { daily?: boolean }): void {
+    this.daily = data?.daily === true;
+  }
 
   private bgKeys(zone: ZoneDef): { far: string; near: string } {
     return { far: `bg-far-z${zone.index}`, near: `bg-near-z${zone.index}` };
@@ -98,6 +108,12 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
 
+    this.dateKeyToday = dateKey(new Date());
+    save.update((b) => recordRunStart(b.analytics, this.daily));
+    this.tracker = new AchievementTracker(this.gameEvents, save, (a) => {
+      this.registry.set('toast', `${a.name} — ${a.description}`);
+    });
+
     this.buildBackground(ZONES[0]);
     const zone0Keys = this.bgKeys(ZONES[0]);
     this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.far)
@@ -105,7 +121,8 @@ export class GameScene extends Phaser.Scene {
     this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
-    this.stream = new LevelStream(Math.floor(Math.random() * 1e9));
+    const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
+    this.stream = new LevelStream(seed);
     this.platforms = new PlatformManager(this, this.gameEvents);
 
     // Spawn the initial platform(s).
@@ -173,6 +190,8 @@ export class GameScene extends Phaser.Scene {
       this.registry.set('zoneBanner', zone.name);
     }
 
+    this.tracker.updateHeight(Math.floor(heightClimbed), this.zoneIndex);
+
     this.lava.update(delta, heightClimbed);
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
       this.dead = true;
@@ -181,13 +200,37 @@ export class GameScene extends Phaser.Scene {
       this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
       this.sound.play('sfx-death', { volume: 0.6 });
       this.time.delayedCall(450, () => {
+        const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
+        save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex));
         this.scene.stop('Hud');
-        this.scene.start('GameOver', { score: finalScore });
+        this.scene.start('GameOver', {
+          score: finalScore,
+          banked, bankTotal,
+          daily: this.daily,
+          dailyBest: this.daily ? save.get().dailyBest[this.dateKeyToday] ?? 0 : 0,
+          earned: [...this.tracker.earnedThisRun],
+        });
       });
     }
 
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
+  }
+
+  /** Banks run coins + records analytics. Used by death, quit, and restart. */
+  public endRunBookkeeping(finalHeight: number): { banked: number; bankTotal: number } {
+    const banked = this.score.coins;
+    save.update((b) => {
+      b.coinBank += banked;
+      recordBank(b.analytics, banked);
+    });
+    if (this.daily) {
+      const key = this.dateKeyToday;
+      const sc = this.score.score;
+      save.update((b) => { if (sc > (b.dailyBest[key] ?? 0)) b.dailyBest[key] = sc; });
+    }
+    void finalHeight;
+    return { banked, bankTotal: save.get().coinBank };
   }
 
   private onCoin(): void {
