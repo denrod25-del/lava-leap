@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
+import { zoneForHeight } from '../core/zones';
 
 const BASE_SPEED = 55;        // px/s upward (y decreases)
 const SPEED_PER_HEIGHT = 0.012; // extra px/s per px climbed
@@ -17,7 +18,7 @@ export class Lava {
   }
 
   update(dtMs: number, heightClimbed: number): void {
-    const speed = BASE_SPEED + heightClimbed * SPEED_PER_HEIGHT;
+    const speed = (BASE_SPEED + heightClimbed * SPEED_PER_HEIGHT) * zoneForHeight(heightClimbed).lavaSpeedMultiplier;
     this.surfaceY -= (speed * dtMs) / 1000;
     this.rect.y = this.surfaceY;
   }

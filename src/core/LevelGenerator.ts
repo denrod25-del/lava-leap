@@ -1,6 +1,7 @@
 import { TUNING, REACH } from '../tuning';
 import { makeRng, randRange, type Rng } from './rng';
 import type { PlatformDescriptor, PlatformType } from './types';
+import { zoneForHeight } from './zones';
 
 export class LevelGenerator {
   private rng: Rng;
@@ -33,10 +34,11 @@ export class LevelGenerator {
     return Math.max(0, Math.min(1, height / REACH.difficultySpan));
   }
 
-  private pickType(t: number): PlatformType {
+  private pickType(t: number, height: number): PlatformType {
     // Probabilities ramp with difficulty; static stays dominant but shrinks.
-    const pCrumble = 0.05 + 0.30 * t;
-    const pMoving = 0.05 + 0.25 * t;
+    const bias = zoneForHeight(height).typeMixBias;
+    const pCrumble = Math.min(0.45, 0.05 + 0.30 * t + bias.crumble);
+    const pMoving = Math.min(0.45, 0.05 + 0.25 * t + bias.moving);
     const r = this.rng();
     if (r < pCrumble) return 'crumbling';
     if (r < pCrumble + pMoving) return 'moving';
@@ -47,7 +49,7 @@ export class LevelGenerator {
     const t = this.difficulty();
 
     // Type picked first (consumes one rng value).
-    const type = this.pickType(t);
+    const type = this.pickType(t, TUNING.groundY - this.last.y);
 
     // Vertical gap widens with difficulty.
     const vGap = randRange(

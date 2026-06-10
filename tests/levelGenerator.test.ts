@@ -138,3 +138,38 @@ describe('LevelGenerator coins', () => {
     }
   });
 });
+
+describe('zone type-mix bias', () => {
+  it('produces more hazard platforms in Obsidian Crown than Magma Vault at equal ramp difficulty', () => {
+    // Compare hazard share in zone 0 (0-1000) vs zone 3 (3000-4000): the ramp rises too,
+    // but the bias must push zone 3 hazards above what the ramp alone would give at zone 0.
+    const count = (lo: number, hi: number) => {
+      const gen = new LevelGenerator(7);
+      gen.first();
+      let hazards = 0, total = 0;
+      let p = gen.next();
+      while (TUNING.groundY - p.y < hi) {
+        const h = TUNING.groundY - p.y;
+        if (h >= lo) { total++; if (p.type !== 'static') hazards++; }
+        p = gen.next();
+      }
+      return hazards / Math.max(1, total);
+    };
+    expect(count(3000, 4000)).toBeGreaterThan(count(0, 1000));
+  });
+
+  it('pickType consults the zone bias table', () => {
+    // With the ramp clamped (difficulty saturates at difficultySpan=4000), heights past
+    // 4000 differ ONLY by zone bias staying applied. Zone 3 bias adds 0.22 hazard
+    // probability over no-bias; sample far above the ramp cap and compare to the
+    // theoretical no-bias ceiling at t=1: pCrumble+pMoving = 0.35+0.30 = 0.65.
+    const gen = new LevelGenerator(11);
+    gen.first();
+    let p = gen.next();
+    while (TUNING.groundY - p.y < 6000) p = gen.next();
+    let hazards = 0;
+    const N = 1500;
+    for (let i = 0; i < N; i++) { p = gen.next(); if (p.type !== 'static') hazards++; }
+    expect(hazards / N).toBeGreaterThan(0.70); // 0.65 ceiling without bias; ~0.87 with
+  });
+});

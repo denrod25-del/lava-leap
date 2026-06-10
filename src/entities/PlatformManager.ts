@@ -1,13 +1,9 @@
 import Phaser from 'phaser';
 import type { PlatformDescriptor } from '../core/types';
 import { GameEvents } from '../core/events';
+import { zoneForHeight } from '../core/zones';
+import { TUNING } from '../tuning';
 
-// Tints differentiate platform types while keeping the pixel-art texture readable.
-const TINTS: Record<string, number> = {
-  static: 0xffffff,   // no tint
-  crumbling: 0xffa040, // orange
-  moving: 0x66ddff,    // cyan
-};
 const PLATFORM_H = 16;
 const CRUMBLE_DELAY_MS = 400;
 const CRUMBLE_RESPAWN_MS = 2500;
@@ -33,7 +29,8 @@ export class PlatformManager {
     const cx = desc.x + desc.width / 2;
     const cy = desc.y + PLATFORM_H / 2;
     const rect = this.scene.add.tileSprite(cx, cy, desc.width, PLATFORM_H, 'platform');
-    rect.setTint(TINTS[desc.type]);
+    const zone = zoneForHeight(TUNING.groundY - desc.y);
+    rect.setTint(zone.platformTints[desc.type]);
     this.scene.physics.add.existing(rect, true);
     this.group.add(rect);
     this.views.set(desc.id, { desc, rect, originX: cx, crumbleAt: null });
