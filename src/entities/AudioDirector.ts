@@ -10,6 +10,9 @@ export class AudioDirector {
   private scrapeOn = false;
 
   constructor(private scene: Phaser.Scene, events: GameEvents, private save: SaveData) {
+    // Take over the soundscape: stops the menu music (nothing else stops it on
+    // Menu -> Game) and any lingering one-shots before starting run audio.
+    scene.sound.stopAll();
     this.music = scene.sound.add('sfx-music-game', { loop: true });
     this.rumble = scene.sound.add('sfx-rumble', { loop: true, volume: 0 });
     this.scrape = scene.sound.add('sfx-scrape', { loop: true, volume: 0 });
