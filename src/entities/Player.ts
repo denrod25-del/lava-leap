@@ -146,5 +146,18 @@ export class Player {
       this.sprite.setVelocityY(body.velocity.y * TUNING.jumpCutMultiplier);
     }
     this.jumpHeldLast = jumpDown;
+
+    this.pickAnimation(onGround, left || right, body.velocity.y);
+  }
+
+  private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
+    if (!this.scene.anims.exists('player-run')) return; // no frames generated — static fallback
+    let key: string;
+    if (!onGround) key = vy < 0 ? 'player-jump' : 'player-fall';
+    else if (moving) key = 'player-run';
+    else key = 'player-idle';
+    if (this.scene.anims.exists(key) && this.sprite.anims.getName() !== key) {
+      this.sprite.anims.play(key, true);
+    }
   }
 }
