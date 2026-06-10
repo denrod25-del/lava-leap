@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { GameEvents } from '../core/events';
+import { save } from '../main';
+import { COSMETICS } from '../scenes/ShopScene';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -41,6 +43,10 @@ export class Player {
     this.keyD = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyDash = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.keyDashAlt = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+
+    // Apply equipped cosmetic tint.
+    const equipped = COSMETICS.find((c) => c.id === save.get().equippedCosmetic);
+    if (equipped && equipped.id !== 'default') this.sprite.setTint(equipped.tint);
   }
 
   update(): void {
