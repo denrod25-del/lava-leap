@@ -5,7 +5,8 @@ import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
 import { CoinManager } from '../entities/CoinManager';
 import { Lava } from '../entities/Lava';
-import { ScoreTracker, saveHighScore } from '../core/ScoreTracker';
+import { ScoreTracker } from '../core/ScoreTracker';
+import { save } from '../main';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -137,7 +138,7 @@ export class GameScene extends Phaser.Scene {
       this.dead = true;
       this.sound.play('sfx-death', { volume: 0.6 });
       const finalScore = this.score.score;
-      saveHighScore(finalScore, window.localStorage);
+      if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
       this.scene.stop('Hud');
       this.scene.start('GameOver', { score: finalScore });
     }

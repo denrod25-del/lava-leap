@@ -5,6 +5,10 @@ import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
 import { HudScene } from './scenes/HudScene';
 import { GameOverScene } from './scenes/GameOverScene';
+import { SaveData } from './core/SaveData';
+
+/** Single shared save — all scenes import this. */
+export const save = new SaveData(window.localStorage);
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

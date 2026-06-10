@@ -1,13 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ScoreTracker, loadHighScore, saveHighScore, type KeyValueStore } from '../src/core/ScoreTracker';
-
-function fakeStore(): KeyValueStore {
-  const m = new Map<string, string>();
-  return {
-    getItem: (k) => (m.has(k) ? m.get(k)! : null),
-    setItem: (k, v) => void m.set(k, v),
-  };
-}
+import { ScoreTracker } from '../src/core/ScoreTracker';
 
 describe('ScoreTracker', () => {
   it('tracks max height (never decreases)', () => {
@@ -23,19 +15,5 @@ describe('ScoreTracker', () => {
     s.addCoin();
     s.addCoin();
     expect(s.score).toBe(123 + 20);
-  });
-});
-
-describe('high score persistence', () => {
-  it('returns 0 when unset', () => {
-    expect(loadHighScore(fakeStore())).toBe(0);
-  });
-  it('saves only when greater', () => {
-    const store = fakeStore();
-    saveHighScore(500, store);
-    saveHighScore(300, store);
-    expect(loadHighScore(store)).toBe(500);
-    saveHighScore(900, store);
-    expect(loadHighScore(store)).toBe(900);
   });
 });
