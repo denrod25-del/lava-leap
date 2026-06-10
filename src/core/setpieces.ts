@@ -83,6 +83,8 @@ export function validateChunk(chunk: SetPiece): string[] {
       const headroom = Math.min(p.x, TUNING.width - (p.x + p.width));
       if (p.movement.range > headroom) v.push(`platform ${i} moving range exceeds headroom`);
     }
+    // Coins never spawn on crumbling platforms (v1 invariant) — guard template authors.
+    if (p.type === 'crumbling' && p.hasCoin) v.push(`platform ${i} crumbling cannot have coin`);
   }
   return v;
 }
