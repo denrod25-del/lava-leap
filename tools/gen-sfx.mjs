@@ -88,10 +88,142 @@ function death() {
   return out;
 }
 
+// 1.0s loop: low noise + 46 Hz sine, clickless edge fades (200 samples each end).
+function rumble() {
+  const dur = 1.0;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  const fadeLen = 200;
+  for (let i = 0; i < n; i++) {
+    const noise = (Math.random() * 2 - 1) * 0.5;
+    const tone = Math.sin(TAU * 46 * (i / SAMPLE_RATE)) * 0.5;
+    let fade = 1;
+    if (i < fadeLen) fade = i / fadeLen;
+    else if (i >= n - fadeLen) fade = (n - 1 - i) / fadeLen;
+    out[i] = (noise + tone) * 0.30 * fade;
+  }
+  return out;
+}
+
+// 0.5s loop: high-pass feel via noise differencing, clickless edge fades.
+function scrape() {
+  const dur = 0.5;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const raw = new Float32Array(n);
+  for (let i = 0; i < n; i++) raw[i] = Math.random() * 2 - 1;
+  const out = new Float32Array(n);
+  const fadeLen = 200;
+  for (let i = 1; i < n; i++) {
+    let fade = 1;
+    if (i < fadeLen) fade = i / fadeLen;
+    else if (i >= n - fadeLen) fade = (n - 1 - i) / fadeLen;
+    out[i] = (raw[i] - raw[i - 1]) * 0.5 * 0.18 * fade;
+  }
+  return out;
+}
+
+// 0.18s one-shot: noise burst 0.5→0 linear decay + 90 Hz sine thud for first 60 ms.
+function crack() {
+  const dur = 0.18;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const thudEnd = Math.floor(SAMPLE_RATE * 0.06);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const decay = 0.5 * (1 - t);
+    const noiseSample = (Math.random() * 2 - 1) * decay;
+    const thud = i < thudEnd ? Math.sin(TAU * 90 * (i / SAMPLE_RATE)) * 0.3 * (1 - i / thudEnd) : 0;
+    out[i] = noiseSample + thud;
+  }
+  return out;
+}
+
+// 0.6s: sine sweep 220→440 Hz, amplitude ramp 0→0.35→0.
+function swell() {
+  const dur = 0.6;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 220 + (440 - 220) * t;
+    const amp = t < 0.5 ? t / 0.5 * 0.35 : (1 - t) / 0.5 * 0.35;
+    out[i] = Math.sin(TAU * freq * (i / SAMPLE_RATE)) * amp;
+  }
+  return out;
+}
+
+// 0.35s: sine 880 Hz for 120 ms then 1760 Hz for 230 ms, 0.3 amp, exponential decay.
+function ding() {
+  const n1 = Math.floor(SAMPLE_RATE * 0.12);
+  const n2 = Math.floor(SAMPLE_RATE * 0.23);
+  const out = new Float32Array(n1 + n2);
+  for (let i = 0; i < n1; i++) {
+    const decay = Math.exp(-i / (SAMPLE_RATE * 0.08));
+    out[i] = Math.sin(TAU * 880 * (i / SAMPLE_RATE)) * 0.3 * decay;
+  }
+  for (let i = 0; i < n2; i++) {
+    const decay = Math.exp(-i / (SAMPLE_RATE * 0.15));
+    out[n1 + i] = Math.sin(TAU * 1760 * (i / SAMPLE_RATE)) * 0.3 * decay;
+  }
+  return out;
+}
+
+// 0.3s: two quick sines 1320 Hz (80 ms) + 1760 Hz (220 ms), 0.32 amplitude.
+function kaching() {
+  const n1 = Math.floor(SAMPLE_RATE * 0.08);
+  const n2 = Math.floor(SAMPLE_RATE * 0.22);
+  const out = new Float32Array(n1 + n2);
+  for (let i = 0; i < n1; i++) {
+    const env = Math.sin(Math.PI * (i / n1));
+    out[i] = Math.sin(TAU * 1320 * (i / SAMPLE_RATE)) * 0.32 * env;
+  }
+  for (let i = 0; i < n2; i++) {
+    const env = Math.sin(Math.PI * (i / n2));
+    out[n1 + i] = Math.sin(TAU * 1760 * (i / SAMPLE_RATE)) * 0.32 * env;
+  }
+  return out;
+}
+
+// 0.06s: 660 Hz square blip, 0.2 amplitude.
+function uiMove() {
+  const dur = 0.06;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const sq = Math.sign(Math.sin(TAU * 660 * (i / SAMPLE_RATE))) * 0.5;
+    const env = Math.sin(Math.PI * t);
+    out[i] = sq * 0.2 * env;
+  }
+  return out;
+}
+
+// 0.1s: 760→900 Hz sine rise, 0.25 amplitude.
+function uiSelect() {
+  const dur = 0.1;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 760 + (900 - 760) * t;
+    const env = Math.sin(Math.PI * t);
+    out[i] = Math.sin(TAU * freq * (i / SAMPLE_RATE)) * 0.25 * env;
+  }
+  return out;
+}
+
 const files = {
   'jump.wav': jump(),
   'coin.wav': coin(),
   'death.wav': death(),
+  'rumble.wav': rumble(),
+  'scrape.wav': scrape(),
+  'crack.wav': crack(),
+  'swell.wav': swell(),
+  'ding.wav': ding(),
+  'kaching.wav': kaching(),
+  'ui-move.wav': uiMove(),
+  'ui-select.wav': uiSelect(),
 };
 
 for (const [name, samples] of Object.entries(files)) {
