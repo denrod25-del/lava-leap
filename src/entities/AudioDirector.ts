@@ -45,10 +45,10 @@ export class AudioDirector {
     const proximity = Phaser.Math.Clamp(1 - lavaDistancePx / 600, 0, 1);
     (this.rumble as Phaser.Sound.WebAudioSound).setVolume(0.6 * proximity * this.sfxMult());
     const target = wallSliding ? 0.35 * this.sfxMult() : 0;
-    if (wallSliding !== this.scrapeOn) {
-      this.scrapeOn = wallSliding;
+    if (wallSliding || wallSliding !== this.scrapeOn) {
       (this.scrape as Phaser.Sound.WebAudioSound).setVolume(target);
     }
+    this.scrapeOn = wallSliding;
   }
 
   destroy(): void {
