@@ -19,3 +19,22 @@ export function defaultAnalytics(): AnalyticsState {
     deathsByZone: {},
   };
 }
+
+export function recordRunStart(a: AnalyticsState, daily: boolean): void {
+  a.runs++;
+  if (daily) a.dailyPlays++;
+}
+
+export function recordDeath(a: AnalyticsState, height: number, zoneIndex: number): void {
+  const bucket = String(Math.floor(height / 100) * 100);
+  a.deathsByBucket[bucket] = (a.deathsByBucket[bucket] ?? 0) + 1;
+  a.deathsByZone[String(zoneIndex)] = (a.deathsByZone[String(zoneIndex)] ?? 0) + 1;
+}
+
+export function recordUnlock(a: AnalyticsState): void {
+  a.achievementsUnlocked++;
+}
+
+export function recordBank(a: AnalyticsState, coins: number): void {
+  a.coinsBanked += coins;
+}
