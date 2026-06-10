@@ -8,6 +8,7 @@ import { Lava } from '../entities/Lava';
 import { ScoreTracker } from '../core/ScoreTracker';
 import { save } from '../main';
 import { GameEvents } from '../core/events';
+import { JuiceController } from '../entities/JuiceController';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -20,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   private bgFar!: Phaser.GameObjects.TileSprite;
   private bgNear!: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
+  private juice!: JuiceController;
 
   constructor() { super('Game'); }
 
@@ -104,6 +106,8 @@ export class GameScene extends Phaser.Scene {
 
     this.lava = new Lava(this);
 
+    this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
+
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
     this.cameras.main.setDeadzone(TUNING.width, 180);
@@ -114,6 +118,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     this.player.update();
     this.platforms.update(time);
+    this.juice.update();
 
     // Parallax: scroll background layers at fractions of the camera.
     this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;

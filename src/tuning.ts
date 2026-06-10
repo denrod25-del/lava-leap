@@ -44,3 +44,15 @@ export const REACH = {
 export const STREAM = {
   generateMargin: 200,
 } as const;
+
+export const JUICE = {
+  jumpSquashX: 0.8, jumpStretchY: 1.2,
+  landSquashX: 1.25, landSquashY: 0.75,
+  squashMs: 120,
+  shakeSmall: { duration: 80, intensity: 0.004 },
+  shakeBig: { duration: 250, intensity: 0.012 },
+  popupRise: 28, popupMs: 600,
+  slowMoScale: 3,      // Arcade world.timeScale (>1 = slower)
+  slowMoMs: 400,
+  emberRatePerSec: 14,
+} as const;
