@@ -47,6 +47,15 @@ export class Player {
     const dt = this.scene.game.loop.delta; // ms
     const body = this.sprite.body as Body;
 
+    // Visual squash/stretch tweens (JuiceController) change the sprite scale, and
+    // Arcade derives the world body from source-size x scale. Re-derive the source
+    // size from the live scale each frame so the world body stays exactly 24x32
+    // no matter what the visuals do.
+    const sx = Math.abs(this.sprite.scaleX) || 1;
+    const sy = Math.abs(this.sprite.scaleY) || 1;
+    body.setSize(24 / sx, 32 / sy);
+    body.setOffset((this.sprite.width - 24 / sx) / 2, this.sprite.height - 32 / sy);
+
     // Capture velocity BEFORE any changes this frame (used for land impactVy).
     const vyAtFrameStart = body.velocity.y;
 
