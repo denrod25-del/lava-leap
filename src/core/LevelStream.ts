@@ -1,6 +1,7 @@
 import { LevelGenerator } from './LevelGenerator';
 import { STREAM } from '../tuning';
 import type { PlatformDescriptor } from './types';
+import type { SetPiece } from './setpieces';
 
 export class LevelStream {
   readonly active: PlatformDescriptor[] = [];
@@ -12,6 +13,11 @@ export class LevelStream {
     const first = this.gen.first();
     this.active.push(first);
     this.topY = first.y;
+  }
+
+  /** Force a boss gauntlet template to surface next via the normal `added` path. */
+  injectChunk(tpl: SetPiece): void {
+    this.gen.injectChunk(tpl);
   }
 
   /**

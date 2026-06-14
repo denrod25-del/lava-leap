@@ -17,6 +17,9 @@ import { dailySeed, dateKey } from '../core/dailySeed';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
 import { EnemyManager } from '../entities/EnemyManager';
 import { PowerupController } from '../entities/PowerupController';
+import { BossController } from '../entities/BossController';
+import { bossBoundaryCrossed } from '../core/boss';
+import { BOSS_TEMPLATES } from '../core/bossTemplates';
 import type { InputSource } from '../core/InputState';
 
 export class GameScene extends Phaser.Scene {
@@ -38,6 +41,9 @@ export class GameScene extends Phaser.Scene {
   private tracker!: AchievementTracker;
   private enemies!: EnemyManager;
   private powerups!: PowerupController;
+  private boss!: BossController;
+  private runSeed = 0;
+  private prevHeight = 0;
   public daily = false;
   private dateKeyToday = '';
 
@@ -115,6 +121,7 @@ export class GameScene extends Phaser.Scene {
     this.dead = false;
     this.booked = false;
     this.zoneIndex = 0;
+    this.prevHeight = 0;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
@@ -135,6 +142,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
+    this.runSeed = seed;
     this.stream = new LevelStream(seed);
     this.platforms = new PlatformManager(this, this.gameEvents);
 
@@ -162,6 +170,12 @@ export class GameScene extends Phaser.Scene {
     this.powerups.registerPlayerOverlap(this.player.sprite);
 
     this.lava = new Lava(this);
+
+    this.boss = new BossController(this, this.gameEvents);
+    this.boss.registerPlayerOverlap(this.player.sprite, () => {
+      this.gameEvents.emit('playerHit', { source: 'boss' });
+      this.handleHit('boss');
+    });
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
@@ -250,6 +264,18 @@ export class GameScene extends Phaser.Scene {
     this.tracker.updateHeight(Math.floor(heightClimbed), this.zoneIndex);
 
     this.lava.update(delta, heightClimbed);
+
+    // Lava Titan boss: trigger once per boundary crossing, then run each frame.
+    if (!this.boss.isActive) {
+      const idx = bossBoundaryCrossed(this.prevHeight, heightClimbed);
+      if (idx >= 0) {
+        this.stream.injectChunk(BOSS_TEMPLATES[idx]);
+        this.boss.start(idx, this.runSeed, this.lava.surfaceY);
+      }
+    }
+    this.boss.update(delta, this.lava.surfaceY);
+    this.prevHeight = heightClimbed;
+
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
       this.triggerDeath('lava');
     }

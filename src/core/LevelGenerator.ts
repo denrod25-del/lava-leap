@@ -2,7 +2,7 @@ import { TUNING, REACH, SETPIECE, HAZARD } from '../tuning';
 import { makeRng, randRange, type Rng } from './rng';
 import type { PlatformDescriptor, PlatformType } from './types';
 import { zoneForHeight } from './zones';
-import { SET_PIECES } from './setpieces';
+import { SET_PIECES, type SetPiece } from './setpieces';
 import { rollHazard, rollEnemy, rollPowerup } from './hazardRules';
 
 export class LevelGenerator {
@@ -74,6 +74,30 @@ export class LevelGenerator {
       y -= cp.dyToNext;
     }
     this.untilChunk = this.chunkInterval();
+  }
+
+  /**
+   * Force a specific template (boss gauntlet) to surface next, mirroring queueChunk's
+   * translation. Platforms are appended to pendingChunk so the normal stream `added`
+   * path emits them; next() updates this.last as it shifts each off. Does NOT mutate
+   * this.last directly. Uses a fixed entry gap so the gauntlet links reach-validly.
+   */
+  injectChunk(tpl: SetPiece): void {
+    let y = this.last.y - 100;
+    for (const cp of tpl.platforms) {
+      const desc: PlatformDescriptor = {
+        id: this.nextId++, x: cp.x, y: Math.round(y), width: cp.width,
+        type: cp.type, hasCoin: cp.hasCoin,
+      };
+      if (cp.type === 'moving' && cp.movement) {
+        const headroom = Math.max(0, Math.min(desc.x, TUNING.width - (desc.x + desc.width)));
+        const range = Math.min(cp.movement.range, headroom);
+        if (range > 0) desc.movement = { axis: 'horizontal', range, speed: cp.movement.speed };
+        else desc.type = 'static';
+      }
+      this.pendingChunk.push(desc);
+      y -= cp.dyToNext;
+    }
   }
 
   next(): PlatformDescriptor {
