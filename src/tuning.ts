@@ -70,6 +70,16 @@ export const HAZARD = {
   powerupChance: 0.03,     // per eligible platform
 } as const;
 
+export const ENEMY = {
+  crawlerSpeed: 55,      // px/s patrol speed
+  drifterAmplitude: 30,  // px sine bob amplitude
+  drifterFreq: 1.4,      // Hz of sine bob
+  drifterHoverH: 28,     // px above platform top
+  stompWindow: 12,       // px: player feet must be above enemy top by this much
+  bodyW: 20,
+  bodyH: 20,
+} as const;
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,

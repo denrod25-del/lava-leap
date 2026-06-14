@@ -15,6 +15,7 @@ import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
+import { EnemyManager } from '../entities/EnemyManager';
 import type { InputSource } from '../core/InputState';
 
 export class GameScene extends Phaser.Scene {
@@ -34,6 +35,7 @@ export class GameScene extends Phaser.Scene {
   private audio!: AudioDirector;
   private zoneIndex = 0;
   private tracker!: AchievementTracker;
+  private enemies!: EnemyManager;
   public daily = false;
   private dateKeyToday = '';
 
@@ -149,6 +151,9 @@ export class GameScene extends Phaser.Scene {
       this.onCoin();
     });
 
+    this.enemies = new EnemyManager(this);
+    for (const p of this.stream.active) this.enemies.spawn(p);
+
     this.lava = new Lava(this);
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
@@ -181,6 +186,27 @@ export class GameScene extends Phaser.Scene {
     for (const p of removed) this.platforms.despawn(p);
     for (const p of added) this.coins.spawn(p);
     for (const p of removed) this.coins.despawn(p);
+    for (const p of added) this.enemies.spawn(p);
+    for (const p of removed) this.enemies.despawn(p);
+
+    this.enemies.update(time, delta);
+
+    // Enemy contact resolution (stomp / dash-kill / lethal)
+    if (!this.dead) {
+      this.enemies.registerPlayerOverlap(
+        this.player.sprite,
+        () => this.player.dashing,
+        () => {
+          this.gameEvents.emit('playerHit', { source: 'enemy' });
+          this.handleHit('enemy');
+        },
+        () => {
+          const kill = this.enemies.consumeLastKill();
+          this.gameEvents.emit('enemyStomped', { x: kill?.x ?? this.player.sprite.x, y: kill?.y ?? this.player.sprite.y });
+          this.player.stompBounce();
+        },
+      );
+    }
 
     const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
     if (body.blocked.down) {
@@ -217,6 +243,11 @@ export class GameScene extends Phaser.Scene {
 
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
+  }
+
+  private handleHit(source: 'enemy' | 'boss'): void {
+    if (this.dead) return;
+    this.triggerDeath(source);
   }
 
   private triggerDeath(_source?: string): void {

@@ -22,6 +22,16 @@ export class Player {
 
   get wallSliding(): boolean { return this._wallSliding; }
 
+  /** True while an air-dash is in progress. */
+  get dashing(): boolean { return this.dashTimer > 0; }
+
+  /** Tiny upward kick on successful stomp, refreshes air abilities. */
+  stompBounce(): void {
+    this.sprite.setVelocityY(-350);
+    this.jumpsUsed = 0;
+    this.dashAvailable = true;
+  }
+
   constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents) {
     this.scene = scene;
     this.sprite = scene.physics.add.sprite(x, y, 'player');
