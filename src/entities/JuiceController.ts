@@ -65,6 +65,13 @@ export class JuiceController {
     events.on('bouncePad', ({ x, y }) => {
       this.dustAt(x, y, 8);
     });
+    events.on('powerupCollected', () => {
+      this.sparkEmitter.explode(16, this.player.x, this.player.y);
+    });
+    events.on('powerupExpired', ({ kind }) => {
+      // Shield break: a quick white screen flash so the loss of protection reads.
+      if (kind === 'shield') this.flash(0xffffff, 0.35, 220);
+    });
   }
 
   /** Call each frame so embers track the lava surface. */
@@ -111,11 +118,16 @@ export class JuiceController {
     });
   }
 
+  /** Full-screen color flash that fades out. Reused by death + shield-break. */
+  private flash(color: number, alpha: number, durationMs: number): void {
+    const rect = this.scene.add.rectangle(0, 0, TUNING.width, TUNING.height, color, alpha)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(50);
+    this.scene.tweens.add({ targets: rect, alpha: 0, duration: durationMs, onComplete: () => rect.destroy() });
+  }
+
   private deathSequence(): void {
     this.shake(JUICE.shakeBig.duration, JUICE.shakeBig.intensity);
-    const flash = this.scene.add.rectangle(0, 0, TUNING.width, TUNING.height, 0xff2d2d, 0.45)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(50);
-    this.scene.tweens.add({ targets: flash, alpha: 0, duration: 350 });
+    this.flash(0xff2d2d, 0.45, 350);
     const world = (this.scene.physics as Phaser.Physics.Arcade.ArcadePhysics).world;
     world.timeScale = JUICE.slowMoScale;
     this.scene.time.delayedCall(JUICE.slowMoMs, () => { world.timeScale = 1; });

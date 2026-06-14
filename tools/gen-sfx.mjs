@@ -248,6 +248,37 @@ function uiSelect() {
   return out;
 }
 
+// 0.24s: rising arpeggio (660 → 990 → 1320 Hz), bright power-up pickup.
+function pickup() {
+  const seg = 0.08;
+  const n = Math.floor(SAMPLE_RATE * seg);
+  const freqs = [660, 990, 1320];
+  const out = new Float32Array(n * freqs.length);
+  let idx = 0;
+  for (const f of freqs) {
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      const env = Math.sin(Math.PI * t);
+      out[idx++] = Math.sin(TAU * (i / SAMPLE_RATE) * f) * env * 0.28;
+    }
+  }
+  return out;
+}
+
+// 0.18s: short descending blip (880 → 440 Hz) for power-up expiry.
+function expire() {
+  const dur = 0.18;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 880 + (440 - 880) * t;
+    const env = Math.exp(-t * 5);
+    out[i] = Math.sin(TAU * freq * (i / SAMPLE_RATE)) * 0.25 * env;
+  }
+  return out;
+}
+
 const files = {
   'jump.wav': jump(),
   'coin.wav': coin(),
@@ -262,6 +293,8 @@ const files = {
   'ui-select.wav': uiSelect(),
   'stomp.wav': stomp(),
   'hit.wav': hit(),
+  'pickup.wav': pickup(),
+  'expire.wav': expire(),
 };
 
 for (const [name, samples] of Object.entries(files)) {

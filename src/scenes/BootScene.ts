@@ -13,7 +13,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx-jump', 'assets/sfx/jump.wav');
     this.load.audio('sfx-coin', 'assets/sfx/coin.wav');
     this.load.audio('sfx-death', 'assets/sfx/death.wav');
-    for (const k of ['music-menu', 'rumble', 'scrape', 'crack', 'swell', 'ding', 'kaching', 'ui-move', 'ui-select', 'stomp', 'hit']) {
+    for (const k of ['music-menu', 'rumble', 'scrape', 'crack', 'swell', 'ding', 'kaching', 'ui-move', 'ui-select', 'stomp', 'hit', 'pickup', 'expire']) {
       this.load.audio(`sfx-${k}`, `assets/sfx/${k}.wav`);
     }
     // Custom gameplay track (user-supplied). OGG first, MP3 fallback for iOS/Safari.
