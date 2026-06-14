@@ -4,12 +4,15 @@ import type { Rng } from './rng';
 
 const POWERUPS: PowerupKind[] = ['shield', 'rocket', 'magnet', 'slowlava'];
 
-/** Decide spike/bounce flags for a platform. Consumes up to 2 rng draws (stable order). */
+/** Decide spike/bounce flags for a platform. ALWAYS consumes exactly 2 rng draws so
+ *  downstream rolls (enemy, power-up) sit at a fixed offset regardless of outcome. */
 export function rollHazard(rng: Rng, t: number, height: number): { spikes: boolean; bounce: boolean } {
-  if (height < HAZARD.graceHeight) { rng(); rng(); return { spikes: false, bounce: false }; }
-  const spikes = rng() < HAZARD.spikeBaseChance + HAZARD.spikeChancePerT * t;
-  // Mutually exclusive: only roll bounce if not spiked.
-  const bounce = !spikes && rng() < HAZARD.bounceChance;
+  const spikeRoll = rng();
+  const bounceRoll = rng();
+  if (height < HAZARD.graceHeight) return { spikes: false, bounce: false };
+  const spikes = spikeRoll < HAZARD.spikeBaseChance + HAZARD.spikeChancePerT * t;
+  // Mutually exclusive: bounce only when not spiked (both rolls already consumed).
+  const bounce = !spikes && bounceRoll < HAZARD.bounceChance;
   return { spikes, bounce };
 }
 
