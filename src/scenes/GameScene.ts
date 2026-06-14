@@ -184,8 +184,15 @@ export class GameScene extends Phaser.Scene {
 
     const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
     if (body.blocked.down) {
-      const id = this.platforms.platformUnder(this.player.sprite);
-      if (id !== null) this.platforms.touch(id, time);
+      const desc = this.platforms.descriptorUnder(this.player.sprite);
+      if (desc !== null) this.platforms.touch(desc.id, time);
+      if (desc?.hazard === 'spikes' && !this.dead) {
+        this.gameEvents.emit('playerHit', { source: 'spike' });
+        this.handleHit('spike');
+      } else if (desc?.bounce) {
+        this.player.bounce();
+        this.gameEvents.emit('bouncePad', { x: this.player.sprite.x, y: this.player.sprite.y });
+      }
     }
 
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
@@ -208,26 +215,38 @@ export class GameScene extends Phaser.Scene {
 
     this.lava.update(delta, heightClimbed);
     if (!this.dead && this.lava.catches(this.player.sprite.y)) {
-      this.dead = true;
-      const finalScore = this.score.score;
-      if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
-      this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
-      this.time.delayedCall(450, () => {
-        const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
-        save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex));
-        this.scene.stop('Hud');
-        this.scene.start('GameOver', {
-          score: finalScore,
-          banked, bankTotal,
-          daily: this.daily,
-          dailyBest: this.daily ? save.get().dailyBest[this.dateKeyToday] ?? 0 : 0,
-          earned: [...this.tracker.earnedThisRun],
-        });
-      });
+      this.triggerDeath('lava');
     }
 
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
+  }
+
+  private triggerDeath(_source?: string): void {
+    if (this.dead) return;
+    this.dead = true;
+    const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
+    const finalScore = this.score.score;
+    if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
+    this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
+    this.time.delayedCall(450, () => {
+      const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
+      save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex));
+      this.scene.stop('Hud');
+      this.scene.start('GameOver', {
+        score: finalScore,
+        banked, bankTotal,
+        daily: this.daily,
+        dailyBest: this.daily ? save.get().dailyBest[this.dateKeyToday] ?? 0 : 0,
+        earned: [...this.tracker.earnedThisRun],
+      });
+    });
+  }
+
+  private handleHit(source: 'enemy' | 'spike' | 'boss'): void {
+    if (this.dead) return;
+    // PowerupController shield consumption is wired in M3; until then, a hit is lethal.
+    this.triggerDeath(source);
   }
 
   private pauseGame(): void {

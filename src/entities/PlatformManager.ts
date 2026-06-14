@@ -13,6 +13,7 @@ interface PlatformView {
   rect: Phaser.GameObjects.TileSprite;
   originX: number;
   crumbleAt: number | null;
+  decor?: Phaser.GameObjects.Graphics;
 }
 
 export class PlatformManager {
@@ -33,13 +34,29 @@ export class PlatformManager {
     rect.setTint(zone.platformTints[desc.type]);
     this.scene.physics.add.existing(rect, true);
     this.group.add(rect);
-    this.views.set(desc.id, { desc, rect, originX: cx, crumbleAt: null });
+
+    let decor: Phaser.GameObjects.Graphics | undefined;
+    if (desc.hazard === 'spikes') {
+      const g = this.scene.add.graphics().setDepth((rect.depth ?? 0) + 1);
+      g.fillStyle(0xcfd2d6, 1);
+      for (let sx = 0; sx < desc.width; sx += 8) {
+        g.fillTriangle(desc.x + sx, desc.y, desc.x + sx + 4, desc.y - 8, desc.x + sx + 8, desc.y);
+      }
+      decor = g;
+    } else if (desc.bounce) {
+      const g = this.scene.add.graphics().setDepth((rect.depth ?? 0) + 1);
+      g.fillStyle(0x35e0a0, 1).fillRect(desc.x + 4, desc.y - 6, desc.width - 8, 6);
+      decor = g;
+    }
+
+    this.views.set(desc.id, { desc, rect, originX: cx, crumbleAt: null, decor });
   }
 
   despawn(desc: PlatformDescriptor): void {
     const v = this.views.get(desc.id);
     if (!v) return;
     v.rect.destroy();
+    v.decor?.destroy();
     this.views.delete(desc.id);
   }
 
@@ -67,6 +84,13 @@ export class PlatformManager {
       ) return v.desc.id;
     }
     return null;
+  }
+
+  /** Returns the descriptor of the platform the sprite is resting on, or null. */
+  descriptorUnder(sprite: Phaser.GameObjects.Sprite): import('../core/types').PlatformDescriptor | null {
+    const id = this.platformUnder(sprite);
+    if (id === null) return null;
+    return this.views.get(id)?.desc ?? null;
   }
 
   update(time: number): void {

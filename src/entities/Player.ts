@@ -154,6 +154,13 @@ export class Player {
     this.pickAnimation(onGround, left || right, body.velocity.y);
   }
 
+  /** Launch off a bounce pad: stronger than a jump, refreshes air abilities. */
+  bounce(): void {
+    this.sprite.setVelocityY(-TUNING.bouncePadVelocity);
+    this.jumpsUsed = 0;
+    this.dashAvailable = true;
+  }
+
   private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
     if (!this.scene.anims.exists('player-run')) return; // no frames generated — static fallback
     let key: string;
