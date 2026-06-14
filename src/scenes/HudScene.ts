@@ -4,6 +4,7 @@ import { TUNING } from '../tuning';
 export class HudScene extends Phaser.Scene {
   private heightText!: Phaser.GameObjects.Text;
   private coinText!: Phaser.GameObjects.Text;
+  private puText?: Phaser.GameObjects.Text;
   private toastQueue: string[] = [];
   private toastShowing = false;
 
@@ -30,6 +31,16 @@ export class HudScene extends Phaser.Scene {
     const c = this.registry.get('coins') ?? 0;
     this.heightText.setText(`Height: ${h}`);
     this.coinText.setText(`Coins: ${c}`);
+
+    const pu = this.registry.get('powerup') as { kind: string | null; shield: boolean; remainMs: number } | undefined;
+    this.puText?.destroy();
+    this.puText = undefined;
+    if (pu && (pu.kind || pu.shield)) {
+      const label = pu.shield ? 'SHIELD' : `${pu.kind!.toUpperCase()} ${(pu.remainMs / 1000).toFixed(1)}s`;
+      this.puText = this.add.text(TUNING.width - 12, 12, label, {
+        fontFamily: 'monospace', fontSize: '14px', color: '#66ddff',
+      }).setOrigin(1, 0);
+    }
   }
 
   private showBanner(name: string): void {

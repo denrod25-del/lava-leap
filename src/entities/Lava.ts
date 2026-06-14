@@ -9,6 +9,11 @@ export class Lava {
   readonly rect: Phaser.GameObjects.TileSprite;
   /** World y of the lava surface (top). Smaller = higher. */
   surfaceY: number;
+  /** Multiplier on rise speed; the slow-lava power-up sets this below 1. */
+  private speedFactor = 1;
+
+  /** Scale the lava's rise rate (1 = normal). Slow-lava power-up uses < 1. */
+  setSpeedFactor(f: number): void { this.speedFactor = f; }
 
   constructor(scene: Phaser.Scene) {
     this.surfaceY = TUNING.groundY + 260; // starts below the screen
@@ -18,7 +23,8 @@ export class Lava {
   }
 
   update(dtMs: number, heightClimbed: number): void {
-    const speed = (BASE_SPEED + heightClimbed * SPEED_PER_HEIGHT) * zoneForHeight(heightClimbed).lavaSpeedMultiplier;
+    const speed = (BASE_SPEED + heightClimbed * SPEED_PER_HEIGHT)
+      * zoneForHeight(heightClimbed).lavaSpeedMultiplier * this.speedFactor;
     this.surfaceY -= (speed * dtMs) / 1000;
     this.rect.y = this.surfaceY;
   }

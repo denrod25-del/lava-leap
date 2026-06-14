@@ -71,6 +71,13 @@ export const HAZARD = {
   powerupChance: 0.03,     // per eligible platform
 } as const;
 
+export const POWERUP = {
+  rocketMs: 2000, rocketVelocity: 900,
+  magnetMs: 8000, magnetRadius: 160, magnetPull: 320,
+  slowLavaMs: 6000, slowLavaFactor: 0.5,
+  pickupSize: 16,
+} as const;
+
 export const ENEMY = {
   crawlerSpeed: 55,      // px/s patrol speed
   drifterAmplitude: 30,  // px sine bob amplitude

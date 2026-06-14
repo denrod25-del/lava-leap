@@ -31,4 +31,21 @@ export class CoinManager {
     const c = this.byId.get(desc.id);
     if (c) { c.destroy(); this.byId.delete(desc.id); }
   }
+
+  /** Magnet power-up: pull active coins within `radius` toward the player by
+   *  `pull` px/s (scaled by the frame's `dtMs`). */
+  attractTo(target: Phaser.GameObjects.Components.Transform, radius: number, pull: number, dtMs: number): void {
+    const step = (pull * dtMs) / 1000;
+    for (const coin of this.byId.values()) {
+      const dx = target.x - coin.x;
+      const dy = target.y - coin.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > radius || dist < 0.001) continue;
+      const move = Math.min(step, dist);
+      coin.x += (dx / dist) * move;
+      coin.y += (dy / dist) * move;
+      const body = coin.body as Phaser.Physics.Arcade.Body | null;
+      if (body) body.updateFromGameObject();
+    }
+  }
 }

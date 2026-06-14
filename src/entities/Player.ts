@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TUNING } from '../tuning';
+import { TUNING, POWERUP } from '../tuning';
 import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
@@ -162,6 +162,13 @@ export class Player {
     this.jumpHeldLast = jumpDown;
 
     this.pickAnimation(onGround, left || right, body.velocity.y);
+  }
+
+  /** Rocket power-up: sustained upward boost each frame it's active, air abilities refreshed. */
+  applyRocket(): void {
+    this.sprite.setVelocityY(-POWERUP.rocketVelocity);
+    this.jumpsUsed = 0;
+    this.dashAvailable = true;
   }
 
   /** Launch off a bounce pad: stronger than a jump, refreshes air abilities. */

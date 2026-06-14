@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TUNING } from '../tuning';
+import { TUNING, POWERUP } from '../tuning';
 import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
@@ -16,6 +16,7 @@ import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
 import { EnemyManager } from '../entities/EnemyManager';
+import { PowerupController } from '../entities/PowerupController';
 import type { InputSource } from '../core/InputState';
 
 export class GameScene extends Phaser.Scene {
@@ -36,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private zoneIndex = 0;
   private tracker!: AchievementTracker;
   private enemies!: EnemyManager;
+  private powerups!: PowerupController;
   public daily = false;
   private dateKeyToday = '';
 
@@ -116,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
+    this.registry.set('powerup', { kind: null, shield: false, remainMs: 0 });
 
     this.dateKeyToday = dateKey(new Date());
     save.update((b) => recordRunStart(b.analytics, this.daily));
@@ -154,6 +157,10 @@ export class GameScene extends Phaser.Scene {
     this.enemies = new EnemyManager(this, this.gameEvents);
     for (const p of this.stream.active) this.enemies.spawn(p);
 
+    this.powerups = new PowerupController(this, this.gameEvents);
+    for (const p of this.stream.active) this.powerups.spawn(p);
+    this.powerups.registerPlayerOverlap(this.player.sprite);
+
     this.lava = new Lava(this);
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
@@ -188,8 +195,17 @@ export class GameScene extends Phaser.Scene {
     for (const p of removed) this.coins.despawn(p);
     for (const p of added) this.enemies.spawn(p);
     for (const p of removed) this.enemies.despawn(p);
+    for (const p of added) this.powerups.spawn(p);
+    for (const p of removed) this.powerups.despawn(p);
 
     this.enemies.update(time, delta);
+
+    // Apply active power-up effects this frame.
+    const fx = this.powerups.update(delta);
+    if (fx.rocket) this.player.applyRocket();
+    if (fx.magnet) this.coins.attractTo(this.player.sprite, POWERUP.magnetRadius, POWERUP.magnetPull, delta);
+    this.lava.setSpeedFactor(fx.slowLava ? POWERUP.slowLavaFactor : 1);
+    this.registry.set('powerup', this.powerups.hudState);
 
     // Enemy contact resolution (stomp / dash-kill / lethal). The manager emits
     // enemyStomped itself on any kill, so the stomp callback just bounces the player.
@@ -244,6 +260,7 @@ export class GameScene extends Phaser.Scene {
 
   private handleHit(source: 'enemy' | 'boss'): void {
     if (this.dead) return;
+    if (this.powerups.absorbHit()) return; // shield saved you
     this.triggerDeath(source);
   }
 
