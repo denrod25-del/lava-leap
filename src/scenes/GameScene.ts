@@ -186,10 +186,7 @@ export class GameScene extends Phaser.Scene {
     if (body.blocked.down) {
       const desc = this.platforms.descriptorUnder(this.player.sprite);
       if (desc !== null) this.platforms.touch(desc.id, time);
-      if (desc?.hazard === 'spikes' && !this.dead) {
-        this.gameEvents.emit('playerHit', { source: 'spike' });
-        this.handleHit('spike');
-      } else if (desc?.bounce) {
+      if (desc?.bounce) {
         this.player.bounce();
         this.gameEvents.emit('bouncePad', { x: this.player.sprite.x, y: this.player.sprite.y });
       }
@@ -241,12 +238,6 @@ export class GameScene extends Phaser.Scene {
         earned: [...this.tracker.earnedThisRun],
       });
     });
-  }
-
-  private handleHit(source: 'enemy' | 'spike' | 'boss'): void {
-    if (this.dead) return;
-    // PowerupController shield consumption is wired in M3; until then, a hit is lethal.
-    this.triggerDeath(source);
   }
 
   private pauseGame(): void {

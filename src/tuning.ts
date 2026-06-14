@@ -62,9 +62,7 @@ export const SETPIECE = {
 } as const;
 
 export const HAZARD = {
-  graceHeight: 400,        // no hazards/enemies/powerups below this height
-  spikeBaseChance: 0.04,   // at difficulty 0 (after grace)
-  spikeChancePerT: 0.16,   // added at difficulty 1
+  graceHeight: 400,        // no bounce/enemies/powerups below this height
   bounceChance: 0.06,      // flat
   enemyBaseChance: 0.05,
   enemyChancePerT: 0.20,

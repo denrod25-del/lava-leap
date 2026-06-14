@@ -36,14 +36,7 @@ export class PlatformManager {
     this.group.add(rect);
 
     let decor: Phaser.GameObjects.Graphics | undefined;
-    if (desc.hazard === 'spikes') {
-      const g = this.scene.add.graphics().setDepth((rect.depth ?? 0) + 1);
-      g.fillStyle(0xcfd2d6, 1);
-      for (let sx = 0; sx < desc.width; sx += 8) {
-        g.fillTriangle(desc.x + sx, desc.y, desc.x + sx + 4, desc.y - 8, desc.x + sx + 8, desc.y);
-      }
-      decor = g;
-    } else if (desc.bounce) {
+    if (desc.bounce) {
       const g = this.scene.add.graphics().setDepth((rect.depth ?? 0) + 1);
       g.fillStyle(0x35e0a0, 1).fillRect(desc.x + 4, desc.y - 6, desc.width - 8, 6);
       decor = g;

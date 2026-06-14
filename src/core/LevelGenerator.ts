@@ -157,13 +157,10 @@ export class LevelGenerator {
     // so reordering or changing this rule reshuffles all downstream generation (determinism caveat).
     p.hasCoin = p.type !== 'crumbling' && this.rng() < REACH.coinChance;
 
-    // Hazard/bounce attachment: static platforms only (no hazards on moving/crumbling).
+    // Bounce-pad attachment: static platforms only.
     const height = TUNING.groundY - p.y;
     if (p.type === 'static') {
-      const hz = rollHazard(this.rng, t, height);
-      // Spikes never on a coin platform (don't bait the player into death); bounce is fine with coins.
-      if (hz.spikes && !p.hasCoin) p.hazard = 'spikes';
-      if (hz.bounce) p.bounce = true;
+      if (rollHazard(this.rng, t, height).bounce) p.bounce = true;
     }
 
     this.last = p;

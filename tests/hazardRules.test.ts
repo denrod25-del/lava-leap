@@ -4,28 +4,22 @@ import { makeRng } from '../src/core/rng';
 import { HAZARD } from '../src/tuning';
 
 describe('hazardRules', () => {
-  it('no hazards below grace height', () => {
+  it('no bounce pads below grace height', () => {
     const rng = makeRng(1);
     for (let i = 0; i < 100; i++) {
-      expect(rollHazard(rng, 0, HAZARD.graceHeight - 1).spikes).toBe(false);
+      expect(rollHazard(rng, 0, HAZARD.graceHeight - 1).bounce).toBe(false);
     }
   });
 
-  it('spike chance rises with difficulty', () => {
-    const count = (t: number) => {
-      const rng = makeRng(5); let n = 0;
-      for (let i = 0; i < 5000; i++) if (rollHazard(rng, t, 1000).spikes) n++;
+  it('bounce pads appear above grace, deterministically', () => {
+    const count = (seed: number) => {
+      const rng = makeRng(seed); let n = 0;
+      for (let i = 0; i < 5000; i++) if (rollHazard(rng, 0.5, 1000).bounce) n++;
       return n;
     };
-    expect(count(1)).toBeGreaterThan(count(0));
-  });
-
-  it('a platform never gets both spikes and bounce', () => {
-    const rng = makeRng(9);
-    for (let i = 0; i < 5000; i++) {
-      const h = rollHazard(rng, 1, 1000);
-      expect(h.spikes && h.bounce).toBe(false);
-    }
+    expect(count(5)).toBeGreaterThan(0);
+    expect(count(5)).toBeLessThan(5000);
+    expect(count(5)).toBe(count(5)); // deterministic
   });
 
   it('rollEnemy returns crawler or drifter or null, deterministic', () => {

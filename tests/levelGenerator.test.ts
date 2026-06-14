@@ -206,22 +206,16 @@ describe('zone type-mix bias', () => {
   });
 });
 
-describe('hazard attachment', () => {
-  it('no spikes on coin platforms; no platform has both spikes and bounce; none below grace; only static', () => {
+describe('bounce-pad attachment', () => {
+  it('bounce pads only on static platforms, never below grace; some appear', () => {
     const gen = new LevelGenerator(321);
     gen.first();
+    let bounces = 0;
     for (let i = 0; i < 4000; i++) {
       const p = gen.next();
-      if (p.hazard === 'spikes') expect(p.hasCoin).toBe(false);
-      expect(p.hazard === 'spikes' && p.bounce === true).toBe(false);
-      if (TUNING.groundY - p.y < HAZARD.graceHeight) {
-        expect(p.hazard).toBeUndefined();
-        expect(p.bounce).toBeUndefined();
-      }
-      // Hazards only on static platforms
-      if (p.hazard !== undefined || p.bounce !== undefined) {
-        expect(p.type).toBe('static');
-      }
+      if (TUNING.groundY - p.y < HAZARD.graceHeight) expect(p.bounce).toBeUndefined();
+      if (p.bounce) { expect(p.type).toBe('static'); bounces++; }
     }
+    expect(bounces).toBeGreaterThan(0);
   });
 });
