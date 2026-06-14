@@ -1,4 +1,6 @@
 export type PlatformType = 'static' | 'crumbling' | 'moving';
+export type EnemyKind = 'crawler' | 'drifter';
+export type PowerupKind = 'shield' | 'rocket' | 'magnet' | 'slowlava';
 
 export interface MovementSpec {
   axis: 'horizontal';
@@ -14,4 +16,8 @@ export interface PlatformDescriptor {
   type: PlatformType;
   hasCoin: boolean;
   movement?: MovementSpec;
+  hazard?: 'spikes';          // spiked top — lethal on contact
+  bounce?: boolean;           // bounce pad — launches the player up
+  enemy?: { kind: EnemyKind }; // an enemy rides/patrols this platform
+  powerup?: { kind: PowerupKind }; // a pickup floats above this platform
 }

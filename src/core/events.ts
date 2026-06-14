@@ -9,6 +9,12 @@ export interface GameEventMap {
   platformCrumble: { x: number; y: number };
   zoneEntered: { zoneIndex: number; name: string };
   death: { height: number; zoneIndex: number };
+  enemyStomped: { x: number; y: number };
+  playerHit: { source: 'enemy' | 'spike' | 'boss' };
+  powerupCollected: { kind: import('./types').PowerupKind };
+  powerupExpired: { kind: import('./types').PowerupKind };
+  bouncePad: { x: number; y: number };
+  bossPhase: { zoneIndex: number; phase: 'start' | 'end' };
 }
 
 export type GameEventName = keyof GameEventMap;
