@@ -1,6 +1,8 @@
 export const TUNING = {
-  // Canvas (portrait climber)
-  width: 480,
+  // Canvas (portrait climber). Width is freely tunable — set-piece templates and
+  // all scene layout are derived from it, so changing this one value rescales the
+  // playfield. 600 keeps the portrait identity while filling more of a wide window.
+  width: 600,
   height: 720,
 
   // Physics (Arcade, pixels, seconds)
@@ -22,7 +24,15 @@ export const TUNING = {
 
   // World
   groundY: 640,             // y of the starting platform's top
-  playerStartX: 240,
+  playerStartX: 300,        // centered: width / 2
+
+  // Player presentation vs collision: the sprite is drawn a touch larger than its
+  // hitbox for presence. Hitbox (playerBody*) is what gameplay is tuned against and
+  // must not change; display (playerDisplay*) is purely visual. Source art is 48x48.
+  playerDisplayW: 30,
+  playerDisplayH: 40,
+  playerBodyW: 24,
+  playerBodyH: 32,
 } as const;
 
 // Generator reach budget — kept strictly below true physics reach (with margin),

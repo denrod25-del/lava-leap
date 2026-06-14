@@ -30,8 +30,9 @@ export class Player {
     this.scene = scene;
     this.sprite = scene.physics.add.sprite(x, y, 'player');
     this.sprite.setCollideWorldBounds(false);
-    // Source art is 48x48; display it at the gameplay footprint (~24x32).
-    this.sprite.setDisplaySize(24, 32);
+    // Source art is 48x48; display it a touch larger than the hitbox for presence.
+    // The hitbox (playerBody*) is locked every frame in update so gameplay is unchanged.
+    this.sprite.setDisplaySize(TUNING.playerDisplayW, TUNING.playerDisplayH);
     // Arcade body size is in source pixels and is scaled by the sprite, so a full
     // 48x48 source body becomes 24x32 in world space — matching the old placeholder.
     const body = this.sprite.body as Body;
@@ -59,8 +60,9 @@ export class Player {
     // no matter what the visuals do.
     const sx = Math.abs(this.sprite.scaleX) || 1;
     const sy = Math.abs(this.sprite.scaleY) || 1;
-    body.setSize(24 / sx, 32 / sy);
-    body.setOffset((this.sprite.width - 24 / sx) / 2, this.sprite.height - 32 / sy);
+    const bw = TUNING.playerBodyW / sx, bh = TUNING.playerBodyH / sy;
+    body.setSize(bw, bh);
+    body.setOffset((this.sprite.width - bw) / 2, this.sprite.height - bh);
 
     // Capture velocity BEFORE any changes this frame (used for land impactVy).
     const vyAtFrameStart = body.velocity.y;

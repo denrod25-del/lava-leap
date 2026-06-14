@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { TUNING } from '../tuning';
 
 export class HudScene extends Phaser.Scene {
   private heightText!: Phaser.GameObjects.Text;
@@ -32,7 +33,7 @@ export class HudScene extends Phaser.Scene {
   }
 
   private showBanner(name: string): void {
-    const t = this.add.text(240, 140, name, {
+    const t = this.add.text(TUNING.width / 2, 140, name, {
       fontFamily: 'monospace', fontSize: '28px', color: '#ffb066',
     }).setOrigin(0.5).setAlpha(0).setDepth(30);
     this.tweens.add({
@@ -50,7 +51,7 @@ export class HudScene extends Phaser.Scene {
     const text = this.toastQueue.shift();
     if (!text) { this.toastShowing = false; return; }
     this.toastShowing = true;
-    const t = this.add.text(240, 70, `★ ${text}`, {
+    const t = this.add.text(TUNING.width / 2, 70, `★ ${text}`, {
       fontFamily: 'monospace', fontSize: '14px', color: '#ffd166',
       backgroundColor: '#1a0906', padding: { x: 8, y: 5 },
     }).setOrigin(0.5).setAlpha(0).setDepth(40);

@@ -20,7 +20,7 @@ export class MenuScene extends Phaser.Scene {
         .map(([b, n]) => `  ${b}-${Number(b) + 99}: ${'■'.repeat(Math.min(20, n))} ${n}`),
       'deaths by zone: ' + Object.entries(a.deathsByZone).map(([z, n]) => `z${z}:${n}`).join('  '),
     ];
-    const bg = this.add.rectangle(0, 0, 480, 720, 0x000000, 0.85).setOrigin(0, 0);
+    const bg = this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x000000, 0.85).setOrigin(0, 0);
     const text = this.add.text(16, 16, lines.join('\n'), {
       fontFamily: 'monospace', fontSize: '12px', color: '#9ef79e', lineSpacing: 5,
     });

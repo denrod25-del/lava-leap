@@ -72,8 +72,8 @@ export class JuiceController {
 
   private squash(sx: number, sy: number): void {
     this.scene.tweens.killTweensOf(this.player);
-    // Player display scale is 0.5 baseline (48px source shown at 24x32) — scale relative:
-    const baseX = 24 / this.player.width, baseY = 32 / this.player.height;
+    // Base scale = the player's DISPLAY size over the 48px source (not the hitbox).
+    const baseX = TUNING.playerDisplayW / this.player.width, baseY = TUNING.playerDisplayH / this.player.height;
     this.player.setScale(baseX * sx * Math.sign(this.player.scaleX || 1), baseY * sy);
     this.scene.tweens.add({
       targets: this.player, scaleX: baseX * Math.sign(this.player.scaleX || 1), scaleY: baseY,

@@ -32,7 +32,9 @@ describe('LevelGenerator.next reachability', () => {
       expect(p.x).toBeGreaterThanOrEqual(0);
       expect(p.x + p.width).toBeLessThanOrEqual(TUNING.width);
       expect(p.width).toBeGreaterThanOrEqual(REACH.minPlatformWidth - 0.001);
-      expect(p.width).toBeLessThanOrEqual(REACH.maxPlatformWidth + 0.001);
+      // Hand-authored set-piece entry/landing platforms may be wider than the
+      // parametric max (validateChunk allows up to maxPlatformWidth + 50).
+      expect(p.width).toBeLessThanOrEqual(REACH.maxPlatformWidth + 50 + 0.001);
       expect(p.id).toBe(prev.id + 1);
       prev = p;
     }
@@ -152,7 +154,7 @@ describe('set-piece injection', () => {
       expect(horizontalEdgeGap(prev, p)).toBeLessThanOrEqual(REACH.maxHorizontalEdgeGap + 0.001);
       expect(p.x).toBeGreaterThanOrEqual(0);
       expect(p.x + p.width).toBeLessThanOrEqual(TUNING.width);
-      if (p.x === 140 && p.width === 150) sawChunkEntry++; // entry platform of every template
+      if (p.width === 200) sawChunkEntry++; // 200-wide entry/landing platforms are unique to chunks
       prev = p;
     }
     expect(sawChunkEntry).toBeGreaterThan(50); // ~5000/20 chunks, most have 1-2 such rows

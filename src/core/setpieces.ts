@@ -17,38 +17,51 @@ export interface SetPiece {
   platforms: ChunkPlatform[];
 }
 
+// Templates are authored against the original 480px design, then centered into the
+// actual TUNING.width so they stay reach-valid (the reachable band is ~480px wide
+// regardless of screen width — a wider canvas just adds margins, it can't let the
+// player jump farther). `off` centers the band; entry/landing platforms are widened
+// to 200 so they span both reach-zones at any supported width.
+const W = TUNING.width;
+const OFF = (W - 480) / 2;        // center the reachable band in the actual width
+const CENTER = Math.round(W / 2); // entry/landing anchor
+
+/** A wide static platform centered under the spawn lane — reachable from anywhere. */
+const entry = (dyToNext: number, hasCoin = false): ChunkPlatform => ({
+  x: CENTER - 100, width: 200, type: 'static', hasCoin, dyToNext,
+});
+
 export const SET_PIECES: SetPiece[] = [
   {
     id: 'staggered-shaft',
     platforms: [
-      // Note: entry width capped at maxPlatformWidth (150) so v1 width invariant holds.
-      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 115 },
-      { x: 60, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
-      { x: 310, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
-      { x: 60, width: 110, type: 'crumbling', hasCoin: false, dyToNext: 115 },
-      { x: 310, width: 110, type: 'static', hasCoin: true, dyToNext: 0 },
+      entry(115),
+      { x: 60 + OFF, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
+      { x: 310 + OFF, width: 110, type: 'static', hasCoin: false, dyToNext: 115 },
+      { x: 60 + OFF, width: 110, type: 'crumbling', hasCoin: false, dyToNext: 115 },
+      { x: 310 + OFF, width: 110, type: 'static', hasCoin: true, dyToNext: 0 },
     ],
   },
   {
     id: 'crumbling-staircase',
     platforms: [
-      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 95 },
-      { x: 50, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      // hasCoin forced false on crumbling platforms: v1 invariant "no coins on crumbling" must hold.
-      { x: 160, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      { x: 270, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      { x: 350, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
-      { x: 200, width: 140, type: 'static', hasCoin: false, dyToNext: 0 },
+      entry(95),
+      // hasCoin forced false on crumbling platforms: v1 invariant "no coins on crumbling".
+      { x: 50 + OFF, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
+      { x: 160 + OFF, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
+      { x: 270 + OFF, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
+      { x: 350 + OFF, width: 80, type: 'crumbling', hasCoin: false, dyToNext: 95 },
+      { x: 200 + OFF, width: 140, type: 'static', hasCoin: false, dyToNext: 0 },
     ],
   },
   {
     id: 'coin-trail-crossing',
     platforms: [
-      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 120 },
-      { x: 20, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
-      { x: 185, width: 110, type: 'moving', hasCoin: true, movement: { range: 80, speed: 60 }, dyToNext: 120 },
-      { x: 370, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
-      { x: 140, width: 150, type: 'static', hasCoin: false, dyToNext: 0 },
+      entry(120),
+      { x: 20 + OFF, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
+      { x: 185 + OFF, width: 110, type: 'moving', hasCoin: true, movement: { range: 80, speed: 60 }, dyToNext: 120 },
+      { x: 370 + OFF, width: 90, type: 'static', hasCoin: true, dyToNext: 120 },
+      entry(0),
     ],
   },
 ];
