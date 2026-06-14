@@ -20,11 +20,27 @@ export class SettingsScene extends Phaser.Scene {
     this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x000000, 0.7).setOrigin(0, 0);
     this.add.text(cx, 180, 'SETTINGS', { fontFamily: 'monospace', fontSize: '30px', color: '#ffb066' }).setOrigin(0.5);
     this.rows = ROWS.map((_r, i) =>
-      this.add.text(cx, 270 + i * 44, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' }).setOrigin(0.5),
+      this.add.text(cx, 270 + i * 44, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
+        .setOrigin(0.5)
+        // Tap a row to select it.
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => { this.idx = i; this.render(); }),
     );
     this.add.text(cx, 460, '←/→ adjust · ↑/↓ select · ESC back', {
       fontFamily: 'monospace', fontSize: '13px', color: '#888888',
     }).setOrigin(0.5);
+
+    // On-screen tap targets for touch devices (same handlers as the keyboard).
+    const tapBtn = (x: number, label: string, fn: () => void): void => {
+      this.add.text(x, 510, label, { fontFamily: 'monospace', fontSize: '24px', color: '#16e0e0' })
+        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', fn);
+    };
+    tapBtn(cx - 130, '▲', () => { this.idx = (this.idx + ROWS.length - 1) % ROWS.length; this.render(); });
+    tapBtn(cx - 70, '▼', () => { this.idx = (this.idx + 1) % ROWS.length; this.render(); });
+    tapBtn(cx - 10, '◀', () => this.adjust(-1));
+    tapBtn(cx + 50, '▶', () => this.adjust(1));
+    tapBtn(cx + 130, 'BACK', () => this.back());
+
     const kb = this.input.keyboard!;
     kb.on('keydown-UP', () => { this.idx = (this.idx + ROWS.length - 1) % ROWS.length; this.render(); });
     kb.on('keydown-DOWN', () => { this.idx = (this.idx + 1) % ROWS.length; this.render(); });

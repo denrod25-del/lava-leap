@@ -25,11 +25,25 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(cx, 60, 'SHOP', { fontFamily: 'monospace', fontSize: '32px', color: '#ffd166' }).setOrigin(0.5);
     this.bankText = this.add.text(cx, 100, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
     this.rows = COSMETICS.map((_c, i) =>
-      this.add.text(cx, 160 + i * 36, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' }).setOrigin(0.5),
+      this.add.text(cx, 160 + i * 36, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
+        .setOrigin(0.5)
+        // Tap a row to select it, then buy/equip it directly.
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => { this.idx = i; this.render(); this.buyOrEquip(); }),
     );
     this.add.text(cx, 620, '↑/↓ select · ENTER buy/equip · ESC back', {
       fontFamily: 'monospace', fontSize: '13px', color: '#888888',
     }).setOrigin(0.5);
+
+    // On-screen tap targets for touch devices (same handlers as the keyboard).
+    const tapBtn = (x: number, label: string, fn: () => void): void => {
+      this.add.text(x, 660, label, { fontFamily: 'monospace', fontSize: '22px', color: '#16e0e0' })
+        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', fn);
+    };
+    tapBtn(cx - 120, '▲', () => { this.idx = (this.idx + COSMETICS.length - 1) % COSMETICS.length; this.render(); });
+    tapBtn(cx - 60, '▼', () => { this.idx = (this.idx + 1) % COSMETICS.length; this.render(); });
+    tapBtn(cx + 20, 'BUY', () => this.buyOrEquip());
+    tapBtn(cx + 110, 'BACK', () => this.scene.start('Menu'));
 
     const kb = this.input.keyboard!;
     kb.on('keydown-UP', () => { this.idx = (this.idx + COSMETICS.length - 1) % COSMETICS.length; this.render(); });

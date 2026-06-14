@@ -36,16 +36,16 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(cx, 260, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
     this.add.text(cx, 290, `Bank: ${save.get().coinBank} coins`, { fontFamily: 'monospace', fontSize: '16px', color: '#ffd166' }).setOrigin(0.5);
 
-    const items = [
-      'SPACE  Climb',
-      'D      Daily challenge',
-      'C      Shop',
-      'A      Achievements',
-      'S      Settings',
+    const items: Array<{ line: string; tap: () => void }> = [
+      { line: 'SPACE  Climb', tap: () => this.scene.start('Game', { daily: false }) },
+      { line: 'D      Daily challenge', tap: () => this.scene.start('Game', { daily: true }) },
+      { line: 'C      Shop', tap: () => this.scene.start('Shop') },
+      { line: 'A      Achievements', tap: () => this.scene.start('Achievements') },
+      { line: 'S      Settings', tap: () => this.scene.start('Settings', { from: 'Menu' }) },
     ];
-    items.forEach((line, i) => this.add.text(cx, 380 + i * 30, line, {
+    items.forEach((item, i) => this.add.text(cx, 380 + i * 30, item.line, {
       fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0',
-    }).setOrigin(0.5));
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', item.tap));
 
     const kb = this.input.keyboard!;
     kb.once('keydown-SPACE', () => this.scene.start('Game', { daily: false }));

@@ -23,7 +23,9 @@ export class GameOverScene extends Phaser.Scene {
         fontFamily: 'monospace', fontSize: '14px', color: '#ffb066',
       }).setOrigin(0.5);
     });
-    this.add.text(cx, 500, 'Press SPACE to retry', { fontFamily: 'monospace', fontSize: '20px', color: '#16e0e0' }).setOrigin(0.5);
-    this.input.keyboard!.once('keydown-SPACE', () => this.scene.start('Game', { daily: data.daily ?? false }));
+    const retry = () => this.scene.start('Game', { daily: data.daily ?? false });
+    this.add.text(cx, 500, 'Press SPACE / tap to retry', { fontFamily: 'monospace', fontSize: '20px', color: '#16e0e0' })
+      .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', retry);
+    this.input.keyboard!.once('keydown-SPACE', retry);
   }
 }

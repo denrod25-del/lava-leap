@@ -15,7 +15,10 @@ export class PauseScene extends Phaser.Scene {
     this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x000000, 0.6).setOrigin(0, 0);
     this.add.text(cx, 200, 'PAUSED', { fontFamily: 'monospace', fontSize: '36px', color: '#ffb066' }).setOrigin(0.5);
     this.rows = OPTIONS.map((o, i) =>
-      this.add.text(cx, 290 + i * 40, o, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5),
+      this.add.text(cx, 290 + i * 40, o, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => { this.idx = i; this.render(); this.choose(); }),
     );
     const kb = this.input.keyboard!;
     const uiVol = () => 0.3 * (save.get().settings.sfxVol / 10);
