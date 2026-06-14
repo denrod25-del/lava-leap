@@ -219,3 +219,69 @@ describe('bounce-pad attachment', () => {
     expect(bounces).toBeGreaterThan(0);
   });
 });
+
+describe('enemy attachment', () => {
+  it('enemies only appear on static platforms', () => {
+    const gen = new LevelGenerator(777);
+    gen.first();
+    for (let i = 0; i < 4000; i++) {
+      const p = gen.next();
+      if (p.enemy) expect(p.type).toBe('static');
+    }
+  });
+
+  it('enemies never appear below the grace height', () => {
+    const gen = new LevelGenerator(888);
+    gen.first();
+    for (let i = 0; i < 4000; i++) {
+      const p = gen.next();
+      if (TUNING.groundY - p.y < HAZARD.graceHeight) expect(p.enemy).toBeUndefined();
+    }
+  });
+
+  it('enemies never appear on bounce platforms', () => {
+    const gen = new LevelGenerator(999);
+    gen.first();
+    for (let i = 0; i < 4000; i++) {
+      const p = gen.next();
+      if (p.bounce) expect(p.enemy).toBeUndefined();
+      if (p.enemy) expect(p.bounce).toBeUndefined();
+    }
+  });
+
+  it('enemy kinds are valid (crawler or drifter)', () => {
+    const gen = new LevelGenerator(111);
+    gen.first();
+    for (let i = 0; i < 4000; i++) {
+      const p = gen.next();
+      if (p.enemy) {
+        expect(['crawler', 'drifter']).toContain(p.enemy.kind);
+      }
+    }
+  });
+
+  it('some enemies appear over 3000 platforms', () => {
+    const gen = new LevelGenerator(222);
+    gen.first();
+    let enemies = 0;
+    for (let i = 0; i < 3000; i++) {
+      if (gen.next().enemy) enemies++;
+    }
+    expect(enemies).toBeGreaterThan(0);
+  });
+
+  it('is deterministic per seed', () => {
+    const run = (seed: number) => {
+      const g = new LevelGenerator(seed);
+      g.first();
+      return Array.from({ length: 300 }, () => {
+        const p = g.next();
+        return `${p.id}:${p.enemy?.kind ?? 'none'}`;
+      }).join('|');
+    };
+    const a = run(42);
+    const b = run(42);
+    expect(a).toBe(b);
+    expect(run(42)).not.toBe(run(43));
+  });
+});

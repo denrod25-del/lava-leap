@@ -3,7 +3,7 @@ import { makeRng, randRange, type Rng } from './rng';
 import type { PlatformDescriptor, PlatformType } from './types';
 import { zoneForHeight } from './zones';
 import { SET_PIECES } from './setpieces';
-import { rollHazard } from './hazardRules';
+import { rollHazard, rollEnemy } from './hazardRules';
 
 export class LevelGenerator {
   private rng: Rng;
@@ -157,10 +157,12 @@ export class LevelGenerator {
     // so reordering or changing this rule reshuffles all downstream generation (determinism caveat).
     p.hasCoin = p.type !== 'crumbling' && this.rng() < REACH.coinChance;
 
-    // Bounce-pad attachment: static platforms only.
+    // Bounce-pad and enemy attachment: static platforms only.
     const height = TUNING.groundY - p.y;
     if (p.type === 'static') {
       if (rollHazard(this.rng, t, height).bounce) p.bounce = true;
+      const ek = rollEnemy(this.rng, t, height);
+      if (ek && !p.bounce) p.enemy = { kind: ek };
     }
 
     this.last = p;
