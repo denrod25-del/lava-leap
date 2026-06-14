@@ -151,7 +151,7 @@ export class GameScene extends Phaser.Scene {
       this.onCoin();
     });
 
-    this.enemies = new EnemyManager(this);
+    this.enemies = new EnemyManager(this, this.gameEvents);
     for (const p of this.stream.active) this.enemies.spawn(p);
 
     this.lava = new Lava(this);
@@ -191,20 +191,17 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies.update(time, delta);
 
-    // Enemy contact resolution (stomp / dash-kill / lethal)
+    // Enemy contact resolution (stomp / dash-kill / lethal). The manager emits
+    // enemyStomped itself on any kill, so the stomp callback just bounces the player.
     if (!this.dead) {
-      this.enemies.registerPlayerOverlap(
+      this.enemies.resolveContact(
         this.player.sprite,
         () => this.player.dashing,
         () => {
           this.gameEvents.emit('playerHit', { source: 'enemy' });
           this.handleHit('enemy');
         },
-        () => {
-          const kill = this.enemies.consumeLastKill();
-          this.gameEvents.emit('enemyStomped', { x: kill?.x ?? this.player.sprite.x, y: kill?.y ?? this.player.sprite.y });
-          this.player.stompBounce();
-        },
+        () => this.player.stompBounce(),
       );
     }
 
