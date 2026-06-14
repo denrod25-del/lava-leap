@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LevelGenerator } from '../src/core/LevelGenerator';
-import { TUNING, REACH } from '../src/tuning';
+import { TUNING, REACH, HAZARD } from '../src/tuning';
 
 describe('LevelGenerator.first', () => {
   it('places a wide starting platform under the player spawn', () => {
@@ -203,5 +203,25 @@ describe('zone type-mix bias', () => {
     const N = 1500;
     for (let i = 0; i < N; i++) { p = gen.next(); if (p.type !== 'static') hazards++; }
     expect(hazards / N).toBeGreaterThan(0.70); // 0.65 ceiling without bias; ~0.87 with
+  });
+});
+
+describe('hazard attachment', () => {
+  it('no spikes on coin platforms; no platform has both spikes and bounce; none below grace; only static', () => {
+    const gen = new LevelGenerator(321);
+    gen.first();
+    for (let i = 0; i < 4000; i++) {
+      const p = gen.next();
+      if (p.hazard === 'spikes') expect(p.hasCoin).toBe(false);
+      expect(p.hazard === 'spikes' && p.bounce === true).toBe(false);
+      if (TUNING.groundY - p.y < HAZARD.graceHeight) {
+        expect(p.hazard).toBeUndefined();
+        expect(p.bounce).toBeUndefined();
+      }
+      // Hazards only on static platforms
+      if (p.hazard !== undefined || p.bounce !== undefined) {
+        expect(p.type).toBe('static');
+      }
+    }
   });
 });

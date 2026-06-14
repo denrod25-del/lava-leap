@@ -60,6 +60,17 @@ export const SETPIECE = {
   maxInterval: 25,
 } as const;
 
+export const HAZARD = {
+  graceHeight: 400,        // no hazards/enemies/powerups below this height
+  spikeBaseChance: 0.04,   // at difficulty 0 (after grace)
+  spikeChancePerT: 0.16,   // added at difficulty 1
+  bounceChance: 0.06,      // flat
+  enemyBaseChance: 0.05,
+  enemyChancePerT: 0.20,
+  drifterShare: 0.4,       // of enemies, fraction that are drifters
+  powerupChance: 0.03,     // per eligible platform
+} as const;
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,
