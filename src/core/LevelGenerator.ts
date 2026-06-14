@@ -1,9 +1,9 @@
-import { TUNING, REACH, SETPIECE } from '../tuning';
+import { TUNING, REACH, SETPIECE, HAZARD } from '../tuning';
 import { makeRng, randRange, type Rng } from './rng';
 import type { PlatformDescriptor, PlatformType } from './types';
 import { zoneForHeight } from './zones';
 import { SET_PIECES } from './setpieces';
-import { rollHazard, rollEnemy } from './hazardRules';
+import { rollHazard, rollEnemy, rollPowerup } from './hazardRules';
 
 export class LevelGenerator {
   private rng: Rng;
@@ -163,6 +163,12 @@ export class LevelGenerator {
       if (rollHazard(this.rng, t, height).bounce) p.bounce = true;
       const ek = rollEnemy(this.rng, t, height);
       if (ek && !p.bounce) p.enemy = { kind: ek };
+      // Power-up: only on platforms with no bounce pad and no enemy, above grace.
+      // Always roll (consumes 2 rng draws) so the per-seed stream is stable.
+      const pk = rollPowerup(this.rng);
+      if (pk && !p.bounce && !p.enemy && height >= HAZARD.graceHeight) {
+        p.powerup = { kind: pk };
+      }
     }
 
     this.last = p;

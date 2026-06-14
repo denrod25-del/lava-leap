@@ -220,6 +220,29 @@ describe('bounce-pad attachment', () => {
   });
 });
 
+describe('powerup attachment', () => {
+  it('rarely attaches a valid power-up, only above grace, not on enemy/bounce platforms, deterministic', () => {
+    const run = (seed: number) => {
+      const gen = new LevelGenerator(seed);
+      gen.first();
+      let count = 0;
+      for (let i = 0; i < 5000; i++) {
+        const p = gen.next();
+        if (p.powerup) {
+          expect(['shield', 'rocket', 'magnet', 'slowlava']).toContain(p.powerup.kind);
+          expect(p.enemy).toBeUndefined();
+          expect(p.bounce).toBeUndefined();
+          expect(TUNING.groundY - p.y).toBeGreaterThanOrEqual(HAZARD.graceHeight);
+          count++;
+        }
+      }
+      return count;
+    };
+    expect(run(8)).toBe(run(8));
+    expect(run(8)).toBeGreaterThan(5);
+  });
+});
+
 describe('enemy attachment', () => {
   it('enemies only appear on static platforms', () => {
     const gen = new LevelGenerator(777);
