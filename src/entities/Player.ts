@@ -3,17 +3,13 @@ import { TUNING } from '../tuning';
 import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
+import type { InputState } from '../core/InputState';
 
 type Body = Phaser.Physics.Arcade.Body;
 
 export class Player {
   readonly sprite: Phaser.Physics.Arcade.Sprite;
   private scene: Phaser.Scene;
-  private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  private keyA: Phaser.Input.Keyboard.Key;
-  private keyD: Phaser.Input.Keyboard.Key;
-  private keyDash!: Phaser.Input.Keyboard.Key;
-  private keyDashAlt!: Phaser.Input.Keyboard.Key;
   private jumpHeldLast = false;
   private jumpsUsed = 0;
   private coyoteTimer = 0;
@@ -39,18 +35,12 @@ export class Player {
     body.setSize(48, 48);
     body.setOffset(0, 0);
 
-    this.cursors = scene.input.keyboard!.createCursorKeys();
-    this.keyA = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    this.keyD = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    this.keyDash = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-    this.keyDashAlt = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-
     // Apply equipped cosmetic tint.
     const equipped = COSMETICS.find((c) => c.id === save.get().equippedCosmetic);
     if (equipped && equipped.id !== 'default') this.sprite.setTint(equipped.tint);
   }
 
-  update(): void {
+  update(input: InputState): void {
     const dt = this.scene.game.loop.delta; // ms
     const body = this.sprite.body as Body;
 
@@ -70,9 +60,9 @@ export class Player {
     // Reset wall-sliding flag before the dash early-return so it's always cleared.
     this._wallSliding = false;
 
-    const left = this.cursors.left!.isDown || this.keyA.isDown;
-    const right = this.cursors.right!.isDown || this.keyD.isDown;
-    const jumpDown = this.cursors.up!.isDown || this.cursors.space!.isDown;
+    const left = input.left;
+    const right = input.right;
+    const jumpDown = input.jumpHeld;
     const onGround = body.blocked.down || body.touching.down;
 
     // Land detection: airborne last frame, grounded this frame.
@@ -115,7 +105,7 @@ export class Player {
     }
 
     // Dash trigger (airborne only, once per airtime).
-    const dashPressed = Phaser.Input.Keyboard.JustDown(this.keyDash) || Phaser.Input.Keyboard.JustDown(this.keyDashAlt);
+    const dashPressed = input.dashPressed;
     if (dashPressed && this.dashAvailable && !onGround) {
       this.dashDir = right ? 1 : left ? -1 : this.sprite.flipX ? -1 : 1;
       this.dashTimer = TUNING.dashDurationMs;

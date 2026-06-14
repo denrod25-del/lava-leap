@@ -14,9 +14,12 @@ import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
+import { KeyboardInput } from '../entities/input/KeyboardInput';
+import type { InputSource } from '../core/InputState';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
+  private inputSrc!: InputSource;
   private stream!: LevelStream;
   private platforms!: PlatformManager;
   private coins!: CoinManager;
@@ -134,6 +137,7 @@ export class GameScene extends Phaser.Scene {
     for (const p of this.stream.active) this.platforms.spawn(p);
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
+    this.inputSrc = new KeyboardInput(this);
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
@@ -161,7 +165,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
-    this.player.update();
+    this.player.update(this.inputSrc.sample());
     this.platforms.update(time);
     this.juice.update();
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
