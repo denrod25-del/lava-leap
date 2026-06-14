@@ -55,6 +55,16 @@ export class JuiceController {
       this.shake(JUICE.shakeSmall.duration, JUICE.shakeSmall.intensity);
     });
     events.on('death', () => this.deathSequence());
+    events.on('enemyStomped', ({ x, y }) => {
+      this.dustAt(x, y, 12);
+      this.popup(x, y - 8, '+25');
+    });
+    events.on('playerHit', () => {
+      this.shake(JUICE.shakeBig.duration, JUICE.shakeBig.intensity);
+    });
+    events.on('bouncePad', ({ x, y }) => {
+      this.dustAt(x, y, 8);
+    });
   }
 
   /** Call each frame so embers track the lava surface. */

@@ -28,6 +28,9 @@ export class AudioDirector {
     events.on('platformCrumble', () => this.sfx('sfx-crack', 0.5));
     events.on('zoneEntered', () => this.sfx('sfx-swell', 0.5));
     events.on('death', () => this.sfx('sfx-death', 0.6));
+    events.on('enemyStomped', () => this.sfx('sfx-stomp', 0.55));
+    events.on('playerHit', () => this.sfx('sfx-hit', 0.6));
+    events.on('bouncePad', () => this.sfx('sfx-jump', 0.5));
 
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
   }

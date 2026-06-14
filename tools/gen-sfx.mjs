@@ -198,6 +198,42 @@ function uiMove() {
   return out;
 }
 
+// 0.15s: low thud (100 Hz) plus a short noise burst for stomp impact.
+function stomp() {
+  const dur = 0.15;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const thudEnd = Math.floor(SAMPLE_RATE * 0.06);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const decay = 1 - t;
+    const thud = i < thudEnd
+      ? Math.sin(TAU * 100 * (i / SAMPLE_RATE)) * 0.5 * (1 - i / thudEnd)
+      : 0;
+    // Quick noise transient at start only
+    const noise = i < thudEnd ? (Math.sin(i * 0.37) * 2 - 1) * 0.15 * (1 - i / thudEnd) : 0;
+    out[i] = (thud + noise) * decay * 0.6;
+  }
+  return out;
+}
+
+// 0.22s: sharp descending tone (480→180 Hz) with gritty distortion for "ouch" hit.
+function hit() {
+  const dur = 0.22;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 480 + (180 - 480) * t;
+    const tone = Math.sin(TAU * (i / SAMPLE_RATE) * freq);
+    // Soft clip for grit
+    const clipped = Math.tanh(tone * 3) * 0.33;
+    const env = Math.exp(-t * 8);
+    out[i] = clipped * env * 0.5;
+  }
+  return out;
+}
+
 // 0.1s: 760→900 Hz sine rise, 0.25 amplitude.
 function uiSelect() {
   const dur = 0.1;
@@ -224,6 +260,8 @@ const files = {
   'kaching.wav': kaching(),
   'ui-move.wav': uiMove(),
   'ui-select.wav': uiSelect(),
+  'stomp.wav': stomp(),
+  'hit.wav': hit(),
 };
 
 for (const [name, samples] of Object.entries(files)) {
