@@ -39,7 +39,10 @@ const config: Phaser.Types.Core.GameConfig = {
   pixelArt: true, // crisp upscaling of the pixel-art sprites
   scale: {
     mode: Phaser.Scale.FIT, // scale the 480x720 design space up to fill the window
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    // The #game flexbox centers the canvas. Phaser's autoCenter would ALSO add
+    // centering margins on top of that, double-centering and pushing the canvas
+    // off to the right — so we let flex own centering and disable Phaser's.
+    autoCenter: Phaser.Scale.NO_CENTER,
     width: TUNING.width,
     height: TUNING.height,
   },
