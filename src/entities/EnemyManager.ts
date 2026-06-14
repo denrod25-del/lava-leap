@@ -98,7 +98,10 @@ export class EnemyManager {
       if (Math.abs(py - v.sprite.y) >= ehh + phh) continue;
       const feetY = b.y + b.height;
       const enemyTopY = v.sprite.y - ehh;
-      if (b.velocity.y > 0 && feetY - enemyTopY < ENEMY.stompWindow * 2) {
+      const feetBelowTop = feetY - enemyTopY;
+      // Stomp only when descending AND feet are at/just-below the enemy top (not above it,
+      // which would let a side-approach falling past a tall enemy steal a free stomp).
+      if (b.velocity.y > 0 && feetBelowTop >= 0 && feetBelowTop < ENEMY.stompWindow * 2) {
         this.kill(v.desc.id); onStompBounce();
       } else if (isDashing()) {
         this.kill(v.desc.id);

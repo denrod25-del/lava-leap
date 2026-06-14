@@ -22,6 +22,7 @@ export const TUNING = {
   coyoteMs: 90,
   jumpBufferMs: 110,
   bouncePadVelocity: 1040,  // ≈1.6× jumpVelocity 650
+  stompBounceVelocity: 350, // upward kick after a successful enemy stomp
 
   // World
   groundY: 640,             // y of the starting platform's top

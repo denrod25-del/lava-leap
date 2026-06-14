@@ -27,7 +27,7 @@ export class Player {
 
   /** Tiny upward kick on successful stomp, refreshes air abilities. */
   stompBounce(): void {
-    this.sprite.setVelocityY(-350);
+    this.sprite.setVelocityY(-TUNING.stompBounceVelocity);
     this.jumpsUsed = 0;
     this.dashAvailable = true;
   }
