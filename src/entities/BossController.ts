@@ -54,6 +54,7 @@ export class BossController {
     body.setAllowGravity(false);
     body.setVelocityY(-260);
     this.projectiles.add(p);
+    this.events.emit('projectileLaunched', { x });
     this.scene.time.delayedCall(4000, () => p.destroy());
   }
 

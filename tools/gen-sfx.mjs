@@ -279,6 +279,44 @@ function expire() {
   return out;
 }
 
+// 0.7s: deep guttural growl — low sine sweep (70→45 Hz) + sub-harmonic + grit noise,
+// slow swell then decay. The Lava Titan's roar.
+function bossRoar() {
+  const dur = 0.7;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 70 + (45 - 70) * t;
+    const ph = (i / SAMPLE_RATE);
+    const tone = Math.sin(TAU * freq * ph) * 0.6;
+    const sub = Math.sin(TAU * (freq * 0.5) * ph) * 0.3;
+    const grit = (Math.random() * 2 - 1) * 0.15;
+    // Soft clip for a throaty rasp.
+    const body = Math.tanh((tone + sub + grit) * 1.8);
+    const env = t < 0.3 ? t / 0.3 : (1 - t) / 0.7; // swell-in then long decay
+    out[i] = body * env * 0.5;
+  }
+  return out;
+}
+
+// 0.18s: descending whoosh blip — sine sweep 900→300 Hz + airy noise, exponential decay.
+// Played when the Titan launches a fireball.
+function projectile() {
+  const dur = 0.18;
+  const n = Math.floor(SAMPLE_RATE * dur);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const freq = 900 + (300 - 900) * t;
+    const tone = Math.sin(TAU * freq * (i / SAMPLE_RATE));
+    const noise = (Math.random() * 2 - 1) * 0.25 * (1 - t);
+    const env = Math.exp(-t * 6);
+    out[i] = (tone * 0.7 + noise) * env * 0.32;
+  }
+  return out;
+}
+
 const files = {
   'jump.wav': jump(),
   'coin.wav': coin(),
@@ -295,6 +333,8 @@ const files = {
   'hit.wav': hit(),
   'pickup.wav': pickup(),
   'expire.wav': expire(),
+  'boss-roar.wav': bossRoar(),
+  'projectile.wav': projectile(),
 };
 
 for (const [name, samples] of Object.entries(files)) {

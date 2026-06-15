@@ -15,6 +15,7 @@ export interface GameEventMap {
   powerupExpired: { kind: import('./types').PowerupKind };
   bouncePad: { x: number; y: number };
   bossPhase: { zoneIndex: number; phase: 'start' | 'end' };
+  projectileLaunched: { x: number };
 }
 
 export type GameEventName = keyof GameEventMap;

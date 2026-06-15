@@ -216,7 +216,6 @@ export class GameScene extends Phaser.Scene {
     this.player.update(sampled);
     if (sampled.pausePressed) this.pauseGame();
     this.platforms.update(time);
-    this.juice.update();
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
 
     // Parallax: scroll background layers at fractions of the camera.
@@ -241,6 +240,7 @@ export class GameScene extends Phaser.Scene {
     const fx = this.powerups.update(delta);
     if (fx.rocket) this.player.applyRocket();
     if (fx.magnet) this.coins.attractTo(this.player.sprite, POWERUP.magnetRadius, POWERUP.magnetPull, delta);
+    this.juice.update(fx.magnet, delta);
     this.lava.setSpeedFactor(fx.slowLava ? POWERUP.slowLavaFactor : 1);
     this.registry.set('powerup', this.powerups.hudState);
 

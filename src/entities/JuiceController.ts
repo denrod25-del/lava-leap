@@ -72,11 +72,35 @@ export class JuiceController {
       // Shield break: a quick white screen flash so the loss of protection reads.
       if (kind === 'shield') this.flash(0xffffff, 0.35, 220);
     });
+    events.on('bossPhase', ({ phase }) => {
+      // The Lava Titan surfacing: big screen shake to sell its arrival.
+      if (phase === 'start') this.shake(JUICE.shakeBig.duration, JUICE.shakeBig.intensity);
+    });
+    events.on('projectileLaunched', ({ x }) => {
+      // Small muzzle flash + ember puff at the lava surface where the fireball erupts.
+      const y = this.lava.surfaceY;
+      this.sparkEmitter.explode(6, x, y);
+      this.dustAt(x, y, 5);
+    });
   }
 
-  /** Call each frame so embers track the lava surface. */
-  update(): void {
+  private magnetSparkleAcc = 0;
+
+  /** Call each frame so embers track the lava surface. `magnetActive` drives a light
+   *  periodic sparkle drifting toward the player while the magnet power-up is up. */
+  update(magnetActive = false, dtMs = 0): void {
     this.emberEmitter.y = this.lava.surfaceY;
+    if (magnetActive) {
+      this.magnetSparkleAcc += dtMs;
+      if (this.magnetSparkleAcc >= 120) {
+        this.magnetSparkleAcc = 0;
+        const a = Math.random() * Math.PI * 2;
+        const r = 40 + Math.random() * 30;
+        this.sparkEmitter.explode(1, this.player.x + Math.cos(a) * r, this.player.y + Math.sin(a) * r);
+      }
+    } else {
+      this.magnetSparkleAcc = 0;
+    }
   }
 
   private ensureParticleTexture(): void {
