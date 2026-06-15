@@ -48,6 +48,26 @@ describe('SaveData', () => {
     expect(s.get().coinBank).toBe(5); // survives in memory
   });
 
+  it('backfills analytics sub-fields added after an old save was written', () => {
+    // A v2-era save whose analytics predates the v3 fields (deathsBySource, etc.).
+    const legacy = {
+      version: 2, highScore: 500, coinBank: 30, equippedCosmetic: 'default',
+      ownedCosmetics: ['default'], achievements: {}, dailyBest: {},
+      settings: { musicVol: 5, sfxVol: 5, screenShake: true },
+      analytics: { runs: 4, dailyPlays: 1, achievementsUnlocked: 2, coinsBanked: 30, deathsByBucket: {}, deathsByZone: {} },
+    };
+    const store = fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) });
+    const s = new SaveData(store);
+    const a = s.get().analytics;
+    // Old fields preserved...
+    expect(a.runs).toBe(4);
+    // ...new v3 fields backfilled so recordDeath/recordStomp can't crash.
+    expect(a.deathsBySource).toEqual({});
+    expect(a.enemiesStomped).toBe(0);
+    expect(a.powerupsUsed).toBe(0);
+    expect(a.bossClears).toBe(0);
+  });
+
   it('prunes dailyBest to the most recent 7 dates', () => {
     const s = new SaveData(fakeStore());
     s.update((b) => {

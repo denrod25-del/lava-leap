@@ -80,8 +80,16 @@ export class SaveData {
       if (raw !== null) {
         const parsed = JSON.parse(raw) as SaveBlob;
         if (parsed && parsed.version === 2) {
-          // Backfill any fields added after a save was written.
-          return { ...defaults(), ...parsed, settings: { ...DEFAULT_SETTINGS, ...parsed.settings } };
+          // Backfill any fields added after a save was written. Both `settings`
+          // and `analytics` are deep-merged so sub-fields introduced in a later
+          // version (e.g. v3's analytics.deathsBySource) exist on old saves —
+          // otherwise recordDeath/recordStomp would touch undefined and crash.
+          return {
+            ...defaults(),
+            ...parsed,
+            settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+            analytics: { ...defaultAnalytics(), ...parsed.analytics },
+          };
         }
       }
     } catch {
