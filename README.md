@@ -84,3 +84,53 @@ regenerated from the synthesis scripts:
 node tools/gen-sfx.mjs    # re-synthesise all SFX WAVs
 node tools/gen-music.mjs  # re-synthesise all music loops
 ```
+
+---
+
+## v3 — What's New
+
+### Enemies
+
+Two enemy types now patrol the climb. **Crawlers** walk along platforms; **drifters**
+hover and bob through open air. Contact with either is lethal — but you can fight back:
+
+- **Stomp** an enemy by landing on it from above.
+- **Dash** through an enemy (`Shift` / `X`) to destroy it.
+
+### Power-ups
+
+Glowing pickups drop on platforms and grant a timed effect:
+
+| Power-up | Effect |
+|----------|--------|
+| **Shield** | Absorbs one otherwise-lethal hit |
+| **Rocket** | A burst of upward boost |
+| **Magnet** | Pulls nearby coins toward you |
+| **Slow-lava** | Temporarily slows the rising lava |
+
+### Spikes & Bounce Pads
+
+New platform hazards and helpers: **spikes** are lethal on contact, while **bounce
+pads** fling you upward for big vertical gains.
+
+### The Lava Titan (boss)
+
+A boss, the **Lava Titan**, awakens at **1000m, 2000m, and 3000m**. It roars, shakes
+the screen, and hurls projectiles. Survive its phase to keep climbing.
+
+### Mobile / Touch Controls
+
+On touch-capable devices, on-screen controls appear automatically (a desktop with a
+touchscreen keeps full keyboard support too):
+
+| Control | Where |
+|---------|-------|
+| Move left / right | Hold the left / right thirds of the lower screen |
+| Jump | Tap the center (lower screen) |
+| Dash | `DASH` button, bottom-right |
+| Pause | `⏸` button, top-right |
+
+### Install as an App (PWA)
+
+Lava Leap ships a web-app manifest and icons, so it can be **installed** from a
+supported browser (Add to Home Screen / Install App) and launched full-screen.
