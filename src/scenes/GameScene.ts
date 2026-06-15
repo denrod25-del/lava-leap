@@ -313,7 +313,7 @@ export class GameScene extends Phaser.Scene {
     this.triggerDeath(source);
   }
 
-  private triggerDeath(_source?: string): void {
+  private triggerDeath(source = 'unknown'): void {
     if (this.dead) return;
     this.dead = true;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
@@ -322,7 +322,7 @@ export class GameScene extends Phaser.Scene {
     this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
     this.time.delayedCall(450, () => {
       const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
-      save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex));
+      save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex, source));
       this.scene.stop('Hud');
       this.scene.start('GameOver', {
         score: finalScore,

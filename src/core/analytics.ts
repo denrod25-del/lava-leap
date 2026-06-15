@@ -7,6 +7,14 @@ export interface AnalyticsState {
   deathsByBucket: Record<string, number>;
   /** Death counts keyed by zone index as string. */
   deathsByZone: Record<string, number>;
+  /** Total enemies stomped across all runs. */
+  enemiesStomped: number;
+  /** Total power-ups collected across all runs. */
+  powerupsUsed: number;
+  /** Lava Titan encounters survived to the end. */
+  bossClears: number;
+  /** Death counts keyed by source, e.g. "lava" | "enemy" | "boss" | "unknown". */
+  deathsBySource: Record<string, number>;
 }
 
 export function defaultAnalytics(): AnalyticsState {
@@ -17,6 +25,10 @@ export function defaultAnalytics(): AnalyticsState {
     coinsBanked: 0,
     deathsByBucket: {},
     deathsByZone: {},
+    enemiesStomped: 0,
+    powerupsUsed: 0,
+    bossClears: 0,
+    deathsBySource: {},
   };
 }
 
@@ -25,10 +37,11 @@ export function recordRunStart(a: AnalyticsState, daily: boolean): void {
   if (daily) a.dailyPlays++;
 }
 
-export function recordDeath(a: AnalyticsState, height: number, zoneIndex: number): void {
+export function recordDeath(a: AnalyticsState, height: number, zoneIndex: number, source = 'unknown'): void {
   const bucket = String(Math.floor(height / 100) * 100);
   a.deathsByBucket[bucket] = (a.deathsByBucket[bucket] ?? 0) + 1;
   a.deathsByZone[String(zoneIndex)] = (a.deathsByZone[String(zoneIndex)] ?? 0) + 1;
+  a.deathsBySource[source] = (a.deathsBySource[source] ?? 0) + 1;
 }
 
 export function recordUnlock(a: AnalyticsState): void {
@@ -37,4 +50,16 @@ export function recordUnlock(a: AnalyticsState): void {
 
 export function recordBank(a: AnalyticsState, coins: number): void {
   a.coinsBanked += coins;
+}
+
+export function recordStomp(a: AnalyticsState): void {
+  a.enemiesStomped++;
+}
+
+export function recordPowerup(a: AnalyticsState): void {
+  a.powerupsUsed++;
+}
+
+export function recordBossClear(a: AnalyticsState): void {
+  a.bossClears++;
 }

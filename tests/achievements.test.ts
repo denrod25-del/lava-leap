@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ACHIEVEMENTS } from '../src/core/achievements';
+import { ACHIEVEMENTS, freshRunCounters } from '../src/core/achievements';
 import { AchievementTracker } from '../src/core/AchievementTracker';
 import { GameEvents } from '../src/core/events';
 import { SaveData } from '../src/core/SaveData';
@@ -19,9 +19,9 @@ function setup() {
 }
 
 describe('achievements', () => {
-  it('has 12 unique ids', () => {
-    expect(ACHIEVEMENTS).toHaveLength(12);
-    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(12);
+  it('has 16 unique ids', () => {
+    expect(ACHIEVEMENTS).toHaveLength(16);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(16);
   });
 
   it('first-steps unlocks at 100 height, not before', () => {
@@ -78,5 +78,81 @@ describe('achievements', () => {
     save.update((b) => { b.coinBank = 500; });
     tracker.updateHeight(1, 0);
     expect(unlocked).toContain('hoarder');
+  });
+});
+
+function def(id: string) {
+  const d = ACHIEVEMENTS.find((a) => a.id === id);
+  if (!d) throw new Error(`no achievement ${id}`);
+  return d;
+}
+
+describe('v3 achievement checks (pure over RunCounters)', () => {
+  it('stomper: 10 stomps in a run', () => {
+    const r = freshRunCounters();
+    r.stomps = 9;
+    expect(def('stomper').check(r, {} as never)).toBe(false);
+    r.stomps = 10;
+    expect(def('stomper').check(r, {} as never)).toBe(true);
+  });
+
+  it('rocket-man: used a rocket', () => {
+    const r = freshRunCounters();
+    expect(def('rocket-man').check(r, {} as never)).toBe(false);
+    r.usedRocket = true;
+    expect(def('rocket-man').check(r, {} as never)).toBe(true);
+  });
+
+  it('pacifist: reach zone 2 with 0 stomps', () => {
+    const r = freshRunCounters();
+    r.zoneIndex = 2;
+    r.stomps = 0;
+    expect(def('pacifist').check(r, {} as never)).toBe(true);
+    r.stomps = 1;
+    expect(def('pacifist').check(r, {} as never)).toBe(false);
+    r.stomps = 0;
+    r.zoneIndex = 1;
+    expect(def('pacifist').check(r, {} as never)).toBe(false);
+  });
+
+  it('untouchable-ii: boss cleared with no shield', () => {
+    const r = freshRunCounters();
+    expect(def('untouchable-ii').check(r, {} as never)).toBe(false);
+    r.bossClearedNoShield = true;
+    expect(def('untouchable-ii').check(r, {} as never)).toBe(true);
+  });
+});
+
+describe('v3 achievement tracker wiring', () => {
+  it('stomper unlocks after 10 enemyStomped events', () => {
+    const { events, tracker, unlocked } = setup();
+    for (let i = 0; i < 9; i++) events.emit('enemyStomped', { x: 0, y: 0 });
+    expect(unlocked).not.toContain('stomper');
+    events.emit('enemyStomped', { x: 0, y: 0 });
+    expect(unlocked).toContain('stomper');
+    void tracker;
+  });
+
+  it('rocket-man unlocks on a rocket powerupCollected', () => {
+    const { events, unlocked } = setup();
+    events.emit('powerupCollected', { kind: 'shield' });
+    expect(unlocked).not.toContain('rocket-man');
+    events.emit('powerupCollected', { kind: 'rocket' });
+    expect(unlocked).toContain('rocket-man');
+  });
+
+  it('untouchable-ii unlocks when the boss ends with no shield used', () => {
+    const { events, unlocked } = setup();
+    events.emit('bossPhase', { zoneIndex: 1, phase: 'start' });
+    events.emit('bossPhase', { zoneIndex: 1, phase: 'end' });
+    expect(unlocked).toContain('untouchable-ii');
+  });
+
+  it('untouchable-ii does NOT unlock if a shield expired during the boss', () => {
+    const { events, unlocked } = setup();
+    events.emit('bossPhase', { zoneIndex: 1, phase: 'start' });
+    events.emit('powerupExpired', { kind: 'shield' });
+    events.emit('bossPhase', { zoneIndex: 1, phase: 'end' });
+    expect(unlocked).not.toContain('untouchable-ii');
   });
 });

@@ -13,12 +13,19 @@ export interface RunCounters {
   airWall: boolean;
   /** Latched true the moment all three air flags coincide. */
   acrobatDone: boolean;
+  /** Enemies stomped/killed this run. */
+  stomps: number;
+  /** A rocket power-up was collected this run. */
+  usedRocket: boolean;
+  /** Latched true when a boss encounter ended without a shield being consumed. */
+  bossClearedNoShield: boolean;
 }
 
 export function freshRunCounters(): RunCounters {
   return {
     maxHeight: 0, coins: 0, wallJumps: 0, zoneIndex: 0,
     heightAtLastCrumble: 0, airDash: false, airDouble: false, airWall: false, acrobatDone: false,
+    stomps: 0, usedRocket: false, bossClearedNoShield: false,
   };
 }
 
@@ -42,4 +49,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'hoarder', name: 'Hoarder', description: 'Bank 500 coins', check: (_r, s) => s.coinBank >= 500 },
   { id: 'daily-devotee', name: 'Daily Devotee', description: 'Play 3 daily challenges', check: (_r, s) => s.analytics.dailyPlays >= 3 },
   { id: 'veteran', name: 'Veteran', description: 'Play 25 runs', check: (_r, s) => s.analytics.runs >= 25 },
+  { id: 'stomper', name: 'Stomper', description: 'Stomp 10 enemies in one run', check: (r) => r.stomps >= 10 },
+  { id: 'rocket-man', name: 'Rocket Man', description: 'Ride a rocket power-up', check: (r) => r.usedRocket },
+  { id: 'pacifist', name: 'Pacifist', description: 'Reach Ashfall without stomping anything', check: (r) => r.zoneIndex >= 2 && r.stomps === 0 },
+  { id: 'untouchable-ii', name: 'Untouchable II', description: 'Clear a Lava Titan without your shield breaking', check: (r) => r.bossClearedNoShield },
 ];
