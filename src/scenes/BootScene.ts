@@ -9,6 +9,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image('platform', 'assets/platform.png');
     this.load.image('coin', 'assets/coin.png');
     this.load.image('lava', 'assets/lava-tile.png');
+    this.load.image('enemy-crawler', 'assets/enemies/crawler.png');
+    this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
+    this.load.image('boss-titan', 'assets/boss/titan.png');
     for (const key of ANIM_FRAME_KEYS) this.load.image(key, `assets/anim/${key}.png`);
     this.load.audio('sfx-jump', 'assets/sfx/jump.wav');
     this.load.audio('sfx-coin', 'assets/sfx/coin.wav');

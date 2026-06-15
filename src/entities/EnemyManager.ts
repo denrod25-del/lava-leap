@@ -52,6 +52,10 @@ export class EnemyManager {
     const y = isCrawler ? platTopY - ENEMY.bodyH / 2 : platTopY - ENEMY.drifterHoverH;
 
     const sprite = this.scene.add.image(startX, y, isCrawler ? 'enemy-crawler' : 'enemy-drifter').setDepth(5);
+    // Loaded PixelLab PNGs are 48px; render at a small presence size. The code-drawn
+    // fallback is already bodyW×bodyH so this is a no-op for it. Contact geometry
+    // (resolveContact) is independent of display size — it always uses ENEMY.bodyW/H.
+    sprite.setDisplaySize(ENEMY.bodyW * 1.4, ENEMY.bodyH * 1.4);
     this.views.set(desc.id, {
       desc, sprite, platLeft, platRight, platTopY, dir: 1,
       phase: (desc.id % 8) / 8 * Math.PI * 2, // deterministic per-platform phase, no Math.random

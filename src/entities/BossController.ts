@@ -11,7 +11,7 @@ import { BOSS_DURATION_MS, projectileSchedule, type Projectile } from '../core/b
  */
 export class BossController {
   private active = false;
-  private titan?: Phaser.GameObjects.Arc;
+  private titan?: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
   private schedule: Projectile[] = [];
   private elapsed = 0;
   private fired = 0;
@@ -30,7 +30,9 @@ export class BossController {
     this.fired = 0;
     this.currentIndex = bossIndex;
     this.schedule = projectileSchedule(bossIndex, seed);
-    this.titan = this.scene.add.circle(TUNING.width / 2, lavaSurfaceY, 70, 0x7a1020).setDepth(4);
+    this.titan = this.scene.textures.exists('boss-titan')
+      ? this.scene.add.image(TUNING.width / 2, lavaSurfaceY, 'boss-titan').setDisplaySize(140, 140).setDepth(4)
+      : this.scene.add.circle(TUNING.width / 2, lavaSurfaceY, 70, 0x7a1020).setDepth(4);
     this.events.emit('bossPhase', { zoneIndex: bossIndex + 1, phase: 'start' });
   }
 
