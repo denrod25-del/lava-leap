@@ -16,7 +16,7 @@ export function emptyInput(): InputState {
   return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, steerX: null };
 }
 
-/** A source of input — implemented by KeyboardInput and TouchInput. */
+/** A source of input — implemented by KeyboardInput and TouchSteerInput. */
 export interface InputSource {
   /** Compute this frame's state. Implementations handle their own edge detection. */
   sample(): InputState;

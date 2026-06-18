@@ -15,7 +15,7 @@ import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
-import { TouchInput } from '../entities/input/TouchInput';
+import { TouchSteerInput } from '../entities/input/TouchSteerInput';
 import { EnemyManager } from '../entities/EnemyManager';
 import { PowerupController } from '../entities/PowerupController';
 import { BossController } from '../entities/BossController';
@@ -26,6 +26,7 @@ import type { InputSource } from '../core/InputState';
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private inputSrc!: InputSource;
+  private movementMode: 'manual' | 'autopilot' = 'manual';
   private stream!: LevelStream;
   private platforms!: PlatformManager;
   private coins!: CoinManager;
@@ -151,28 +152,9 @@ export class GameScene extends Phaser.Scene {
     for (const p of this.stream.active) this.platforms.spawn(p);
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
-    this.inputSrc = new KeyboardInput(this);
-    // On touch-capable devices also create on-screen touch controls and OR the two
-    // input sources, so a desktop with a touchscreen keeps working from either.
     const wantTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0;
-    if (wantTouch) {
-      const kb = this.inputSrc;
-      const touch = new TouchInput(this);
-      this.inputSrc = {
-        sample: () => {
-          const a = kb.sample(), b = touch.sample();
-          return {
-            left: a.left || b.left,
-            right: a.right || b.right,
-            jumpHeld: a.jumpHeld || b.jumpHeld,
-            jumpPressed: a.jumpPressed || b.jumpPressed,
-            dashPressed: a.dashPressed || b.dashPressed,
-            pausePressed: a.pausePressed || b.pausePressed,
-            steerX: a.steerX ?? b.steerX,
-          };
-        },
-      };
-    }
+    this.movementMode = wantTouch ? 'autopilot' : 'manual';
+    this.inputSrc = wantTouch ? new TouchSteerInput(this) : new KeyboardInput(this);
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
@@ -214,7 +196,8 @@ export class GameScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     const sampled = this.inputSrc.sample();
-    this.player.update(sampled);
+    if (this.movementMode === 'autopilot') this.player.updateAutoPilot(sampled, delta);
+    else this.player.update(sampled);
     if (sampled.pausePressed) this.pauseGame();
     this.platforms.update(time);
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
