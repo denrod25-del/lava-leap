@@ -94,6 +94,12 @@ export const AUTOPILOT = {
   steerGain: 9,          // horizontal velocity per px of (fingerX - playerX) offset
 } as const;
 
+export const COMBO = {
+  step: 0.5,
+  max: 5,
+  decayMs: 2500,
+} as const;
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,
