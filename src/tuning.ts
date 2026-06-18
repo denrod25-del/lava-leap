@@ -107,6 +107,14 @@ export const COMBO_POINTS = {
   powerup: 15,
 } as const;
 
+export interface UpgradeDef { id: 'powerupDuration' | 'startShield' | 'revive'; name: string; maxLevel: number; costs: number[]; desc: string }
+export const UPGRADES: UpgradeDef[] = [
+  { id: 'powerupDuration', name: 'Power-Up Time', maxLevel: 3, costs: [150, 300, 500], desc: '+15% power-up duration / level' },
+  { id: 'startShield',     name: 'Start Shield',  maxLevel: 1, costs: [400],          desc: 'Begin each run with a shield' },
+  { id: 'revive',          name: 'Revive',        maxLevel: 1, costs: [600],          desc: 'Auto-revive once per run' },
+];
+export function powerupDurationFactor(level: number): number { return 1 + 0.15 * level; }
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,
