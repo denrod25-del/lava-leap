@@ -5,6 +5,8 @@ export class HudScene extends Phaser.Scene {
   private heightText!: Phaser.GameObjects.Text;
   private coinText!: Phaser.GameObjects.Text;
   private puText?: Phaser.GameObjects.Text;
+  private comboText?: Phaser.GameObjects.Text;
+  private comboBar?: Phaser.GameObjects.Rectangle;
   private toastQueue: string[] = [];
   private toastShowing = false;
 
@@ -40,6 +42,18 @@ export class HudScene extends Phaser.Scene {
       this.puText = this.add.text(TUNING.width - 12, 12, label, {
         fontFamily: 'monospace', fontSize: '14px', color: '#66ddff',
       }).setOrigin(1, 0);
+    }
+
+    const combo = this.registry.get('combo') as { multiplier: number; remaining01: number } | undefined;
+    this.comboText?.destroy(); this.comboText = undefined;
+    this.comboBar?.destroy(); this.comboBar = undefined;
+    if (combo && combo.multiplier > 1) {
+      const cx = TUNING.width / 2;
+      this.comboText = this.add.text(cx, 36, `x${combo.multiplier.toFixed(1)}`, {
+        fontFamily: 'monospace', fontSize: '22px', color: '#ffcf4d',
+      }).setOrigin(0.5, 0).setDepth(25);
+      this.comboBar = this.add.rectangle(cx - 40, 64, 80 * combo.remaining01, 4, 0xffcf4d)
+        .setOrigin(0, 0).setDepth(25);
     }
   }
 
