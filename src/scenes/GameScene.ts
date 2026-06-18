@@ -332,7 +332,9 @@ export class GameScene extends Phaser.Scene {
       this.player.sprite.setVelocity(0, 0);
       this.powerups.hasShield = true;
       this.registry.set('powerup', this.powerups.hudState);
-      this.gameEvents.emit('powerupCollected', { kind: 'shield' }); // juice/sfx feedback
+      // Dedicated revive event for juice/sfx — NOT powerupCollected, so the revive
+      // doesn't bump the combo multiplier or count as a power-up used in analytics.
+      this.gameEvents.emit('playerRevived', { x: this.player.sprite.x, y: this.player.sprite.y });
       return;
     }
 

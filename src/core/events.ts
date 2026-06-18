@@ -17,6 +17,9 @@ export interface GameEventMap {
   bossPhase: { zoneIndex: number; phase: 'start' | 'end' };
   projectileLaunched: { x: number };
   comboChanged: { multiplier: number };
+  /** The Revive upgrade saved the player from a lethal hit (juice/audio only —
+   *  deliberately NOT a combo/power-up event so it doesn't inflate the multiplier). */
+  playerRevived: { x: number; y: number };
 }
 
 export type GameEventName = keyof GameEventMap;

@@ -72,6 +72,11 @@ export class JuiceController {
       // Shield break: a quick white screen flash so the loss of protection reads.
       if (kind === 'shield') this.flash(0xffffff, 0.35, 220);
     });
+    events.on('playerRevived', ({ x, y }) => {
+      // Revive: cyan flash + burst so the second chance reads clearly.
+      this.flash(0x66ddff, 0.4, 320);
+      this.sparkEmitter.explode(20, x, y);
+    });
     events.on('bossPhase', ({ phase }) => {
       // The Lava Titan surfacing: big screen shake to sell its arrival.
       if (phase === 'start') this.shake(JUICE.shakeBig.duration, JUICE.shakeBig.intensity);

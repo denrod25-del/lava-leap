@@ -51,7 +51,7 @@ test('survives a gameplay stretch', async ({ page }) => {
 test.describe('touch', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('touch input drives the player', async ({ page }) => {
+  test('tapping the screen steers without errors', async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push(String(e)));
@@ -65,16 +65,16 @@ test.describe('touch', () => {
     await page.keyboard.press('Space');
     await page.waitForTimeout(800);
 
-    // Compute screen coords inside the move zones from the canvas bounding box.
-    // Left third = x in [0, w/3], right third = x in [2w/3, w]; y in 55%..100%.
+    // In autopilot the whole screen is a steer surface: a tap sets a momentary
+    // steer target at that x. Tap left and right of centre to exercise both ways.
     const box = await canvas.boundingBox();
     if (!box) throw new Error('canvas has no bounding box');
-    const yTouch = box.y + box.height * 0.78;            // ~78% down (within 55%-100%)
-    const leftX = box.x + box.width * (1 / 6);           // center of left third
-    const rightX = box.x + box.width * (5 / 6);          // center of right third
+    const yTouch = box.y + box.height * 0.78;            // lower-middle, clear of the buttons
+    const leftX = box.x + box.width * (1 / 6);           // left of centre
+    const rightX = box.x + box.width * (5 / 6);          // right of centre
 
-    // Tap left zone, then right zone, a few times. Goal: the touch path runs
-    // (pointer events -> TouchInput zones) without throwing.
+    // Tap left, then right, a few times. Goal: the touch steer path runs
+    // (pointer events -> TouchSteerInput) without throwing.
     for (let i = 0; i < 3; i++) {
       await page.touchscreen.tap(rightX, yTouch);
       await page.waitForTimeout(250);

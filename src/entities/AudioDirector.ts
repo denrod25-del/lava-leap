@@ -35,6 +35,7 @@ export class AudioDirector {
     events.on('powerupExpired', () => this.sfx('sfx-expire', 0.4));
     events.on('bossPhase', ({ phase }) => { if (phase === 'start') this.sfx('sfx-boss-roar', 0.7); });
     events.on('projectileLaunched', () => this.sfx('sfx-projectile', 0.45));
+    events.on('playerRevived', () => this.sfx('sfx-pickup', 0.7));
 
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
   }
