@@ -85,6 +85,30 @@ test.describe('touch', () => {
     await expect(canvas).toBeVisible();
     expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
   });
+
+  test('autopilot: drag to steer + dash runs without errors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', (e) => errors.push(String(e)));
+
+    await page.goto('/');
+    await expect(page.locator('canvas')).toBeVisible();
+    await page.waitForTimeout(1500);
+    await page.keyboard.press('Space'); // start run
+    await page.waitForTimeout(800);
+
+    const box = (await page.locator('canvas').boundingBox())!;
+    // Drag across the lower-middle of the canvas to steer.
+    await page.touchscreen.tap(box.x + box.width * 0.3, box.y + box.height * 0.7);
+    await page.waitForTimeout(150);
+    await page.touchscreen.tap(box.x + box.width * 0.7, box.y + box.height * 0.7);
+    await page.waitForTimeout(150);
+    // Tap the DASH button (bottom-right).
+    await page.touchscreen.tap(box.x + box.width * 0.86, box.y + box.height * 0.86);
+    await page.waitForTimeout(500);
+
+    expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
+  });
 });
 
 test('pause and resume mid-run without errors', async ({ page }) => {
