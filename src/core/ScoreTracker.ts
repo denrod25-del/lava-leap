@@ -5,7 +5,8 @@ export interface KeyValueStore {
 
 export class ScoreTracker {
   maxHeight = 0;
-  coins = 0;
+  coins = 0;        // count, for HUD + coin banking
+  bonusScore = 0;   // accumulated, already-multiplied action points (coins/stomps/bounces)
 
   updateHeight(height: number): void {
     if (height > this.maxHeight) this.maxHeight = height;
@@ -15,7 +16,12 @@ export class ScoreTracker {
     this.coins += n;
   }
 
+  /** Add already-multiplied action points to the run's bonus score. */
+  addBonus(points: number): void {
+    this.bonusScore += points;
+  }
+
   get score(): number {
-    return Math.floor(this.maxHeight) + this.coins * 10;
+    return Math.floor(this.maxHeight) + this.bonusScore;
   }
 }

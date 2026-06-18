@@ -9,11 +9,22 @@ describe('ScoreTracker', () => {
     expect(s.maxHeight).toBe(100);
   });
 
-  it('scores height + 10 per coin', () => {
+  it('scores height + 10 per coin (coin value flows through addBonus)', () => {
     const s = new ScoreTracker();
     s.updateHeight(123.7);
     s.addCoin();
     s.addCoin();
+    s.addBonus(10);
+    s.addBonus(10);
     expect(s.score).toBe(123 + 20);
+  });
+
+  it('score = floored height + accumulated bonus; coins still tracked as count', () => {
+    const s = new ScoreTracker();
+    s.updateHeight(250.7);
+    s.addCoin();            // count only now
+    s.addBonus(40);         // already-multiplied action points
+    expect(s.coins).toBe(1);
+    expect(s.score).toBe(250 + 40);
   });
 });
