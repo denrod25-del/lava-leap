@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
-import { TUNING, POWERUP } from '../tuning';
+import { TUNING, POWERUP, COMBO_POINTS } from '../tuning';
 import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
 import { CoinManager } from '../entities/CoinManager';
 import { Lava } from '../entities/Lava';
 import { ScoreTracker } from '../core/ScoreTracker';
+import { ComboTracker } from '../core/ComboTracker';
 import { save } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
@@ -32,6 +33,7 @@ export class GameScene extends Phaser.Scene {
   private coins!: CoinManager;
   private lava!: Lava;
   private score = new ScoreTracker();
+  private combo!: ComboTracker;
   private dead = false;
   private booked = false;
   private bgFar!: Phaser.GameObjects.TileSprite;
@@ -120,6 +122,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.gameEvents = new GameEvents();
     this.score = new ScoreTracker();
+    this.combo = new ComboTracker();
     this.dead = false;
     this.booked = false;
     this.zoneIndex = 0;
@@ -127,6 +130,7 @@ export class GameScene extends Phaser.Scene {
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
+    this.registry.set('combo', { multiplier: 1, remaining01: 0 });
     this.registry.set('powerup', { kind: null, shield: false, remainMs: 0 });
 
     this.dateKeyToday = dateKey(new Date());
@@ -180,6 +184,10 @@ export class GameScene extends Phaser.Scene {
       this.gameEvents.emit('playerHit', { source: 'boss' });
       this.handleHit('boss');
     });
+
+    this.gameEvents.on('enemyStomped', () => this.comboAction(COMBO_POINTS.stomp));
+    this.gameEvents.on('bouncePad', () => this.comboAction(COMBO_POINTS.bounce));
+    this.gameEvents.on('powerupCollected', () => this.comboAction(COMBO_POINTS.powerup));
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
@@ -256,6 +264,11 @@ export class GameScene extends Phaser.Scene {
     this.score.updateHeight(heightClimbed);
     this.registry.set('height', Math.floor(this.score.maxHeight));
     this.registry.set('coins', this.score.coins);
+
+    if (this.combo.update(delta)) {
+      this.gameEvents.emit('comboChanged', { multiplier: this.combo.multiplier });
+    }
+    this.registry.set('combo', { multiplier: this.combo.multiplier, remaining01: this.combo.remaining01 });
 
     // Zone tracking — crossfade background and emit event on zone change.
     const zone = zoneForHeight(heightClimbed);
@@ -344,5 +357,14 @@ export class GameScene extends Phaser.Scene {
 
   private onCoin(): void {
     this.score.addCoin();
+    this.comboAction(COMBO_POINTS.coin);
+  }
+
+  /** Register a combo action: bump the multiplier, award multiplied bonus, sync HUD. */
+  private comboAction(basePoints: number): void {
+    this.combo.bump();
+    this.score.addBonus(Math.floor(basePoints * this.combo.multiplier));
+    this.gameEvents.emit('comboChanged', { multiplier: this.combo.multiplier });
+    this.registry.set('combo', { multiplier: this.combo.multiplier, remaining01: this.combo.remaining01 });
   }
 }

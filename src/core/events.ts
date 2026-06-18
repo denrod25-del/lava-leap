@@ -16,6 +16,7 @@ export interface GameEventMap {
   bouncePad: { x: number; y: number };
   bossPhase: { zoneIndex: number; phase: 'start' | 'end' };
   projectileLaunched: { x: number };
+  comboChanged: { multiplier: number };
 }
 
 export type GameEventName = keyof GameEventMap;
