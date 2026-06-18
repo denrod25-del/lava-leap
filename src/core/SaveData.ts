@@ -21,6 +21,7 @@ export interface SaveBlob {
   dailyBest: Record<string, number>;
   settings: Settings;
   analytics: AnalyticsState;
+  upgrades: { powerupDuration: number; startShield: number; revive: number };
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -37,6 +38,7 @@ function defaults(): SaveBlob {
     dailyBest: {},
     settings: { ...DEFAULT_SETTINGS },
     analytics: defaultAnalytics(),
+    upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
   };
 }
 
@@ -89,6 +91,7 @@ export class SaveData {
             ...parsed,
             settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
             analytics: { ...defaultAnalytics(), ...parsed.analytics },
+            upgrades: { ...defaults().upgrades, ...parsed.upgrades },
           };
         }
       }

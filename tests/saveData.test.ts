@@ -68,6 +68,22 @@ describe('SaveData', () => {
     expect(a.bossClears).toBe(0);
   });
 
+  it('defaults upgrades to zero levels and backfills them on an old save', () => {
+    const fresh = new SaveData(fakeStore());
+    expect(fresh.get().upgrades).toEqual({ powerupDuration: 0, startShield: 0, revive: 0 });
+
+    const legacy = {
+      version: 2, highScore: 0, coinBank: 999, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {}, settings: { musicVol: 7, sfxVol: 7, screenShake: true },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      // no `upgrades` key
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }));
+    expect(s.get().upgrades).toEqual({ powerupDuration: 0, startShield: 0, revive: 0 });
+    expect(s.get().coinBank).toBe(999);
+  });
+
   it('prunes dailyBest to the most recent 7 dates', () => {
     const s = new SaveData(fakeStore());
     s.update((b) => {
