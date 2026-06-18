@@ -76,6 +76,7 @@ export class TouchInput implements InputSource {
     const s: InputState = {
       left: this.state.left, right: this.state.right, jumpHeld: this.state.jumpHeld,
       jumpPressed: this.jumpQueued, dashPressed: this.dashQueued, pausePressed: this.pauseQueued,
+      steerX: null,
     };
     this.jumpQueued = false; this.dashQueued = false; this.pauseQueued = false;
     return s;

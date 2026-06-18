@@ -168,6 +168,7 @@ export class GameScene extends Phaser.Scene {
             jumpPressed: a.jumpPressed || b.jumpPressed,
             dashPressed: a.dashPressed || b.dashPressed,
             pausePressed: a.pausePressed || b.pausePressed,
+            steerX: a.steerX ?? b.steerX,
           };
         },
       };

@@ -7,10 +7,13 @@ export interface InputState {
   jumpPressed: boolean;
   dashPressed: boolean;
   pausePressed: boolean;
+  /** Autopilot steer target in world-x, or null when no steer pointer is active.
+   *  Ignored by the manual movement path. */
+  steerX: number | null;
 }
 
 export function emptyInput(): InputState {
-  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false };
+  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, steerX: null };
 }
 
 /** A source of input — implemented by KeyboardInput and TouchInput. */
