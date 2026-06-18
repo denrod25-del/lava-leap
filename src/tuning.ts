@@ -88,6 +88,12 @@ export const ENEMY = {
   bodyH: 20,
 } as const;
 
+export const AUTOPILOT = {
+  bounceVelocity: 820,   // apex ≈ v²/(2·gravityY); 820²/(2·1800) ≈ 187px > REACH.maxVerticalGap
+  steerMaxSpeed: 260,    // px/s cap on follow-finger horizontal speed
+  steerGain: 9,          // horizontal velocity per px of (fingerX - playerX) offset
+} as const;
+
 export const JUICE = {
   jumpSquashX: 0.8, jumpStretchY: 1.2,
   landSquashX: 1.25, landSquashY: 0.75,
