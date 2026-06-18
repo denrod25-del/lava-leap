@@ -134,3 +134,46 @@ touchscreen keeps full keyboard support too):
 
 Lava Leap ships a web-app manifest and icons, so it can be **installed** from a
 supported browser (Add to Home Screen / Install App) and launched full-screen.
+
+---
+
+## v4 — What's New
+
+### Mobile Auto-Pilot Mode
+
+On touch-capable devices, Lava Leap now switches to a one-handed **auto-pilot**
+mode (replacing the v3 d-pad). The player bounces automatically on every landing,
+so there is no jump button to time — you just point where you want to go:
+
+| Control | How |
+|---------|-----|
+| Steer | **Drag anywhere** — the player follows your finger's horizontal position |
+| Dash | `DASH` button, bottom-right (one dash per airtime) |
+| Pause | `⏸` button, top-right |
+
+Desktop keyboards keep the full manual move/jump/wall/dash controls from earlier
+versions; the mode is selected automatically per device.
+
+### Combo / Multiplier Scoring
+
+Chaining actions now builds a **score multiplier**. Each stomp, coin, bounce pad,
+or power-up bumps the multiplier up a step (capped at x5), and the multiplier
+scales the bonus points those actions award. The multiplier **decays back to x1
+after about 2.5 seconds** without a new action, so keeping the chain alive is
+worth far more than collecting things one at a time. A live multiplier meter and
+a draining timer bar appear at the top of the HUD while a combo is active.
+
+### Coin Upgrades
+
+The Cosmetics **Shop** now has an **Upgrades** tab (toggle with `Tab` or by
+tapping the tab header) for permanent, coin-funded boosts that persist across
+runs:
+
+| Upgrade | Effect |
+|---------|--------|
+| **Power-Up Time** | +15% power-up duration per level (up to 3 levels) |
+| **Start Shield** | Begin every run already holding a shield |
+| **Revive** | Auto-revive once per run on an otherwise-lethal hit |
+
+Upgrades are bought with banked coins and saved permanently; old save files are
+migrated forward automatically.
