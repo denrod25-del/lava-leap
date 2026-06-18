@@ -17,6 +17,10 @@ export class PowerupController {
   hasShield = false;
   activeKind: PowerupKind | null = null; // timed (rocket/magnet/slowlava)
   private remainMs = 0;
+  private durationFactor = 1;
+
+  /** Multiply timed power-up durations (e.g. by the Power-Up Time upgrade). */
+  setDurationFactor(f: number): void { this.durationFactor = f; }
 
   constructor(private scene: Phaser.Scene, private events: GameEvents) {
     this.group = scene.physics.add.group({ allowGravity: false });
@@ -57,7 +61,8 @@ export class PowerupController {
     this.events.emit('powerupCollected', { kind });
     if (kind === 'shield') { this.hasShield = true; return; }
     this.activeKind = kind;
-    this.remainMs = kind === 'rocket' ? POWERUP.rocketMs : kind === 'magnet' ? POWERUP.magnetMs : POWERUP.slowLavaMs;
+    const base = kind === 'rocket' ? POWERUP.rocketMs : kind === 'magnet' ? POWERUP.magnetMs : POWERUP.slowLavaMs;
+    this.remainMs = base * this.durationFactor;
   }
 
   /** True if a hit was absorbed by the shield. */

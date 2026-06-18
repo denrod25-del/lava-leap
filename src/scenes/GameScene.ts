@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TUNING, POWERUP, COMBO_POINTS } from '../tuning';
+import { TUNING, POWERUP, COMBO_POINTS, powerupDurationFactor } from '../tuning';
 import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
@@ -48,6 +48,7 @@ export class GameScene extends Phaser.Scene {
   private boss!: BossController;
   private runSeed = 0;
   private prevHeight = 0;
+  private revivedThisRun = false;
   public daily = false;
   private dateKeyToday = '';
 
@@ -125,6 +126,7 @@ export class GameScene extends Phaser.Scene {
     this.combo = new ComboTracker();
     this.dead = false;
     this.booked = false;
+    this.revivedThisRun = false;
     this.zoneIndex = 0;
     this.prevHeight = 0;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
@@ -176,6 +178,14 @@ export class GameScene extends Phaser.Scene {
     this.powerups = new PowerupController(this, this.gameEvents);
     for (const p of this.stream.active) this.powerups.spawn(p);
     this.powerups.registerPlayerOverlap(this.player.sprite);
+
+    // Apply meta-progression upgrade effects for this run.
+    const up = save.get().upgrades;
+    this.powerups.setDurationFactor(powerupDurationFactor(up.powerupDuration));
+    if (up.startShield > 0) {
+      this.powerups.hasShield = true;
+      this.registry.set('powerup', this.powerups.hudState);
+    }
 
     this.lava = new Lava(this);
 
@@ -312,6 +322,20 @@ export class GameScene extends Phaser.Scene {
 
   private triggerDeath(source = 'unknown'): void {
     if (this.dead) return;
+
+    if (!this.revivedThisRun && save.get().upgrades.revive > 0) {
+      this.revivedThisRun = true;
+      // Lift the player back to safety above the lava, with a fresh shield + brief grace.
+      const safeY = this.lava.surfaceY - 220;
+      const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+      body.reset(TUNING.playerStartX, safeY);
+      this.player.sprite.setVelocity(0, 0);
+      this.powerups.hasShield = true;
+      this.registry.set('powerup', this.powerups.hudState);
+      this.gameEvents.emit('powerupCollected', { kind: 'shield' }); // juice/sfx feedback
+      return;
+    }
+
     this.dead = true;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
