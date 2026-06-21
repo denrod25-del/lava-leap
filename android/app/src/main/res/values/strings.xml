@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lava Leap</string>
+    <string name="title_activity_main">Lava Leap</string>
+    <string name="package_name">com.isymbolic.lavaleap</string>
+    <string name="custom_url_scheme">com.isymbolic.lavaleap</string>
+</resources>
