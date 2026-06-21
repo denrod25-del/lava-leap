@@ -186,7 +186,7 @@ export class Player {
     // Land detection (juice/audio hooks rely on this).
     if (onGround && !this.wasOnGround) this.events.emit('land', { impactVy: vyAtFrameStart });
     this.wasOnGround = onGround;
-    if (onGround) this.dashAvailable = true;
+    if (onGround) { this.dashAvailable = true; this.jumpsUsed = 0; }
 
     // Maintain an active dash (overrides steering + gravity), same as manual.
     if (this.dashTimer > 0) {
@@ -198,8 +198,17 @@ export class Player {
     }
     body.setAllowGravity(true);
 
-    // Auto-bounce: kick upward the instant we land.
-    if (onGround) this.sprite.setVelocityY(-AUTOPILOT.bounceVelocity);
+    // Assisted bounce: auto-hop on landing (boosted while JUMP is held — "tap/hold to
+    // jump higher"); in the air, tap JUMP for one double jump, or hold to float.
+    if (onGround) {
+      this.sprite.setVelocityY(-(input.jumpHeld ? AUTOPILOT.boostBounceVelocity : AUTOPILOT.bounceVelocity));
+    } else if (input.jumpPressed && this.jumpsUsed < 1) {
+      this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
+      this.jumpsUsed += 1;
+      this.events.emit('doubleJump', {});
+    } else if (input.jumpHeld && body.velocity.y > AUTOPILOT.floatMaxFall) {
+      this.sprite.setVelocityY(AUTOPILOT.floatMaxFall);
+    }
 
     // Follow-finger steering: ease horizontal velocity toward the finger target.
     if (input.steerX !== null) {

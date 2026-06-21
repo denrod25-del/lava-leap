@@ -47,6 +47,16 @@ export class MenuScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', item.tap));
 
+    // Big tap-to-start zone (mobile): a tap anywhere in the upper area starts a climb
+    // instantly, so players don't have to hit the small "Climb" text. The secondary
+    // option rows below (y >= 380) stay individually tappable.
+    this.add.text(cx, 340, '▶  TAP TO CLIMB  ◀', {
+      fontFamily: 'monospace', fontSize: '20px', color: '#ffd166',
+    }).setOrigin(0.5);
+    this.add.rectangle(0, 0, TUNING.width, 365, 0xffffff, 0).setOrigin(0, 0).setDepth(50)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.scene.start('Game', { daily: false }));
+
     const kb = this.input.keyboard!;
     kb.once('keydown-SPACE', () => this.scene.start('Game', { daily: false }));
     kb.once('keydown-D', () => this.scene.start('Game', { daily: true }));
