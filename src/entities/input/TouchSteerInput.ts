@@ -25,6 +25,10 @@ export class TouchSteerInput implements InputSource {
   constructor(scene: Phaser.Scene) {
     const w = TUNING.width, h = TUNING.height;
 
+    // Phaser tracks only ONE touch pointer by default, so holding the run joystick would
+    // block the jump tap. Add pointers so run + jump (+ dash) register simultaneously.
+    scene.input.addPointer(3);
+
     // DASH button (bottom-right) + pause (top-right) — created first so they sit on top.
     const dash = scene.add.rectangle(w - 84, h - 84, 72, 72, 0x66ddff, 0.18)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(62).setInteractive();
