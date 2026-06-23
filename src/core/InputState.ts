@@ -7,13 +7,13 @@ export interface InputState {
   jumpPressed: boolean;
   dashPressed: boolean;
   pausePressed: boolean;
-  /** Autopilot steer target in world-x, or null when no steer pointer is active.
-   *  Ignored by the manual movement path. */
-  steerX: number | null;
+  /** Horizontal run intent in [-1, 1] (-1 = full left, +1 = full right, 0 = idle).
+   *  Keyboard sets ±1 from left/right; the touch run-joystick sets analog values. */
+  runAxis: number;
 }
 
 export function emptyInput(): InputState {
-  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, steerX: null };
+  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, runAxis: 0 };
 }
 
 /** A source of input — implemented by KeyboardInput and TouchSteerInput. */

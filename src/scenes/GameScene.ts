@@ -161,6 +161,8 @@ export class GameScene extends Phaser.Scene {
     // keys. Player.update() reads whichever and runs the SAME manual moveset for both.
     const wantTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0;
     this.inputSrc = wantTouch ? new TouchSteerInput(this) : new KeyboardInput(this);
+    // Touch climbing is harder, so grant a triple jump (ground + 2 air); keyboard stays double.
+    this.player.maxJumps = wantTouch ? 3 : 2;
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);

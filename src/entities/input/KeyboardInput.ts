@@ -30,6 +30,7 @@ export class KeyboardInput implements InputSource {
     const dashPressed =
       Phaser.Input.Keyboard.JustDown(this.keyDash) || Phaser.Input.Keyboard.JustDown(this.keyDashAlt);
     const pausePressed = Phaser.Input.Keyboard.JustDown(this.keyP);
-    return { left, right, jumpHeld, jumpPressed, dashPressed, pausePressed, steerX: null };
+    const runAxis = (right ? 1 : 0) - (left ? 1 : 0);
+    return { left, right, jumpHeld, jumpPressed, dashPressed, pausePressed, runAxis };
   }
 }

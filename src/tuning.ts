@@ -88,11 +88,10 @@ export const ENEMY = {
   bodyH: 20,
 } as const;
 
-// Touch follow-finger steering tuning (mobile horizontal movement; jumping is fully
-// manual via the JUMP button, identical to keyboard).
-export const AUTOPILOT = {
-  steerMaxSpeed: 260,    // px/s cap on follow-finger horizontal speed
-  steerGain: 9,          // horizontal velocity per px of (fingerX - playerX) offset
+// Touch run-joystick tuning (left-half floating stick → runAxis ∈ [-1,1]).
+export const TOUCH = {
+  joystickRange: 60,     // px of finger travel from the origin = full run
+  joystickDeadzone: 8,   // px; within this the runAxis is 0 (stand still)
 } as const;
 
 export const COMBO = {

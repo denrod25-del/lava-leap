@@ -125,9 +125,9 @@ touchscreen keeps full keyboard support too):
 
 | Control | Where |
 |---------|-------|
-| Jump | **Tap anywhere** — tap for a short hop, **hold for a higher jump**, tap again in mid-air to **double jump** |
-| Steer left / right | **Drag** — the player follows your finger's horizontal position |
-| Wall jump | Drag into a wall, then tap |
+| Run left / right | **Hold the left half** — a floating joystick appears under your thumb; slide left/right (analog: lean a little to walk, far to run) |
+| Jump | **Tap the right half** — tap for a short hop, **hold for a higher jump**, tap again in mid-air to **double jump**, a third time for a **triple jump** |
+| Wall jump | Run into a wall, then tap to jump |
 | Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
 
@@ -146,19 +146,20 @@ supported browser (Add to Home Screen / Install App) and launched full-screen.
 ### Mobile Touch Controls
 
 On touch-capable devices, on-screen controls appear automatically (replacing the
-v3 d-pad). Mobile runs the **exact same manual moveset as the keyboard**: **tap
-anywhere to jump** and **drag to steer**. There is no auto-jump; you decide when
-and how high to jump:
+v3 d-pad). Mobile is a **two-thumb** layout running the **exact same manual moveset
+as the keyboard** — left thumb runs, right thumb jumps, so you can do both at once:
 
 | Control | How |
 |---------|-----|
-| Jump | **Tap anywhere** — tap = short hop, hold = higher, tap again in air = double jump, drag into a wall + tap = wall jump |
-| Steer | **Drag** — the player follows your finger horizontally |
+| Run | **Hold the left half** — a floating joystick spawns under your thumb; slide left/right (analog speed) |
+| Jump | **Tap the right half** — short hop, hold = higher, tap-in-air = double, again = **triple jump** (mobile only) |
+| Wall jump | Run into a wall, then tap |
 | Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
 
-Both desktop and mobile share one movement code path, so they feel identical;
-only the input source (keys vs. touch) differs.
+Desktop and mobile share one movement code path (a single run axis), so they feel
+identical; only the input source (keys vs. touch joystick) differs. Mobile gets a
+triple jump since touch climbing is harder; keyboard stays double.
 
 ### Combo / Multiplier Scoring
 

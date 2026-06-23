@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TUNING, POWERUP, AUTOPILOT } from '../tuning';
+import { TUNING, POWERUP } from '../tuning';
 import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
@@ -19,6 +19,9 @@ export class Player {
   private dashDir = 1;
   private wasOnGround = true;
   private _wallSliding = false;
+  /** Max jumps before landing (ground + air). 2 = double (keyboard); GameScene sets
+   *  3 on touch devices for the triple jump (mobile is harder to climb). */
+  maxJumps = 2;
 
   get wallSliding(): boolean { return this._wallSliding; }
 
@@ -70,13 +73,12 @@ export class Player {
     // Reset wall-sliding flag before the dash early-return so it's always cleared.
     this._wallSliding = false;
 
-    // Horizontal intent comes from EITHER a follow-finger target (touch: steerX) or
-    // left/right keys (keyboard). Derive left/right booleans either way so wall-slide,
-    // dash direction, and facing work identically for both input sources.
-    const steering = input.steerX !== null;
-    const steerDx = steering ? input.steerX! - this.sprite.x : 0;
-    const left = steering ? steerDx < -2 : input.left;
-    const right = steering ? steerDx > 2 : input.right;
+    // Horizontal intent is a single run axis [-1,1]: keyboard sets ±1 from left/right,
+    // the touch run-joystick sets analog values. Derive left/right booleans from its
+    // sign so wall-slide, dash direction, and facing work the same for both sources.
+    const runAxis = Phaser.Math.Clamp(input.runAxis, -1, 1);
+    const left = runAxis < -0.2;
+    const right = runAxis > 0.2;
     const jumpDown = input.jumpHeld;
     const onGround = body.blocked.down || body.touching.down;
 
@@ -101,22 +103,11 @@ export class Player {
     }
     (body as Body).setAllowGravity(true);
 
-    // Horizontal movement. Touch eases toward the finger for precise positioning;
-    // keyboard runs at a constant speed. Facing tracks travel direction.
-    if (steering) {
-      const vx = Phaser.Math.Clamp(steerDx * AUTOPILOT.steerGain, -AUTOPILOT.steerMaxSpeed, AUTOPILOT.steerMaxSpeed);
-      this.sprite.setVelocityX(vx);
-      if (vx < -1) this.sprite.setFlipX(true);
-      else if (vx > 1) this.sprite.setFlipX(false);
-    } else if (left && !right) {
-      this.sprite.setVelocityX(-TUNING.moveSpeed);
-      this.sprite.setFlipX(true);
-    } else if (right && !left) {
-      this.sprite.setVelocityX(TUNING.moveSpeed);
-      this.sprite.setFlipX(false);
-    } else {
-      this.sprite.setVelocityX(0);
-    }
+    // Horizontal movement: run at runAxis × moveSpeed (analog on touch, ±1 on keyboard).
+    // Facing tracks travel direction.
+    this.sprite.setVelocityX(runAxis * TUNING.moveSpeed);
+    if (runAxis < -0.05) this.sprite.setFlipX(true);
+    else if (runAxis > 0.05) this.sprite.setFlipX(false);
 
     // Wall slide: cap downward speed when pressing into a wall.
     const pressingIntoWall = (onWallLeft && left) || (onWallRight && right);
@@ -162,9 +153,10 @@ export class Player {
         this.jumpsUsed = 1; // allow one air jump after a wall jump
         this.bufferTimer = 0;
         this.events.emit('wallJump', {});
-      } else if (!onGround && this.jumpsUsed < 2 && this.jumpsUsed > 0) {
+      } else if (!onGround && this.jumpsUsed >= 1 && this.jumpsUsed < this.maxJumps) {
+        // Air jump(s): one for double (keyboard), two for triple (touch, maxJumps=3).
         this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
-        this.jumpsUsed = 2;
+        this.jumpsUsed += 1;
         this.bufferTimer = 0;
         this.events.emit('doubleJump', {});
       }
