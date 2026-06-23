@@ -3,8 +3,9 @@ import type { InputSource, InputState } from '../../core/InputState';
 import { emptyInput } from '../../core/InputState';
 import { TUNING } from '../../tuning';
 
-/** Mobile autopilot input: drag anywhere to steer (player follows finger x); a DASH
- *  button (bottom-right) and a ⏸ pause button (top-right). Replaces the v3 d-pad. */
+/** Mobile input: TAP ANYWHERE to jump, DRAG to steer (player follows finger x). Hold a
+ *  tap for a higher jump; a second tap in the air double-jumps. A DASH button (bottom-
+ *  right) and a ⏸ pause button (top-right) sit on top of the play surface. */
 export class TouchSteerInput implements InputSource {
   private steerX: number | null = null;
   private steerPointerId: number | null = null;
@@ -16,17 +17,7 @@ export class TouchSteerInput implements InputSource {
   constructor(scene: Phaser.Scene) {
     const w = TUNING.width, h = TUNING.height;
 
-    // JUMP button (bottom-left): tap for a double jump, hold at landing for a higher
-    // bounce, hold while falling to float. Held state + press edge drive the autopilot.
-    const jump = scene.add.rectangle(12, h - 84, 72, 72, 0xffd166, 0.18)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(62).setInteractive();
-    scene.add.text(48, h - 48, 'JUMP', { fontFamily: 'monospace', fontSize: '12px', color: '#ffffff' })
-      .setOrigin(0.5).setScrollFactor(0).setDepth(63).setAlpha(0.6);
-    jump.on('pointerdown', () => { this.jumpHeld = true; this.jumpQueued = true; });
-    jump.on('pointerup', () => { this.jumpHeld = false; });
-    jump.on('pointerout', () => { this.jumpHeld = false; });
-
-    // DASH button (bottom-right) — created first so it sits on top of the steer surface.
+    // DASH button (bottom-right) — created first so it sits above the play surface.
     const dash = scene.add.rectangle(w - 84, h - 84, 72, 72, 0x66ddff, 0.18)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(62).setInteractive();
     scene.add.text(w - 48, h - 48, 'DASH', { fontFamily: 'monospace', fontSize: '12px', color: '#ffffff' })
@@ -40,16 +31,26 @@ export class TouchSteerInput implements InputSource {
       .setOrigin(0.5).setScrollFactor(0).setDepth(63);
     pause.on('pointerdown', () => { this.pauseQueued = true; });
 
-    // Steer surface: the whole canvas. Track the first pointer that ISN'T on a button.
+    // Play surface: the whole canvas (minus the buttons). Every touch jumps; the first
+    // active touch also steers (player eases toward its x) and holding it = higher jump.
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (over.includes(jump) || over.includes(dash) || over.includes(pause)) return;
-      if (this.steerPointerId === null) { this.steerPointerId = p.id; this.steerX = p.worldX; }
+      if (over.includes(dash) || over.includes(pause)) return;
+      this.jumpQueued = true;                 // tap -> jump (and double-jump in the air)
+      if (this.steerPointerId === null) {
+        this.steerPointerId = p.id;
+        this.steerX = p.worldX;
+        this.jumpHeld = true;                  // held -> full jump height + steering
+      }
     });
     scene.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (p.id === this.steerPointerId) this.steerX = p.worldX;
     });
     const release = (p: Phaser.Input.Pointer): void => {
-      if (p.id === this.steerPointerId) { this.steerPointerId = null; this.steerX = null; }
+      if (p.id === this.steerPointerId) {
+        this.steerPointerId = null;
+        this.steerX = null;
+        this.jumpHeld = false;                 // release -> cut height (short hop), stop steering
+      }
     };
     scene.input.on('pointerup', release);
     scene.input.on('pointerupoutside', release);

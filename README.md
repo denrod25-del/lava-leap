@@ -125,9 +125,9 @@ touchscreen keeps full keyboard support too):
 
 | Control | Where |
 |---------|-------|
-| Steer left / right | **Drag anywhere** — the player follows your finger's horizontal position |
-| Jump | `JUMP` button, bottom-left — tap for a short hop, **hold for a higher jump**, tap again in mid-air to **double jump** |
-| Wall jump | Steer into a wall, then `JUMP` |
+| Jump | **Tap anywhere** — tap for a short hop, **hold for a higher jump**, tap again in mid-air to **double jump** |
+| Steer left / right | **Drag** — the player follows your finger's horizontal position |
+| Wall jump | Drag into a wall, then tap |
 | Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
 
@@ -146,14 +146,14 @@ supported browser (Add to Home Screen / Install App) and launched full-screen.
 ### Mobile Touch Controls
 
 On touch-capable devices, on-screen controls appear automatically (replacing the
-v3 d-pad). Mobile runs the **exact same manual moveset as the keyboard** — drag to
-steer, and a `JUMP` button gives you full control over jump height, double jumps,
-and wall jumps. There is no auto-jump; you decide when and how high to jump:
+v3 d-pad). Mobile runs the **exact same manual moveset as the keyboard**: **tap
+anywhere to jump** and **drag to steer**. There is no auto-jump; you decide when
+and how high to jump:
 
 | Control | How |
 |---------|-----|
-| Steer | **Drag anywhere** — the player follows your finger horizontally |
-| Jump | `JUMP` (bottom-left) — tap = short hop, hold = higher, tap again in air = double jump, steer into a wall + JUMP = wall jump |
+| Jump | **Tap anywhere** — tap = short hop, hold = higher, tap again in air = double jump, drag into a wall + tap = wall jump |
+| Steer | **Drag** — the player follows your finger horizontally |
 | Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
 
