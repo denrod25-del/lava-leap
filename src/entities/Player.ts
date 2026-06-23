@@ -70,8 +70,13 @@ export class Player {
     // Reset wall-sliding flag before the dash early-return so it's always cleared.
     this._wallSliding = false;
 
-    const left = input.left;
-    const right = input.right;
+    // Horizontal intent comes from EITHER a follow-finger target (touch: steerX) or
+    // left/right keys (keyboard). Derive left/right booleans either way so wall-slide,
+    // dash direction, and facing work identically for both input sources.
+    const steering = input.steerX !== null;
+    const steerDx = steering ? input.steerX! - this.sprite.x : 0;
+    const left = steering ? steerDx < -2 : input.left;
+    const right = steering ? steerDx > 2 : input.right;
     const jumpDown = input.jumpHeld;
     const onGround = body.blocked.down || body.touching.down;
 
@@ -96,8 +101,14 @@ export class Player {
     }
     (body as Body).setAllowGravity(true);
 
-    // Horizontal movement (track facing for dash direction fallback).
-    if (left && !right) {
+    // Horizontal movement. Touch eases toward the finger for precise positioning;
+    // keyboard runs at a constant speed. Facing tracks travel direction.
+    if (steering) {
+      const vx = Phaser.Math.Clamp(steerDx * AUTOPILOT.steerGain, -AUTOPILOT.steerMaxSpeed, AUTOPILOT.steerMaxSpeed);
+      this.sprite.setVelocityX(vx);
+      if (vx < -1) this.sprite.setFlipX(true);
+      else if (vx > 1) this.sprite.setFlipX(false);
+    } else if (left && !right) {
       this.sprite.setVelocityX(-TUNING.moveSpeed);
       this.sprite.setFlipX(true);
     } else if (right && !left) {
@@ -162,74 +173,6 @@ export class Player {
     this.jumpHeldLast = jumpDown;
 
     this.pickAnimation(onGround, left || right, body.velocity.y);
-  }
-
-  /**
-   * Autopilot movement (mobile): the player bounces automatically on landing and
-   * steers horizontally toward the finger's world-x. Dash carries over. No manual
-   * jump / wall mechanics. Mirrors update()'s body-lock + land-event bookkeeping.
-   */
-  updateAutoPilot(input: InputState, dtMs: number): void {
-    const body = this.sprite.body as Body;
-
-    // Re-derive the 24x32 world body from live scale each frame (same as update()).
-    const sx = Math.abs(this.sprite.scaleX) || 1;
-    const sy = Math.abs(this.sprite.scaleY) || 1;
-    const bw = TUNING.playerBodyW / sx, bh = TUNING.playerBodyH / sy;
-    body.setSize(bw, bh);
-    body.setOffset((this.sprite.width - bw) / 2, this.sprite.height - bh);
-
-    const vyAtFrameStart = body.velocity.y;
-    this._wallSliding = false;
-    const onGround = body.blocked.down || body.touching.down;
-
-    // Land detection (juice/audio hooks rely on this).
-    if (onGround && !this.wasOnGround) this.events.emit('land', { impactVy: vyAtFrameStart });
-    this.wasOnGround = onGround;
-    if (onGround) { this.dashAvailable = true; this.jumpsUsed = 0; }
-
-    // Maintain an active dash (overrides steering + gravity), same as manual.
-    if (this.dashTimer > 0) {
-      this.dashTimer -= dtMs;
-      this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed);
-      this.sprite.setVelocityY(0);
-      body.setAllowGravity(false);
-      return;
-    }
-    body.setAllowGravity(true);
-
-    // Assisted bounce: auto-hop on landing (boosted while JUMP is held — "tap/hold to
-    // jump higher"); in the air, tap JUMP for one double jump, or hold to float.
-    if (onGround) {
-      this.sprite.setVelocityY(-(input.jumpHeld ? AUTOPILOT.boostBounceVelocity : AUTOPILOT.bounceVelocity));
-    } else if (input.jumpPressed && this.jumpsUsed < 1) {
-      this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
-      this.jumpsUsed += 1;
-      this.events.emit('doubleJump', {});
-    } else if (input.jumpHeld && body.velocity.y > AUTOPILOT.floatMaxFall) {
-      this.sprite.setVelocityY(AUTOPILOT.floatMaxFall);
-    }
-
-    // Follow-finger steering: ease horizontal velocity toward the finger target.
-    if (input.steerX !== null) {
-      const dx = input.steerX - this.sprite.x;
-      const vx = Phaser.Math.Clamp(dx * AUTOPILOT.steerGain, -AUTOPILOT.steerMaxSpeed, AUTOPILOT.steerMaxSpeed);
-      this.sprite.setVelocityX(vx);
-      if (vx < -1) this.sprite.setFlipX(true);
-      else if (vx > 1) this.sprite.setFlipX(false);
-    } else {
-      this.sprite.setVelocityX(0);
-    }
-
-    // Dash: horizontal burst toward current facing, once per airtime.
-    if (input.dashPressed && this.dashAvailable && !onGround) {
-      this.dashDir = this.sprite.flipX ? -1 : 1;
-      this.dashTimer = TUNING.dashDurationMs;
-      this.dashAvailable = false;
-      this.events.emit('dash', {});
-    }
-
-    this.pickAnimation(onGround, input.steerX !== null, body.velocity.y);
   }
 
   /** Rocket power-up: sustained upward boost each frame it's active, air abilities refreshed. */

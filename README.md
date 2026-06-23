@@ -125,10 +125,14 @@ touchscreen keeps full keyboard support too):
 
 | Control | Where |
 |---------|-------|
-| Move left / right | Hold the left / right thirds of the lower screen |
-| Jump | Tap the center (lower screen) |
-| Dash | `DASH` button, bottom-right |
+| Steer left / right | **Drag anywhere** — the player follows your finger's horizontal position |
+| Jump | `JUMP` button, bottom-left — tap for a short hop, **hold for a higher jump**, tap again in mid-air to **double jump** |
+| Wall jump | Steer into a wall, then `JUMP` |
+| Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
+
+Mobile uses the **same manual moveset as the keyboard** — you control every jump's
+height and timing; nothing jumps for you.
 
 ### Install as an App (PWA)
 
@@ -139,20 +143,22 @@ supported browser (Add to Home Screen / Install App) and launched full-screen.
 
 ## v4 — What's New
 
-### Mobile Auto-Pilot Mode
+### Mobile Touch Controls
 
-On touch-capable devices, Lava Leap now switches to a one-handed **auto-pilot**
-mode (replacing the v3 d-pad). The player bounces automatically on every landing,
-so there is no jump button to time — you just point where you want to go:
+On touch-capable devices, on-screen controls appear automatically (replacing the
+v3 d-pad). Mobile runs the **exact same manual moveset as the keyboard** — drag to
+steer, and a `JUMP` button gives you full control over jump height, double jumps,
+and wall jumps. There is no auto-jump; you decide when and how high to jump:
 
 | Control | How |
 |---------|-----|
-| Steer | **Drag anywhere** — the player follows your finger's horizontal position |
-| Dash | `DASH` button, bottom-right (one dash per airtime) |
+| Steer | **Drag anywhere** — the player follows your finger horizontally |
+| Jump | `JUMP` (bottom-left) — tap = short hop, hold = higher, tap again in air = double jump, steer into a wall + JUMP = wall jump |
+| Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
 
-Desktop keyboards keep the full manual move/jump/wall/dash controls from earlier
-versions; the mode is selected automatically per device.
+Both desktop and mobile share one movement code path, so they feel identical;
+only the input source (keys vs. touch) differs.
 
 ### Combo / Multiplier Scoring
 

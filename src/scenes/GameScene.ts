@@ -27,7 +27,6 @@ import type { InputSource } from '../core/InputState';
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private inputSrc!: InputSource;
-  private movementMode: 'manual' | 'autopilot' = 'manual';
   private stream!: LevelStream;
   private platforms!: PlatformManager;
   private coins!: CoinManager;
@@ -158,8 +157,9 @@ export class GameScene extends Phaser.Scene {
     for (const p of this.stream.active) this.platforms.spawn(p);
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
+    // Touch supplies a follow-finger steer target + JUMP/DASH buttons; keyboard supplies
+    // keys. Player.update() reads whichever and runs the SAME manual moveset for both.
     const wantTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0;
-    this.movementMode = wantTouch ? 'autopilot' : 'manual';
     this.inputSrc = wantTouch ? new TouchSteerInput(this) : new KeyboardInput(this);
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
@@ -214,8 +214,7 @@ export class GameScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     const sampled = this.inputSrc.sample();
-    if (this.movementMode === 'autopilot') this.player.updateAutoPilot(sampled, delta);
-    else this.player.update(sampled);
+    this.player.update(sampled);
     if (sampled.pausePressed) this.pauseGame();
     this.platforms.update(time);
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);

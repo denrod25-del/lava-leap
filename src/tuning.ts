@@ -88,10 +88,9 @@ export const ENEMY = {
   bodyH: 20,
 } as const;
 
+// Touch follow-finger steering tuning (mobile horizontal movement; jumping is fully
+// manual via the JUMP button, identical to keyboard).
 export const AUTOPILOT = {
-  bounceVelocity: 820,   // apex ≈ v²/(2·gravityY); 820²/(2·1800) ≈ 187px > REACH.maxVerticalGap
-  boostBounceVelocity: 1040, // bounce when JUMP is held at landing ("tap/hold to jump higher")
-  floatMaxFall: 220,     // capped descent speed while JUMP is held ("hold to float")
   steerMaxSpeed: 260,    // px/s cap on follow-finger horizontal speed
   steerGain: 9,          // horizontal velocity per px of (fingerX - playerX) offset
 } as const;
