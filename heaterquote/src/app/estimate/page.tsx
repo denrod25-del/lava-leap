@@ -55,8 +55,11 @@ export default function EstimatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const suggested = useMemo(
-    () => new Set(suggestAddOns({ location, fuelType, urgency })),
-    [location, fuelType, urgency]
+    () =>
+      new Set(
+        suggestAddOns({ location, systemType, fuelType, currentIssue, urgency })
+      ),
+    [location, systemType, fuelType, currentIssue, urgency]
   );
 
   // Effective selection: a manual override if present, else the suggestion.

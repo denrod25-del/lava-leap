@@ -126,7 +126,9 @@ export function derivedTanklessType(
 // homeowner already gave. The form pre-checks these but lets them edit any.
 export function suggestAddOns(args: {
   location: string;
+  systemType: SystemType;
   fuelType: FuelType;
+  currentIssue: string;
   urgency: string;
 }): AddOnKey[] {
   const suggested = new Set<AddOnKey>();
@@ -134,8 +136,17 @@ export function suggestAddOns(args: {
   // A permit is required for a replacement in virtually every FL municipality.
   suggested.add("permit");
 
-  // A drain pan is required when the heater sits in or above living space.
-  if (["attic", "closet", "laundry"].includes(args.location)) {
+  // A closed gas system commonly requires thermal expansion control.
+  if (args.fuelType === "gas") {
+    suggested.add("expansion_tank");
+  }
+
+  // A drain pan is required when the heater sits in or above living space, and
+  // wall-mounted tankless units in living space benefit from one too.
+  if (
+    ["attic", "closet", "laundry"].includes(args.location) ||
+    args.systemType === "tankless"
+  ) {
     suggested.add("drain_pan");
   }
 
@@ -144,13 +155,17 @@ export function suggestAddOns(args: {
     suggested.add("difficult_access");
   }
 
-  // Gas units in a garage typically need the burner elevated on a stand.
-  if (args.location === "garage" && args.fuelType === "gas") {
+  // Garage installs typically need the unit elevated on a stand.
+  if (args.location === "garage") {
     suggested.add("stand");
   }
 
-  // No hot water and need it today -> priority same-day dispatch.
-  if (args.urgency === "today") {
+  // Same-day dispatch when there's no time to wait — explicitly urgent, or a
+  // failure (leak / no hot water) that can't sit.
+  if (
+    args.urgency === "today" ||
+    ["leaking", "no_hot_water"].includes(args.currentIssue)
+  ) {
     suggested.add("emergency_same_day");
   }
 

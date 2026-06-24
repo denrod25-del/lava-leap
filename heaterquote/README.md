@@ -43,11 +43,11 @@ pre-checks the add-ons that usually apply and the homeowner can toggle any:
 | Add-on | Auto-suggested when |
 | --- | --- |
 | Permit | Always (required for FL replacements) |
-| Drain pan | Location is attic, closet, or laundry room |
+| Expansion tank | New system is gas (closed-system thermal expansion) |
+| Drain pan | Location is attic / closet / laundry, **or** new system is tankless |
 | Difficult access | Location is attic or closet |
-| Stand | Gas unit in a garage |
-| Emergency same-day | Urgency is "today" |
-| Expansion tank | Manual (installer confirms closed-system) |
+| Stand | Any garage install |
+| Emergency same-day | Urgency is "today", **or** issue is leaking / no hot water |
 
 The estimate is always recomputed **server-side** on submission so the stored
 range can't be tampered with from the browser. The logic lives in

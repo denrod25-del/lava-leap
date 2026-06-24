@@ -70,35 +70,61 @@ describe("derivedTanklessType", () => {
 });
 
 describe("suggestAddOns", () => {
-  it("always suggests a permit", () => {
-    expect(
-      suggestAddOns({ location: "outside", fuelType: "electric", urgency: "researching" })
-    ).toEqual(["permit"]);
+  const base = {
+    location: "outside",
+    systemType: "tank",
+    fuelType: "electric",
+    currentIssue: "old",
+    urgency: "researching",
+  } as const;
+
+  it("suggests only a permit in the simplest case", () => {
+    expect(suggestAddOns(base)).toEqual(["permit"]);
+  });
+
+  it("suggests an expansion tank for gas, not electric", () => {
+    expect(suggestAddOns({ ...base, fuelType: "gas" })).toContain(
+      "expansion_tank"
+    );
+    expect(suggestAddOns({ ...base, fuelType: "electric" })).not.toContain(
+      "expansion_tank"
+    );
   });
 
   it("suggests drain pan + difficult access in an attic", () => {
-    const s = suggestAddOns({
-      location: "attic",
-      fuelType: "electric",
-      urgency: "this_week",
-    });
+    const s = suggestAddOns({ ...base, location: "attic" });
     expect(s).toContain("drain_pan");
     expect(s).toContain("difficult_access");
   });
 
-  it("suggests a stand only for gas in a garage", () => {
+  it("suggests a drain pan for tankless regardless of location", () => {
     expect(
-      suggestAddOns({ location: "garage", fuelType: "gas", urgency: "this_week" })
-    ).toContain("stand");
-    expect(
-      suggestAddOns({ location: "garage", fuelType: "electric", urgency: "this_week" })
-    ).not.toContain("stand");
+      suggestAddOns({ ...base, location: "outside", systemType: "tankless" })
+    ).toContain("drain_pan");
   });
 
-  it("suggests emergency service when urgency is today", () => {
+  it("suggests a stand for any garage install", () => {
     expect(
-      suggestAddOns({ location: "garage", fuelType: "gas", urgency: "today" })
-    ).toContain("emergency_same_day");
+      suggestAddOns({ ...base, location: "garage", fuelType: "electric" })
+    ).toContain("stand");
+    expect(
+      suggestAddOns({ ...base, location: "garage", fuelType: "gas" })
+    ).toContain("stand");
+  });
+
+  it("suggests emergency service for urgency=today or a failure", () => {
+    expect(suggestAddOns({ ...base, urgency: "today" })).toContain(
+      "emergency_same_day"
+    );
+    expect(suggestAddOns({ ...base, currentIssue: "leaking" })).toContain(
+      "emergency_same_day"
+    );
+    expect(suggestAddOns({ ...base, currentIssue: "no_hot_water" })).toContain(
+      "emergency_same_day"
+    );
+    expect(suggestAddOns({ ...base, currentIssue: "upgrading" })).not.toContain(
+      "emergency_same_day"
+    );
   });
 });
 
