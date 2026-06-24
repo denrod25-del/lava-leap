@@ -41,8 +41,8 @@ export default async function ResultsPage({
 
   const lead = data as Lead;
   const estimate = calculateEstimate({
+    currentSystem: lead.current_system,
     systemType: lead.system_type,
-    tanklessType: lead.tankless_type,
     fuelType: lead.fuel_type,
     addOns: (lead.add_ons || []) as AddOnKey[],
   });

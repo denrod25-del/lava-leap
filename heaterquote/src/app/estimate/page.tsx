@@ -7,16 +7,16 @@ import { getSupabaseBrowser, PHOTO_BUCKET } from "@/lib/supabase/client";
 import {
   ADD_ONS,
   calculateEstimate,
+  suggestAddOns,
+  derivedTanklessType,
   formatUsd,
   DISCLAIMER,
   type AddOnKey,
   type SystemType,
-  type TanklessType,
   type FuelType,
 } from "@/lib/estimate";
 import {
   SYSTEM_TYPES,
-  TANKLESS_TYPES,
   FUEL_TYPES,
   GALLON_SIZES,
   LOCATIONS,
@@ -36,36 +36,75 @@ export default function EstimatePage() {
   const [zip, setZip] = useState("");
 
   // Heater
+  const [currentSystem, setCurrentSystem] = useState<SystemType>("tank");
   const [systemType, setSystemType] = useState<SystemType>("tank");
-  const [tanklessType, setTanklessType] = useState<TanklessType>("conversion");
   const [fuelType, setFuelType] = useState<FuelType>("gas");
   const [gallonSize, setGallonSize] = useState("40");
   const [location, setLocation] = useState("garage");
   const [currentIssue, setCurrentIssue] = useState("old");
   const [urgency, setUrgency] = useState("this_week");
 
-  // Add-ons + photos
-  const [addOns, setAddOns] = useState<AddOnKey[]>(["permit"]);
+  // Add-ons are auto-suggested from the answers above; `overrides` records any
+  // checkbox the homeowner has explicitly flipped away from the suggestion.
+  const [overrides, setOverrides] = useState<
+    Partial<Record<AddOnKey, boolean>>
+  >({});
   const [photos, setPhotos] = useState<File[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const suggested = useMemo(
+    () => new Set(suggestAddOns({ location, fuelType, urgency })),
+    [location, fuelType, urgency]
+  );
+
+  // Effective selection: a manual override if present, else the suggestion.
+  const addOns = useMemo<AddOnKey[]>(
+    () =>
+      ADD_ON_ORDER.filter((k) =>
+        overrides[k] !== undefined ? overrides[k]! : suggested.has(k)
+      ),
+    [overrides, suggested]
+  );
+
+  // What this job is, derived from current vs. desired system.
+  const tanklessLabel = useMemo(() => {
+    const t = derivedTanklessType({ currentSystem, systemType });
+    if (!t) return null;
+    return t === "conversion"
+      ? "Tank → tankless conversion"
+      : "Tankless replacement";
+  }, [currentSystem, systemType]);
+
   const estimate = useMemo(
     () =>
       calculateEstimate({
+        currentSystem,
         systemType,
-        tanklessType: systemType === "tankless" ? tanklessType : null,
         fuelType,
         addOns,
       }),
-    [systemType, tanklessType, fuelType, addOns]
+    [currentSystem, systemType, fuelType, addOns]
   );
 
+  function isChecked(key: AddOnKey) {
+    return overrides[key] !== undefined ? overrides[key]! : suggested.has(key);
+  }
+
   function toggleAddOn(key: AddOnKey) {
-    setAddOns((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    const next = !isChecked(key);
+    // If the new value matches the suggestion again, drop the override so the
+    // checkbox resumes following the auto-suggestion as answers change.
+    setOverrides((prev) => {
+      const copy = { ...prev };
+      if (next === suggested.has(key)) {
+        delete copy[key];
+      } else {
+        copy[key] = next;
+      }
+      return copy;
+    });
   }
 
   function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -122,8 +161,8 @@ export default function EstimatePage() {
           phone,
           email,
           zip,
+          current_system: currentSystem,
           system_type: systemType,
-          tankless_type: systemType === "tankless" ? tanklessType : null,
           fuel_type: fuelType,
           gallon_size: gallonSize,
           location,
@@ -226,24 +265,27 @@ export default function EstimatePage() {
         </h2>
 
         <div>
-          <span className="field-label">Tank or tankless?</span>
+          <span className="field-label">What do you have now?</span>
+          <OptionPills
+            options={SYSTEM_TYPES}
+            value={currentSystem}
+            onChange={(v) => setCurrentSystem(v as SystemType)}
+          />
+        </div>
+
+        <div>
+          <span className="field-label">What do you want installed?</span>
           <OptionPills
             options={SYSTEM_TYPES}
             value={systemType}
             onChange={(v) => setSystemType(v as SystemType)}
           />
+          {tanklessLabel && (
+            <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+              This looks like a {tanklessLabel.toLowerCase()}.
+            </p>
+          )}
         </div>
-
-        {systemType === "tankless" && (
-          <div>
-            <span className="field-label">Which best describes the job?</span>
-            <OptionPills
-              options={TANKLESS_TYPES}
-              value={tanklessType}
-              onChange={(v) => setTanklessType(v as TanklessType)}
-            />
-          </div>
-        )}
 
         <div>
           <span className="field-label">Gas or electric?</span>
@@ -310,14 +352,15 @@ export default function EstimatePage() {
             Site conditions that may apply
           </h2>
           <p className="text-sm text-slate-600">
-            Select any you know about. Not sure? Leave them unchecked — your
-            installer will confirm on site.
+            We&apos;ve pre-checked the ones that usually apply based on your
+            answers. Add or remove any — your installer confirms on site.
           </p>
         </div>
         <div className="space-y-2">
           {ADD_ON_ORDER.map((key) => {
             const def = ADD_ONS[key];
-            const checked = addOns.includes(key);
+            const checked = isChecked(key);
+            const isSuggested = suggested.has(key);
             return (
               <label
                 key={key}
@@ -335,8 +378,15 @@ export default function EstimatePage() {
                 />
                 <span className="flex-1">
                   <span className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-slate-900">
-                      {def.label}
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-900">
+                        {def.label}
+                      </span>
+                      {isSuggested && (
+                        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">
+                          Suggested
+                        </span>
+                      )}
                     </span>
                     <span className="whitespace-nowrap text-sm font-medium text-slate-500">
                       {formatUsd(def.range.low)}–{formatUsd(def.range.high)}

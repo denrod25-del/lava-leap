@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { calculateEstimate, ADD_ONS, type AddOnKey } from "@/lib/estimate";
+import {
+  calculateEstimate,
+  derivedTanklessType,
+  ADD_ONS,
+  type AddOnKey,
+} from "@/lib/estimate";
 import type { LeadSubmission } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +30,7 @@ export async function POST(request: Request) {
     "phone",
     "email",
     "zip",
+    "current_system",
     "system_type",
     "fuel_type",
     "gallon_size",
@@ -38,6 +44,9 @@ export async function POST(request: Request) {
     }
   }
 
+  if (body.current_system !== "tank" && body.current_system !== "tankless") {
+    return bad("current_system must be 'tank' or 'tankless'.");
+  }
   if (body.system_type !== "tank" && body.system_type !== "tankless") {
     return bad("system_type must be 'tank' or 'tankless'.");
   }
@@ -55,10 +64,16 @@ export async function POST(request: Request) {
 
   // Compute the estimate server-side so it can't be tampered with by the client.
   const estimate = calculateEstimate({
+    currentSystem: body.current_system,
     systemType: body.system_type,
-    tanklessType: body.tankless_type ?? null,
     fuelType: body.fuel_type,
     addOns,
+  });
+
+  // Replacement vs. conversion is derived from current vs. desired system.
+  const tanklessType = derivedTanklessType({
+    currentSystem: body.current_system,
+    systemType: body.system_type,
   });
 
   const row = {
@@ -66,9 +81,9 @@ export async function POST(request: Request) {
     phone: String(body.phone).trim(),
     email: String(body.email).trim(),
     zip: String(body.zip).trim(),
+    current_system: body.current_system,
     system_type: body.system_type,
-    tankless_type:
-      body.system_type === "tankless" ? body.tankless_type ?? null : null,
+    tankless_type: tanklessType,
     fuel_type: body.fuel_type,
     gallon_size: String(body.gallon_size),
     location: String(body.location),

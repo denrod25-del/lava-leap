@@ -13,8 +13,9 @@ create table if not exists public.leads (
   zip             text not null,
 
   -- Heater details
-  system_type     text not null,            -- 'tank' | 'tankless'
-  tankless_type   text,                     -- 'replacement' | 'conversion' (tankless only)
+  current_system  text not null,            -- 'tank' | 'tankless' (what they have now)
+  system_type     text not null,            -- 'tank' | 'tankless' (what they want)
+  tankless_type   text,                     -- 'replacement' | 'conversion', derived
   fuel_type       text not null,            -- 'gas' | 'electric'
   gallon_size     text not null,            -- e.g. '40', '50', '75', 'n/a'
   location        text not null,            -- garage | closet | attic | laundry | outside
@@ -34,6 +35,10 @@ create table if not exists public.leads (
 );
 
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
+
+-- For existing projects created before current_system was added:
+alter table public.leads
+  add column if not exists current_system text not null default 'tank';
 
 -- 2. Row Level Security -----------------------------------------------------
 alter table public.leads enable row level security;

@@ -5,11 +5,6 @@ export const SYSTEM_TYPES = [
   { value: "tankless", label: "Tankless" },
 ] as const;
 
-export const TANKLESS_TYPES = [
-  { value: "replacement", label: "Replacing an existing tankless" },
-  { value: "conversion", label: "Converting from a tank to tankless" },
-] as const;
-
 export const FUEL_TYPES = [
   { value: "gas", label: "Gas" },
   { value: "electric", label: "Electric" },

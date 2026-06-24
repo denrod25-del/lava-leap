@@ -8,6 +8,7 @@ export interface Lead {
   phone: string;
   email: string;
   zip: string;
+  current_system: "tank" | "tankless";
   system_type: "tank" | "tankless";
   tankless_type: "replacement" | "conversion" | null;
   fuel_type: "gas" | "electric";
@@ -28,8 +29,8 @@ export interface LeadSubmission {
   phone: string;
   email: string;
   zip: string;
+  current_system: "tank" | "tankless";
   system_type: "tank" | "tankless";
-  tankless_type?: "replacement" | "conversion" | null;
   fuel_type: "gas" | "electric";
   gallon_size: string;
   location: string;

@@ -28,9 +28,26 @@ Base installation (USD):
 | Tankless replacement | $3,200 – $5,500 |
 | Tankless conversion | $4,500 – $8,500 |
 
-Optional add-ons (selected on the form): Permit ($150–$350), Expansion tank
-($250–$500), Drain pan ($150–$350), Stand ($150–$400), Difficult access
-($300–$900), Emergency same-day ($200–$600).
+Add-ons: Permit ($150–$350), Expansion tank ($250–$500), Drain pan
+($150–$350), Stand ($150–$400), Difficult access ($300–$900), Emergency
+same-day ($200–$600).
+
+**Replacement vs. conversion is derived, not asked.** The form collects what the
+homeowner has now and what they want installed. A tankless install over an
+existing tank is a conversion ($4,500–$8,500); over an existing tankless it's a
+replacement ($3,200–$5,500).
+
+**Add-ons are auto-suggested from the answers, then editable.** The form
+pre-checks the add-ons that usually apply and the homeowner can toggle any:
+
+| Add-on | Auto-suggested when |
+| --- | --- |
+| Permit | Always (required for FL replacements) |
+| Drain pan | Location is attic, closet, or laundry room |
+| Difficult access | Location is attic or closet |
+| Stand | Gas unit in a garage |
+| Emergency same-day | Urgency is "today" |
+| Expansion tank | Manual (installer confirms closed-system) |
 
 The estimate is always recomputed **server-side** on submission so the stored
 range can't be tampered with from the browser. The logic lives in

@@ -31,8 +31,8 @@ export interface Range {
 }
 
 export interface EstimateInput {
-  systemType: SystemType;
-  tanklessType?: TanklessType | null;
+  currentSystem: SystemType; // what the homeowner has installed today
+  systemType: SystemType; // what they want installed
   fuelType: FuelType;
   addOns: AddOnKey[];
 }
@@ -106,10 +106,56 @@ export function baseKey(input: EstimateInput): keyof typeof BASE_RANGES {
   if (input.systemType === "tank") {
     return input.fuelType === "electric" ? "electric_tank" : "gas_tank";
   }
-  // Tankless: default to a like-for-like replacement unless converting from a tank.
-  return input.tanklessType === "conversion"
+  // Tankless: it's a conversion if they currently have a tank, otherwise a
+  // like-for-like tankless replacement.
+  return input.currentSystem === "tank"
     ? "tankless_conversion"
     : "tankless_replacement";
+}
+
+// Whether the job is a tankless replacement or conversion — derived from the
+// current vs. desired system. Returns null when the new system is a tank.
+export function derivedTanklessType(
+  input: Pick<EstimateInput, "currentSystem" | "systemType">
+): TanklessType | null {
+  if (input.systemType !== "tankless") return null;
+  return input.currentSystem === "tank" ? "conversion" : "replacement";
+}
+
+// Auto-suggest the add-ons that typically apply, based on the answers the
+// homeowner already gave. The form pre-checks these but lets them edit any.
+export function suggestAddOns(args: {
+  location: string;
+  fuelType: FuelType;
+  urgency: string;
+}): AddOnKey[] {
+  const suggested = new Set<AddOnKey>();
+
+  // A permit is required for a replacement in virtually every FL municipality.
+  suggested.add("permit");
+
+  // A drain pan is required when the heater sits in or above living space.
+  if (["attic", "closet", "laundry"].includes(args.location)) {
+    suggested.add("drain_pan");
+  }
+
+  // Tight or elevated spots add labor.
+  if (["attic", "closet"].includes(args.location)) {
+    suggested.add("difficult_access");
+  }
+
+  // Gas units in a garage typically need the burner elevated on a stand.
+  if (args.location === "garage" && args.fuelType === "gas") {
+    suggested.add("stand");
+  }
+
+  // No hot water and need it today -> priority same-day dispatch.
+  if (args.urgency === "today") {
+    suggested.add("emergency_same_day");
+  }
+
+  // Keep a stable, predictable order.
+  return (Object.keys(ADD_ONS) as AddOnKey[]).filter((k) => suggested.has(k));
 }
 
 export function calculateEstimate(input: EstimateInput): EstimateResult {
