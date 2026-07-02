@@ -238,3 +238,41 @@ one** (GTM-style). No network calls, no PII, silent no-op otherwise.
 
 The lava surface now **bubbles**, and every UI button across the menus clicks
 audibly at your SFX volume.
+
+---
+
+## v5.1 — What's New
+
+### In-Game Version Label
+
+The running build now identifies itself. A `vX.Y.Z · <commit>` label sits in the
+bottom-left corner of the title screen (tap it to open the changelog), and a full
+version / build-date / build-ID block appears at the bottom of **Settings**. The
+version, commit, and build date are **auto-injected from `package.json` + git at
+build time** — no manual bumping of a string in the source.
+
+### "What's New" Changelog
+
+A new **What's New** screen (press `N` on the menu, or tap the corner build label)
+lists recent updates. It **auto-shows once** after the game updates to a new
+version — a quick confirmation to players (and to you) that a fresh deploy actually
+landed. It only pops once per version, tracked via a `lastSeenVersion` save field.
+
+### Dev Overlay
+
+In dev builds only, a small top-left readout shows the active scene, live FPS, and
+the version / build date. It is compiled out of production bundles (guarded by
+`import.meta.env.DEV`), so it never ships to players.
+
+### Tightened Meta
+
+The page title and Open Graph copy are sharpened for cleaner link unfurls.
+
+### Vercel Deploy + Cache Headers
+
+The web build is deploy-ready on Vercel. A committed [`vercel.json`](./vercel.json)
+pins the build command / output directory and sets a correct cache strategy:
+content-hashed assets are cached `immutable` for a year, while `index.html` is
+`max-age=0, must-revalidate` so a new deploy is picked up immediately (no service
+worker, so nothing stale to clear). See [`DEPLOY.md`](./DEPLOY.md) for the connect
+steps and a post-deploy cache-test checklist.
