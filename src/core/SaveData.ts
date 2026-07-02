@@ -22,6 +22,8 @@ export interface SaveBlob {
   settings: Settings;
   analytics: AnalyticsState;
   upgrades: { powerupDuration: number; startShield: number; revive: number };
+  /** True once the first-run tutorial has been completed (Settings can reset it). */
+  tutorialDone: boolean;
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -39,6 +41,7 @@ function defaults(): SaveBlob {
     settings: { ...DEFAULT_SETTINGS },
     analytics: defaultAnalytics(),
     upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
+    tutorialDone: false,
   };
 }
 
