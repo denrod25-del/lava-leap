@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { CHANGELOG } from '../src/core/changelog';
 
 describe('changelog', () => {
@@ -12,6 +13,10 @@ describe('changelog', () => {
     }
   });
   it('is ordered newest-first (semver-descending on the leading entry)', () => {
-    expect(CHANGELOG[0].version).toBe('0.5.1');
+    expect(CHANGELOG[0].version).toBe('0.5.2');
+  });
+  it("leading entry matches package.json version (What's New auto-pop keys off it)", () => {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
+    expect(CHANGELOG[0].version).toBe(pkg.version);
   });
 });

@@ -6,12 +6,29 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#ff4d00" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
-    <meta name="description" content="Outrun the rising lava, chain combos, and face the Lava Titan. Free arcade climber." />
+    <meta name="description" content="Jump, climb, and escape rising lava in a fast arcade platformer." />
     <meta property="og:title" content="Lava Leap — Arcade Lava Climber" />
-    <meta property="og:description" content="Outrun the rising lava, chain combos, and face the Lava Titan. Free arcade climber." />
+    <meta property="og:description" content="Jump, climb, and escape rising lava in a fast arcade platformer." />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:type" content="website" />
     <title>Lava Leap — Arcade Lava Climber</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Lava Leap",
+      "alternateName": "Lava Leap — Arcade Lava Climber",
+      "description": "Jump, climb, and escape rising lava in a fast arcade platformer. Endless climber with combos, power-ups, and the Lava Titan boss.",
+      "genre": ["Platformer", "Arcade"],
+      "gamePlatform": ["Web Browser", "Android"],
+      "playMode": "SinglePlayer",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "image": "/og-image.png",
+      "softwareVersion": "%APP_VERSION%",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
     <style>
       html, body { margin: 0; height: 100%; background: #000; }
       /* touch-action: manipulation removes the ~300ms tap delay some mobile WebViews add. */
@@ -19,10 +36,50 @@
               padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
               box-sizing: border-box; touch-action: manipulation; }
       #game canvas { touch-action: manipulation; }
+      /* Static pre-loader: visible from the first byte of HTML, before the JS
+         bundle downloads/parses. main.ts removes it once Phaser is READY. */
+      #preloader { position: fixed; inset: 0; z-index: 10; background: #10101a; color: #cfd8e3;
+                   display: flex; flex-direction: column; align-items: center; justify-content: center;
+                   font-family: monospace; text-align: center; transition: opacity 0.25s ease; }
+      #preloader.done { opacity: 0; pointer-events: none; }
+      #preloader h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: 3px; color: #ff7b00; }
+      #preloader .sub { margin: 0 0 28px; font-size: 13px; color: #888; letter-spacing: 1px; }
+      #preloader .msg { font-size: 14px; margin-bottom: 14px; }
+      #preloader .lava-bar { width: 220px; height: 10px; border-radius: 5px; overflow: hidden;
+                             background: #26121a; box-shadow: 0 0 12px #ff4d0055; }
+      #preloader .lava-bar::before { content: ''; display: block; height: 100%; width: 200%;
+                                     background: linear-gradient(90deg, #ff4d00, #ffb066, #ff2d55, #ff4d00);
+                                     animation: lavaflow 1.2s linear infinite; }
+      @keyframes lavaflow { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+      #preloader .build { margin-top: 22px; font-size: 11px; color: #666; }
+      noscript .shell { position: fixed; inset: 0; z-index: 20; background: #10101a; color: #cfd8e3;
+                        font-family: monospace; padding: 40px 24px; overflow: auto; text-align: center; }
+      noscript h1 { color: #ff7b00; letter-spacing: 3px; }
+      noscript a { color: #16e0e0; }
     </style>
   </head>
   <body>
     <div id="game"></div>
+    <div id="preloader" aria-label="Loading Lava Leap">
+      <h1>LAVA LEAP</h1>
+      <p class="sub">Arcade Lava Climber</p>
+      <p class="msg">Loading Lava Leap&hellip;</p>
+      <div class="lava-bar"></div>
+      <p class="build">v%APP_VERSION% &middot; %BUILD_ID% &middot; %BUILD_DATE%</p>
+    </div>
+    <noscript>
+      <div class="shell">
+        <h1>LAVA LEAP</h1>
+        <p><strong>Arcade Lava Climber</strong> &mdash; v%APP_VERSION% (build %BUILD_ID%, %BUILD_DATE%)</p>
+        <p>Jump, climb, and escape rising lava in a fast arcade platformer.
+           Climb an endless tower of procedurally generated platforms, outrun the rising lava,
+           chain combos, grab power-ups, and face the Lava Titan. Your score is how high you climb.</p>
+        <p><strong>Desktop controls:</strong> Arrow keys / A&ndash;D to move &middot; Space to jump (again in air = double jump) &middot; Shift to dash &middot; Down to fast-fall.</p>
+        <p><strong>Mobile controls:</strong> hold the left half of the screen for the run stick &middot; tap the right half to jump (tap in air = double / triple jump).</p>
+        <p>Lava Leap needs JavaScript to run. Please enable JavaScript, or grab the Android build from
+           <a href="https://github.com/denrod25-del/lava-leap/releases">GitHub Releases</a>.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

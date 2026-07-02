@@ -2,17 +2,17 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-02 (v0.5.1)._
+_Last updated: 2026-07-02 (v0.5.2)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.5.1, shipped & live
-- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.5.1 · <commit>` with correct cache headers (verified).
-- **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.5.1 · local `LavaLeap-v0.5.1-debug.apk`.
-- **Tests:** 100 unit (Vitest) + 7 e2e (Playwright), all green; typecheck + build clean.
+## Current state — v0.5.2, shipped & live
+- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.5.2 · <commit>` with correct cache headers (verified).
+- **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.5.1 · local `LavaLeap-v0.5.1-debug.apk` (v0.5.2 is a web-shell-only change; no APK rebuild needed).
+- **Tests:** 101 unit (Vitest) + 9 e2e (Playwright), all green; typecheck + build clean.
 - Everything pushed; working tree clean.
 
 ## Version history (all shipped)
@@ -24,7 +24,8 @@ _Last updated: 2026-07-02 (v0.5.1)._
 | v0.4.0 | Combo/multiplier scoring, coin-funded upgrades (power-up time/start shield/revive); Capacitor Android packaging (`com.isymbolic.lavaleap`) |
 | v0.4.1–4.5 | **Mobile-controls arc** → landed on **two-thumb**: left-half floating run joystick + right-half tap-to-jump (double/**triple** on touch), fast fall, multi-touch fix (`addPointer`) |
 | v0.5.0 | First-run tutorial, How-to-Play, start-screen polish, fast fall, loading bar, favicon/OG/meta, analytics hooks (`window.dataLayer`), lava bubbles |
-| **v0.5.1** | **Build/version visibility** (auto-injected version+commit+date on title/Settings/dev-overlay), "What's New" auto-shown on version change, Vercel deploy + cache headers |
+| v0.5.1 | Build/version visibility (auto-injected version+commit+date on title/Settings/dev-overlay), "What's New" auto-shown on version change, Vercel deploy + cache headers |
+| **v0.5.2** | **Public HTML shell**: static lava-themed pre-loader with build stamp (visible pre-JS, removed on Phaser READY), `<noscript>` readable content (description+controls), JSON-LD VideoGame, meta-description copy swap, defensive SW/CacheStorage cleanup on boot; build info injected into static HTML via a vite `transformIndexHtml` plugin (`%APP_VERSION%`/`%BUILD_ID%`/`%BUILD_DATE%` placeholders) |
 
 ## Key technical facts / gotchas
 - **Architecture:** pure logic in `src/core/` (never imports Phaser; unit-tested); Phaser in `src/scenes/` + `src/entities/`. Tuning in `src/tuning.ts`. In `GameScene` the event hub is `this.gameEvents` (Phaser owns `this.events`); input source is `this.inputSrc`.

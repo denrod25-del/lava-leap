@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.5.2', date: '2026-07-02', notes: [
+    'Instant lava-themed loading screen with live build info, shown before the game boots.',
+    'The page now carries readable content for search engines and no-JS visitors.',
+    'Automatic cleanup of any stale offline caches left by older versions.',
+  ]},
   { version: '0.5.1', date: '2026-07-02', notes: [
     'Visible build/version label on the title screen and in Settings.',
     'This "What\'s New" screen — auto-shown once when the game updates.',

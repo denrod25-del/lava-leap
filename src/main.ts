@@ -52,7 +52,30 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, ChangelogScene, PauseScene, SettingsScene],
 };
 
+// Defensive stale-build protection: this app has no service worker (deliberate),
+// so any registration or CacheStorage entry is a leftover from an older deploy
+// or another app on the same origin — unregister and clear, non-blocking.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then((regs) => regs.forEach((r) => { void r.unregister(); }))
+    .catch(() => { /* unsupported/blocked — nothing to clean */ });
+}
+if ('caches' in window) {
+  caches.keys()
+    .then((keys) => keys.forEach((k) => { void caches.delete(k); }))
+    .catch(() => { /* unsupported/blocked — nothing to clean */ });
+}
+
 const game = new Phaser.Game(config);
+
+// Drop the static HTML pre-loader once Phaser is up (canvas created, first
+// scene starting) — BootScene's own progress bar takes over from here.
+game.events.once(Phaser.Core.Events.READY, () => {
+  const pre = document.getElementById('preloader');
+  if (!pre) return;
+  pre.classList.add('done'); // CSS opacity fade
+  setTimeout(() => pre.remove(), 300);
+});
 
 // Dispose the game on HMR so editing source during development doesn't
 // stack multiple Phaser.Game instances into #game.
