@@ -99,6 +99,21 @@ describe('SaveData', () => {
     expect(s.get().highScore).toBe(5);
   });
 
+  it('defaults lastSeenVersion to empty and backfills it on an old save', () => {
+    expect(new SaveData(fakeStore()).get().lastSeenVersion).toBe('');
+    const legacy = {
+      version: 2, highScore: 0, coinBank: 0, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {}, settings: { musicVol: 7, sfxVol: 7, screenShake: true },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true,
+      // no lastSeenVersion
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }));
+    expect(s.get().lastSeenVersion).toBe('');
+    expect(s.get().tutorialDone).toBe(true);
+  });
+
   it('prunes dailyBest to the most recent 7 dates', () => {
     const s = new SaveData(fakeStore());
     s.update((b) => {

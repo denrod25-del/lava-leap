@@ -24,6 +24,8 @@ export interface SaveBlob {
   upgrades: { powerupDuration: number; startShield: number; revive: number };
   /** True once the first-run tutorial has been completed (Settings can reset it). */
   tutorialDone: boolean;
+  /** Last app version whose "What's New" screen was shown; drives the once-per-version auto-show. */
+  lastSeenVersion: string;
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -42,6 +44,7 @@ function defaults(): SaveBlob {
     analytics: defaultAnalytics(),
     upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
     tutorialDone: false,
+    lastSeenVersion: '',
   };
 }
 
