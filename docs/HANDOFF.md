@@ -12,7 +12,7 @@ _Last updated: 2026-07-02 (v0.5.3)._
 ## Current state — v0.5.3, shipped & live
 - **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.5.3 · <commit>` with correct cache headers (verified).
 - **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.5.1 · local `LavaLeap-v0.5.1-debug.apk` (v0.5.2/0.5.3 are web-only changes; no APK rebuild needed).
-- **Tests:** 102 unit (Vitest) + 9 e2e (Playwright), all green; typecheck + build clean.
+- **Tests:** 102 unit (Vitest) + 10 e2e (Playwright, incl. an audio-pipeline spec: decode/unlock/music-handoff/one-shots), all green; typecheck + build clean.
 - Everything pushed; working tree clean.
 
 ## Version history (all shipped)
