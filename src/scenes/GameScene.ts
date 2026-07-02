@@ -22,6 +22,7 @@ import { PowerupController } from '../entities/PowerupController';
 import { BossController } from '../entities/BossController';
 import { TutorialOverlay } from '../entities/TutorialOverlay';
 import { bossBoundaryCrossed } from '../core/boss';
+import { track } from '../core/track';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
 import type { InputSource } from '../core/InputState';
 
@@ -172,6 +173,7 @@ export class GameScene extends Phaser.Scene {
         save.update((b) => { b.tutorialDone = true; });
       });
     }
+    track('start_game', { daily: this.daily, control_type: wantTouch ? 'touch' : 'keyboard' });
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
@@ -209,6 +211,9 @@ export class GameScene extends Phaser.Scene {
     this.gameEvents.on('enemyStomped', () => this.comboAction(COMBO_POINTS.stomp));
     this.gameEvents.on('bouncePad', () => this.comboAction(COMBO_POINTS.bounce));
     this.gameEvents.on('powerupCollected', () => this.comboAction(COMBO_POINTS.powerup));
+    this.gameEvents.on('bossPhase', ({ zoneIndex, phase }) => {
+      track(phase === 'start' ? 'boss_start' : 'boss_clear', { index: zoneIndex });
+    });
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
@@ -352,6 +357,7 @@ export class GameScene extends Phaser.Scene {
     this.dead = true;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
+    track('death', { height: Math.floor(heightClimbed), zone: this.zoneIndex, source });
     if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
     this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
     this.time.delayedCall(450, () => {

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
+import { track } from '../core/track';
 
 const OPTIONS = ['Resume', 'Restart', 'Settings', 'Quit to Menu'] as const;
 
@@ -50,6 +51,7 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private endRun(target: 'restart' | 'menu'): void {
+    track(target === 'restart' ? 'restart' : 'quit_run', {});
     type GS = Phaser.Scene & { endRunBookkeeping(h: number): unknown; daily: boolean };
     const gs = this.scene.get('Game') as GS;
     gs.endRunBookkeeping(0); // banks coins (spec: quit/restart banks silently)

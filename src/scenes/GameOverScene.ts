@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
+import { track } from '../core/track';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
@@ -23,7 +24,10 @@ export class GameOverScene extends Phaser.Scene {
         fontFamily: 'monospace', fontSize: '14px', color: '#ffb066',
       }).setOrigin(0.5);
     });
-    const retry = () => this.scene.start('Game', { daily: data.daily ?? false });
+    const retry = () => {
+      track('restart', { from: 'gameover' });
+      this.scene.start('Game', { daily: data.daily ?? false });
+    };
     this.add.text(cx, 500, 'Press SPACE / tap to retry', { fontFamily: 'monospace', fontSize: '20px', color: '#16e0e0' })
       .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', retry);
     this.input.keyboard!.once('keydown-SPACE', retry);
