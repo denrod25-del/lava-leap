@@ -23,6 +23,7 @@ export const TUNING = {
   jumpBufferMs: 110,
   bouncePadVelocity: 1040,  // ≈1.6× jumpVelocity 650
   stompBounceVelocity: 350, // upward kick after a successful enemy stomp
+  fastFallSpeed: 640,       // px/s dive speed while fast-falling (airborne, descending)
 
   // World
   groundY: 640,             // y of the starting platform's top
@@ -92,6 +93,7 @@ export const ENEMY = {
 export const TOUCH = {
   joystickRange: 60,     // px of finger travel from the origin = full run
   joystickDeadzone: 8,   // px; within this the runAxis is 0 (stand still)
+  fastFallThreshold: 40, // px the run stick must be pulled DOWN to fast-fall
 } as const;
 
 export const COMBO = {

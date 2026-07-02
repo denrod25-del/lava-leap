@@ -14,6 +14,8 @@ export class TouchSteerInput implements InputSource {
   private runAxis = 0;
   private runPointerId: number | null = null;
   private originX = 0;
+  private originY = 0;
+  private fastFall = false;
   private jumpHeld = false;
   private jumpPointerId: number | null = null;
   private jumpQueued = false;
@@ -55,6 +57,8 @@ export class TouchSteerInput implements InputSource {
         if (this.runPointerId === null) {
           this.runPointerId = p.id;
           this.originX = p.x;
+          this.originY = p.y;
+          this.fastFall = false;
           this.runAxis = 0;
           this.base.setPosition(p.x, p.y).setVisible(true);
           this.knob.setPosition(p.x, p.y).setVisible(true);
@@ -70,6 +74,7 @@ export class TouchSteerInput implements InputSource {
       if (p.id !== this.runPointerId) return;
       const dx = Phaser.Math.Clamp(p.x - this.originX, -TOUCH.joystickRange, TOUCH.joystickRange);
       this.runAxis = Math.abs(dx) < TOUCH.joystickDeadzone ? 0 : dx / TOUCH.joystickRange;
+      this.fastFall = (p.y - this.originY) > TOUCH.fastFallThreshold;
       this.knob.setPosition(this.originX + dx, this.base.y);
     });
 
@@ -77,6 +82,7 @@ export class TouchSteerInput implements InputSource {
       if (p.id === this.runPointerId) {
         this.runPointerId = null;
         this.runAxis = 0;
+        this.fastFall = false;
         this.base.setVisible(false);
         this.knob.setVisible(false);
       }
@@ -93,6 +99,7 @@ export class TouchSteerInput implements InputSource {
     const s: InputState = {
       ...emptyInput(),
       runAxis: this.runAxis,
+      fastFall: this.fastFall,
       jumpHeld: this.jumpHeld,
       jumpPressed: this.jumpQueued,
       dashPressed: this.dashQueued,

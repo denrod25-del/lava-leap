@@ -10,11 +10,13 @@ export class KeyboardInput implements InputSource {
   private keyDash: Phaser.Input.Keyboard.Key;
   private keyDashAlt: Phaser.Input.Keyboard.Key;
   private keyP: Phaser.Input.Keyboard.Key;
+  private keyS: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene) {
     const kb = scene.input.keyboard!;
     this.cursors = kb.createCursorKeys();
     this.keyA = kb.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keyS = kb.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     this.keyD = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyDash = kb.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.keyDashAlt = kb.addKey(Phaser.Input.Keyboard.KeyCodes.X);
@@ -31,6 +33,7 @@ export class KeyboardInput implements InputSource {
       Phaser.Input.Keyboard.JustDown(this.keyDash) || Phaser.Input.Keyboard.JustDown(this.keyDashAlt);
     const pausePressed = Phaser.Input.Keyboard.JustDown(this.keyP);
     const runAxis = (right ? 1 : 0) - (left ? 1 : 0);
-    return { left, right, jumpHeld, jumpPressed, dashPressed, pausePressed, runAxis };
+    const fastFall = this.cursors.down!.isDown || this.keyS.isDown;
+    return { left, right, jumpHeld, jumpPressed, dashPressed, pausePressed, runAxis, fastFall };
   }
 }

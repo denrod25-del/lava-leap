@@ -9,4 +9,10 @@ describe('touch run-joystick tuning', () => {
     expect(TOUCH.joystickDeadzone).toBeGreaterThanOrEqual(0);
     expect(TOUCH.joystickDeadzone).toBeLessThan(TOUCH.joystickRange);
   });
+
+  it('fast-fall tuning is sane', async () => {
+    const { TUNING } = await import('../src/tuning');
+    expect(TUNING.fastFallSpeed).toBeGreaterThan(0);
+    expect(TOUCH.fastFallThreshold).toBeGreaterThan(TOUCH.joystickDeadzone);
+  });
 });

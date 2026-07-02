@@ -116,6 +116,13 @@ export class Player {
       this.sprite.setVelocityY(TUNING.wallSlideMax);
     }
 
+    // Fast fall: dive while airborne and already descending. Wall-slide wins (its
+    // speed cap runs above and the guard here skips while sliding).
+    if (input.fastFall && !onGround && !this._wallSliding
+        && body.velocity.y > 0 && body.velocity.y < TUNING.fastFallSpeed) {
+      this.sprite.setVelocityY(TUNING.fastFallSpeed);
+    }
+
     // Dash trigger (airborne only, once per airtime).
     const dashPressed = input.dashPressed;
     if (dashPressed && this.dashAvailable && !onGround) {

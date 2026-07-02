@@ -10,10 +10,12 @@ export interface InputState {
   /** Horizontal run intent in [-1, 1] (-1 = full left, +1 = full right, 0 = idle).
    *  Keyboard sets ±1 from left/right; the touch run-joystick sets analog values. */
   runAxis: number;
+  /** Hold to dive while airborne (keyboard Down/S; touch = pull the run stick down). */
+  fastFall: boolean;
 }
 
 export function emptyInput(): InputState {
-  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, runAxis: 0 };
+  return { left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, runAxis: 0, fastFall: false };
 }
 
 /** A source of input — implemented by KeyboardInput and TouchSteerInput. */

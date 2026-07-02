@@ -4,7 +4,11 @@ import { emptyInput } from '../src/core/InputState';
 describe('InputState', () => {
   it('emptyInput is all-false with a zero run axis', () => {
     const i = emptyInput();
-    expect(i).toEqual({ left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, runAxis: 0 });
+    expect(i).toEqual({ left: false, right: false, jumpHeld: false, jumpPressed: false, dashPressed: false, pausePressed: false, runAxis: 0, fastFall: false });
+  });
+
+  it('emptyInput has fastFall off', () => {
+    expect(emptyInput().fastFall).toBe(false);
   });
 
   it('is a fresh object each call (no shared mutation)', () => {
