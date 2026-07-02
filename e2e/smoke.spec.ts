@@ -48,6 +48,20 @@ test('survives a gameplay stretch', async ({ page }) => {
   expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
 });
 
+test('How to Play opens and returns without errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto('/');
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('H');
+  await page.waitForTimeout(600);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(600);
+  expect(errors, errors.join('\n')).toHaveLength(0);
+});
+
 test.describe('touch', () => {
   test.use({ hasTouch: true, isMobile: true });
 

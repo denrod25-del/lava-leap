@@ -12,6 +12,7 @@ your best run is saved as a persistent high score.
 | Move left / right | Arrow keys, or `A` / `D` |
 | Jump | `Up` or `Space` — tap for a short hop, hold for a higher jump |
 | Double jump | Press jump again in mid-air |
+| Fast fall | Hold `Down` or `S` while falling |
 | Wall slide | Hold toward a wall while falling |
 | Wall jump | Jump while sliding on a wall |
 | Air dash | `Shift` or `X` |
@@ -153,6 +154,7 @@ as the keyboard** — left thumb runs, right thumb jumps, so you can do both at 
 |---------|-----|
 | Run | **Hold the left half** — a floating joystick spawns under your thumb; slide left/right (analog speed) |
 | Jump | **Tap the right half** — short hop, hold = higher, tap-in-air = double, again = **triple jump** (mobile only) |
+| Fast fall | **Pull the run-stick down** while falling |
 | Wall jump | Run into a wall, then tap |
 | Dash | `DASH` button, bottom-right (one per airtime) |
 | Pause | `⏸` button, top-right |
@@ -184,3 +186,55 @@ runs:
 
 Upgrades are bought with banked coins and saved permanently; old save files are
 migrated forward automatically.
+
+---
+
+## v5 — What's New
+
+### First-Run Tutorial
+
+Your very first run walks you through the basics with a short sequence of
+non-blocking hints — run, jump, double jump, and the golden rule (**the lava
+rises — climb!**). Each hint dismisses itself once you perform the action (or
+after a few seconds, so it never traps you), and the wording adapts to your
+input: keys on desktop, thumbs on touch. It only plays once; you can re-arm it
+any time from **Settings → Replay tutorial**.
+
+### How to Play
+
+A new **How to Play** screen (press `H` on the menu, or tap its row) lays out
+the controls, the hazards, the power-ups, and the Lava Titan — with
+device-appropriate wording for keyboard vs. touch.
+
+### Fast Fall
+
+You can now **dive** while airborne: hold `Down` / `S` on the keyboard, or
+**pull the run-stick down** on touch. Great for bailing out of an overshot jump
+or lining up a stomp — wall slides still take precedence.
+
+### Start-Screen Polish
+
+The menu earns its keep: the Lava Titan looms as a centerpiece, an animated
+lava strip scrolls along the bottom with embers drifting up, the **TAP TO
+CLIMB** prompt pulses, and menu rows highlight on hover and click audibly.
+
+### Loading Bar
+
+Booting now shows the wordmark and a real progress bar instead of a black
+screen while assets load.
+
+### Web Presence
+
+The page ships a favicon, a proper meta description, and Open Graph tags with
+a generated 1200×630 share image — so links to the game unfurl nicely.
+
+### Analytics Hooks
+
+Lightweight, client-side-only event hooks (`start_game`, `death`, `restart`,
+boss events, and more) push into `window.dataLayer` **if the page defines
+one** (GTM-style). No network calls, no PII, silent no-op otherwise.
+
+### Juice
+
+The lava surface now **bubbles**, and every UI button across the menus clicks
+audibly at your SFX volume.
