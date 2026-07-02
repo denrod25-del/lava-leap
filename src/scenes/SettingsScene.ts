@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
 
-const ROWS = ['Music volume', 'SFX volume', 'Screen shake'] as const;
+const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Replay tutorial'] as const;
 
 export class SettingsScene extends Phaser.Scene {
   private idx = 0;
@@ -54,6 +54,7 @@ export class SettingsScene extends Phaser.Scene {
     save.update((b) => {
       if (this.idx === 0) b.settings.musicVol = Phaser.Math.Clamp(b.settings.musicVol + d, 0, 10);
       else if (this.idx === 1) b.settings.sfxVol = Phaser.Math.Clamp(b.settings.sfxVol + d, 0, 10);
+      else if (this.idx === 3) b.tutorialDone = false;
       else b.settings.screenShake = d > 0;
     });
     this.sound.play('sfx-ui-move', { volume: 0.3 * (save.get().settings.sfxVol / 10) });
@@ -61,11 +62,13 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   private render(): void {
-    const s = save.get().settings;
+    const blob = save.get();
+    const s = blob.settings;
     const vals = [
       `${'#'.repeat(s.musicVol)}${'.'.repeat(10 - s.musicVol)} ${s.musicVol}`,
       `${'#'.repeat(s.sfxVol)}${'.'.repeat(10 - s.sfxVol)} ${s.sfxVol}`,
       s.screenShake ? 'ON ' : 'OFF',
+      blob.tutorialDone ? 'DONE — ◀/▶ to re-arm' : 'ON NEXT RUN',
     ];
     this.rows.forEach((r, i) => r.setText(`${i === this.idx ? '> ' : '  '}${ROWS[i].padEnd(13)} ${vals[i]}`)
       .setColor(i === this.idx ? '#16e0e0' : '#ffffff'));

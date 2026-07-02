@@ -20,6 +20,7 @@ import { TouchSteerInput } from '../entities/input/TouchSteerInput';
 import { EnemyManager } from '../entities/EnemyManager';
 import { PowerupController } from '../entities/PowerupController';
 import { BossController } from '../entities/BossController';
+import { TutorialOverlay } from '../entities/TutorialOverlay';
 import { bossBoundaryCrossed } from '../core/boss';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
 import type { InputSource } from '../core/InputState';
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private enemies!: EnemyManager;
   private powerups!: PowerupController;
   private boss!: BossController;
+  private tutorial?: TutorialOverlay;
   private runSeed = 0;
   private prevHeight = 0;
   private revivedThisRun = false;
@@ -163,6 +165,13 @@ export class GameScene extends Phaser.Scene {
     this.inputSrc = wantTouch ? new TouchSteerInput(this) : new KeyboardInput(this);
     // Touch climbing is harder, so grant a triple jump (ground + 2 air); keyboard stays double.
     this.player.maxJumps = wantTouch ? 3 : 2;
+    // First-run tutorial (once ever; Settings can reset the flag).
+    this.tutorial = undefined;
+    if (!save.get().tutorialDone) {
+      this.tutorial = new TutorialOverlay(this, this.gameEvents, wantTouch, () => {
+        save.update((b) => { b.tutorialDone = true; });
+      });
+    }
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
@@ -217,6 +226,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     const sampled = this.inputSrc.sample();
     this.player.update(sampled);
+    this.tutorial?.update(sampled, delta);
     if (sampled.pausePressed) this.pauseGame();
     this.platforms.update(time);
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
