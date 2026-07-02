@@ -5,6 +5,7 @@ import { defaultAnalytics } from '../core/analytics';
 
 export class MenuScene extends Phaser.Scene {
   private debugPanel: Phaser.GameObjects.Container | null = null;
+  private lavaStrip!: Phaser.GameObjects.TileSprite;
 
   constructor() { super('Menu'); }
 
@@ -31,6 +32,9 @@ export class MenuScene extends Phaser.Scene {
     this.sound.stopAll();
     this.sound.play('sfx-music-menu', { loop: true, volume: (save.get().settings.musicVol / 10) * 0.6 });
     const cx = TUNING.width / 2;
+    if (this.textures.exists('boss-titan')) {
+      this.add.image(cx, 96, 'boss-titan').setDisplaySize(104, 104).setAlpha(0.95);
+    }
     this.add.text(cx, 180, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '48px', color: '#ff7b00' }).setOrigin(0.5);
     const hi = save.get().highScore;
     this.add.text(cx, 260, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
@@ -44,16 +48,21 @@ export class MenuScene extends Phaser.Scene {
       { line: 'H      How to play', tap: () => this.scene.start('HowTo') },
       { line: 'S      Settings', tap: () => this.scene.start('Settings', { from: 'Menu' }) },
     ];
+    const uiVol = () => 0.35 * (save.get().settings.sfxVol / 10);
     items.forEach((item, i) => this.add.text(cx, 380 + i * 30, item.line, {
       fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', item.tap));
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      .on('pointerover', function (this: Phaser.GameObjects.Text) { this.setColor('#ffffff'); })
+      .on('pointerout', function (this: Phaser.GameObjects.Text) { this.setColor('#16e0e0'); })
+      .on('pointerdown', () => { this.sound.play('sfx-ui-select', { volume: uiVol() }); item.tap(); }));
 
     // Big tap-to-start zone (mobile): a tap anywhere in the upper area starts a climb
     // instantly, so players don't have to hit the small "Climb" text. The secondary
     // option rows below (y >= 380) stay individually tappable.
-    this.add.text(cx, 340, '▶  TAP TO CLIMB  ◀', {
+    const tapText = this.add.text(cx, 340, '▶  TAP TO CLIMB  ◀', {
       fontFamily: 'monospace', fontSize: '20px', color: '#ffd166',
     }).setOrigin(0.5);
+    this.tweens.add({ targets: tapText, scale: 1.07, alpha: 0.75, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.add.rectangle(0, 0, TUNING.width, 365, 0xffffff, 0).setOrigin(0, 0).setDepth(50)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start('Game', { daily: false }));
@@ -77,5 +86,23 @@ export class MenuScene extends Phaser.Scene {
       save.update((b) => { b.analytics = defaultAnalytics(); });
       this.toggleDebug(); this.toggleDebug(); // rebuild with fresh numbers
     });
+
+    // Animated lava strip along the bottom + rising embers.
+    this.lavaStrip = this.add.tileSprite(cx, TUNING.height - 20, TUNING.width, 40, 'lava').setDepth(1);
+    if (!this.textures.exists('px4')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 4, 4);
+      g.generateTexture('px4', 4, 4);
+      g.destroy();
+    }
+    this.add.particles(0, TUNING.height - 40, 'px4', {
+      x: { min: 0, max: TUNING.width }, speedY: { min: -60, max: -25 }, speedX: { min: -8, max: 8 },
+      lifespan: 1800, scale: { start: 1, end: 0 }, alpha: { start: 0.8, end: 0 },
+      tint: [0xff8a3d, 0xff4d00, 0xffd166], frequency: 90,
+    }).setDepth(2);
+  }
+
+  update(_time: number, delta: number): void {
+    this.lavaStrip.tilePositionX += delta * 0.02;
   }
 }
