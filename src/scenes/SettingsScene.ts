@@ -33,7 +33,10 @@ export class SettingsScene extends Phaser.Scene {
     // On-screen tap targets for touch devices (same handlers as the keyboard).
     const tapBtn = (x: number, label: string, fn: () => void): void => {
       this.add.text(x, 510, label, { fontFamily: 'monospace', fontSize: '24px', color: '#16e0e0' })
-        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', fn);
+        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+          this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+          fn();
+        });
     };
     tapBtn(cx - 130, '▲', () => { this.idx = (this.idx + ROWS.length - 1) % ROWS.length; this.render(); });
     tapBtn(cx - 70, '▼', () => { this.idx = (this.idx + 1) % ROWS.length; this.render(); });

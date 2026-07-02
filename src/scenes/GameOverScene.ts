@@ -25,6 +25,7 @@ export class GameOverScene extends Phaser.Scene {
       }).setOrigin(0.5);
     });
     const retry = () => {
+      this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
       track('restart', { from: 'gameover' });
       this.scene.start('Game', { daily: data.daily ?? false });
     };

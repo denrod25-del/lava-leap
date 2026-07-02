@@ -21,8 +21,12 @@ export class AchievementsScene extends Phaser.Scene {
         fontFamily: 'monospace', fontSize: '12px', color: got ? '#bbbbbb' : '#555555',
       });
     });
+    const back = () => {
+      this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+      this.scene.start('Menu');
+    };
     this.add.text(cx, 660, 'ESC / tap back', { fontFamily: 'monospace', fontSize: '13px', color: '#888888' })
-      .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.scene.start('Menu'));
-    this.input.keyboard!.on('keydown-ESC', () => this.scene.start('Menu'));
+      .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', back);
+    this.input.keyboard!.on('keydown-ESC', back);
   }
 }

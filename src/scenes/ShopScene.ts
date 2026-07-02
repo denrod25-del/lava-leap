@@ -34,7 +34,10 @@ export class ShopScene extends Phaser.Scene {
 
     this.tabBtn = this.add.text(cx, 128, '', { fontFamily: 'monospace', fontSize: '14px', color: '#16e0e0' })
       .setOrigin(0.5).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.switchTab());
+      .on('pointerdown', () => {
+        this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+        this.switchTab();
+      });
 
     this.rows = COSMETICS.map((_c, i) =>
       this.add.text(cx, 170 + i * 36, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
@@ -50,7 +53,10 @@ export class ShopScene extends Phaser.Scene {
     // On-screen tap targets for touch devices (same handlers as the keyboard).
     const tapBtn = (x: number, label: string, fn: () => void): void => {
       this.add.text(x, 660, label, { fontFamily: 'monospace', fontSize: '22px', color: '#16e0e0' })
-        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', fn);
+        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+          this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+          fn();
+        });
     };
     tapBtn(cx - 150, '▲', () => { this.idx = (this.idx + this.listLength() - 1) % this.listLength(); this.render(); });
     tapBtn(cx - 90, '▼', () => { this.idx = (this.idx + 1) % this.listLength(); this.render(); });
