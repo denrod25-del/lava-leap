@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
 import { defaultAnalytics } from '../core/analytics';
+import { APP_VERSION, BUILD_LABEL } from '../core/buildInfo';
 
 export class MenuScene extends Phaser.Scene {
   private debugPanel: Phaser.GameObjects.Container | null = null;
@@ -46,6 +47,7 @@ export class MenuScene extends Phaser.Scene {
       { line: 'C      Shop', tap: () => this.scene.start('Shop') },
       { line: 'A      Achievements', tap: () => this.scene.start('Achievements') },
       { line: 'H      How to play', tap: () => this.scene.start('HowTo') },
+      { line: "N      What's New", tap: () => this.scene.start('Changelog') },
       { line: 'S      Settings', tap: () => this.scene.start('Settings', { from: 'Menu' }) },
     ];
     const uiVol = () => 0.35 * (save.get().settings.sfxVol / 10);
@@ -73,6 +75,7 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-C', () => this.scene.start('Shop'));
     kb.once('keydown-A', () => this.scene.start('Achievements'));
     kb.once('keydown-H', () => this.scene.start('HowTo'));
+    kb.once('keydown-N', () => this.scene.start('Changelog'));
     kb.once('keydown-S', () => this.scene.start('Settings', { from: 'Menu' }));
     kb.on('keydown-F9', () => this.toggleDebug());
     // Panel hotkeys registered ONCE (not per toggle, which stacked stale once-listeners);
@@ -100,6 +103,18 @@ export class MenuScene extends Phaser.Scene {
       lifespan: 1800, scale: { start: 1, end: 0 }, alpha: { start: 0.8, end: 0 },
       tint: [0xff8a3d, 0xff4d00, 0xffd166], frequency: 90,
     }).setDepth(2);
+
+    // Tappable build label bottom-left; also opens the changelog.
+    this.add.text(6, TUNING.height - 16, BUILD_LABEL, { fontFamily: 'monospace', fontSize: '11px', color: '#5a6472' })
+      .setScrollFactor(0).setDepth(80).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.scene.start('Changelog'));
+
+    // Auto-show What's New once after a version change (confirms a fresh deploy landed).
+    // Set lastSeenVersion BEFORE starting so the return to Menu doesn't re-open (no loop).
+    if (save.get().lastSeenVersion !== APP_VERSION) {
+      save.update((b) => { b.lastSeenVersion = APP_VERSION; });
+      this.scene.start('Changelog');
+    }
   }
 
   update(_time: number, delta: number): void {
