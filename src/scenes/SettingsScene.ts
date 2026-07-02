@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
+import { APP_NAME, APP_VERSION, BUILD_ID, BUILD_DATE } from '../core/buildInfo';
 
 const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Replay tutorial'] as const;
 
@@ -50,6 +51,13 @@ export class SettingsScene extends Phaser.Scene {
     kb.on('keydown-LEFT', () => this.adjust(-1));
     kb.on('keydown-RIGHT', () => this.adjust(1));
     kb.on('keydown-ESC', () => this.back());
+
+    // Non-interactive build footer.
+    this.add.text(cx, 600,
+      `${APP_NAME}\nVersion v${APP_VERSION}\nBuild ${BUILD_DATE}\nBuild ID ${BUILD_ID}`,
+      { fontFamily: 'monospace', fontSize: '12px', color: '#5a6472', align: 'center', lineSpacing: 4 },
+    ).setOrigin(0.5);
+
     this.render();
   }
 
