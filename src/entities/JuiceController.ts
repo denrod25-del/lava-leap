@@ -132,7 +132,8 @@ export class JuiceController {
   }
 
   private shake(duration: number, intensity: number): void {
-    if (!this.save.get().settings.screenShake) return;
+    const s = this.save.get().settings;
+    if (!s.screenShake || s.reducedMotion) return;
     this.scene.cameras.main.shake(duration, intensity);
   }
 
@@ -157,6 +158,8 @@ export class JuiceController {
   private deathSequence(): void {
     this.shake(JUICE.shakeBig.duration, JUICE.shakeBig.intensity);
     this.flash(0xff2d2d, 0.45, 350);
+    // Reduce motion: skip the slow-mo time warp (the flash still reads the death).
+    if (this.save.get().settings.reducedMotion) return;
     const world = (this.scene.physics as Phaser.Physics.Arcade.ArcadePhysics).world;
     world.timeScale = JUICE.slowMoScale;
     this.scene.time.delayedCall(JUICE.slowMoMs, () => { world.timeScale = 1; });

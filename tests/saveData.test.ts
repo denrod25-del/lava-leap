@@ -99,6 +99,24 @@ describe('SaveData', () => {
     expect(s.get().highScore).toBe(5);
   });
 
+  it('defaults settings.reducedMotion to false and backfills it on an old save', () => {
+    expect(new SaveData(fakeStore()).get().settings.reducedMotion).toBe(false);
+    const legacy = {
+      version: 2, highScore: 5, coinBank: 1, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 4, sfxVol: 9, screenShake: false }, // pre-reducedMotion settings
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
+      tutorialDone: true,
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }));
+    expect(s.get().settings.reducedMotion).toBe(false);
+    // Existing nested settings preserved by the deep-merge.
+    expect(s.get().settings.musicVol).toBe(4);
+    expect(s.get().settings.screenShake).toBe(false);
+  });
+
   it('defaults lastSeenVersion to empty and backfills it on an old save', () => {
     expect(new SaveData(fakeStore()).get().lastSeenVersion).toBe('');
     const legacy = {

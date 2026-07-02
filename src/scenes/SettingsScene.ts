@@ -3,7 +3,7 @@ import { TUNING } from '../tuning';
 import { save } from '../main';
 import { APP_NAME, APP_VERSION, BUILD_ID, BUILD_DATE } from '../core/buildInfo';
 
-const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Replay tutorial'] as const;
+const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Reduce motion', 'Replay tutorial'] as const;
 
 export class SettingsScene extends Phaser.Scene {
   private idx = 0;
@@ -65,8 +65,9 @@ export class SettingsScene extends Phaser.Scene {
     save.update((b) => {
       if (this.idx === 0) b.settings.musicVol = Phaser.Math.Clamp(b.settings.musicVol + d, 0, 10);
       else if (this.idx === 1) b.settings.sfxVol = Phaser.Math.Clamp(b.settings.sfxVol + d, 0, 10);
-      else if (this.idx === 3) b.tutorialDone = false;
-      else b.settings.screenShake = d > 0;
+      else if (this.idx === 2) b.settings.screenShake = d > 0;
+      else if (this.idx === 3) b.settings.reducedMotion = d > 0;
+      else b.tutorialDone = false;
     });
     this.sound.play('sfx-ui-move', { volume: 0.3 * (save.get().settings.sfxVol / 10) });
     this.render();
@@ -79,6 +80,7 @@ export class SettingsScene extends Phaser.Scene {
       `${'#'.repeat(s.musicVol)}${'.'.repeat(10 - s.musicVol)} ${s.musicVol}`,
       `${'#'.repeat(s.sfxVol)}${'.'.repeat(10 - s.sfxVol)} ${s.sfxVol}`,
       s.screenShake ? 'ON ' : 'OFF',
+      s.reducedMotion ? 'ON ' : 'OFF',
       blob.tutorialDone ? 'DONE — ◀/▶ to re-arm' : 'ON NEXT RUN',
     ];
     this.rows.forEach((r, i) => r.setText(`${i === this.idx ? '> ' : '  '}${ROWS[i].padEnd(13)} ${vals[i]}`)

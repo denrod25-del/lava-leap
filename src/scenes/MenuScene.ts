@@ -39,6 +39,10 @@ export class MenuScene extends Phaser.Scene {
       this.add.image(cx, 96, 'boss-titan').setDisplaySize(104, 104).setAlpha(0.95);
     }
     this.add.text(cx, 180, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '48px', color: '#ff7b00' }).setOrigin(0.5);
+    this.add.text(cx, 212, 'Arcade Lava Climber', { fontFamily: 'monospace', fontSize: '15px', color: '#ffb066' }).setOrigin(0.5);
+    this.add.text(cx, 233, "Jump fast. Climb higher. Don't let the lava catch you.", {
+      fontFamily: 'monospace', fontSize: '11px', color: '#8a93a3',
+    }).setOrigin(0.5);
     const hi = save.get().highScore;
     this.add.text(cx, 260, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
     this.add.text(cx, 290, `Bank: ${save.get().coinBank} coins`, { fontFamily: 'monospace', fontSize: '16px', color: '#ffd166' }).setOrigin(0.5);

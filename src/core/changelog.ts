@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.5.3', date: '2026-07-02', notes: [
+    'Reduce Motion setting — turns off camera shake and the death slow-mo.',
+    'The lava now glows: a heat haze rises off the surface.',
+    'Title screen tagline: Jump fast. Climb higher. Don\'t let the lava catch you.',
+  ]},
   { version: '0.5.2', date: '2026-07-02', notes: [
     'Instant lava-themed loading screen with live build info, shown before the game boots.',
     'The page now carries readable content for search engines and no-JS visitors.',

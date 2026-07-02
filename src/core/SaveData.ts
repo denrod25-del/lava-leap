@@ -5,9 +5,11 @@ export interface Settings {
   musicVol: number;   // 0-10
   sfxVol: number;     // 0-10
   screenShake: boolean;
+  /** Accessibility: skip camera shake and the death slow-mo when true. */
+  reducedMotion: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true };
+export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false };
 
 export interface SaveBlob {
   version: 2;

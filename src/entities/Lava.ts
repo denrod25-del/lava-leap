@@ -5,6 +5,8 @@ import { zoneForHeight } from '../core/zones';
 const BASE_SPEED = 55;        // px/s upward (y decreases)
 const SPEED_PER_HEIGHT = 0.012; // extra px/s per px climbed
 
+const GLOW_HEIGHT = 90; // px of gradient glow above the lava surface
+
 export class Lava {
   readonly rect: Phaser.GameObjects.TileSprite;
   /** World y of the lava surface (top). Smaller = higher. */
@@ -12,6 +14,7 @@ export class Lava {
   /** Multiplier on rise speed; the slow-lava power-up sets this below 1. */
   private speedFactor = 1;
   private bubbles: Phaser.GameObjects.Particles.ParticleEmitter;
+  private glow: Phaser.GameObjects.Image;
 
   /** Scale the lava's rise rate (1 = normal). Slow-lava power-up uses < 1. */
   setSpeedFactor(f: number): void { this.speedFactor = f; }
@@ -33,6 +36,24 @@ export class Lava {
       scale: { start: 1.3, end: 0 }, alpha: { start: 0.85, end: 0 },
       tint: [0xffd166, 0xff8a3d], frequency: 130,
     }).setDepth(6);
+
+    // Heat glow rising off the surface: a vertical orange→transparent gradient,
+    // additive-blended, sitting just above the lava and tracking it upward.
+    if (!scene.textures.exists('lava-glow')) {
+      const canvas = scene.textures.createCanvas('lava-glow', 4, GLOW_HEIGHT)!;
+      const ctx = canvas.getContext();
+      const grad = ctx.createLinearGradient(0, 0, 0, GLOW_HEIGHT);
+      grad.addColorStop(0, 'rgba(255, 77, 0, 0)');
+      grad.addColorStop(1, 'rgba(255, 122, 30, 0.55)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 4, GLOW_HEIGHT);
+      canvas.refresh();
+    }
+    this.glow = scene.add.image(TUNING.width / 2, this.surfaceY, 'lava-glow')
+      .setOrigin(0.5, 1)                    // bottom edge rides the surface
+      .setDisplaySize(TUNING.width, GLOW_HEIGHT)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(5);
   }
 
   update(dtMs: number, heightClimbed: number): void {
@@ -41,6 +62,7 @@ export class Lava {
     this.surfaceY -= (speed * dtMs) / 1000;
     this.rect.y = this.surfaceY;
     this.bubbles.y = this.surfaceY;
+    this.glow.y = this.surfaceY;
   }
 
   /** True if the player's feet are at/below the lava surface. */
