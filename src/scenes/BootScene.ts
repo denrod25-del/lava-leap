@@ -1,10 +1,21 @@
 import Phaser from 'phaser';
 import { ANIM_FRAME_KEYS, PLAYER_ANIMS } from '../animManifest';
+import { TUNING } from '../tuning';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
 
   preload(): void {
+    const cx = TUNING.width / 2, cy = TUNING.height / 2;
+    this.add.text(cx, cy - 64, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '42px', color: '#ff7b00' }).setOrigin(0.5);
+    this.add.rectangle(cx, cy, 322, 16, 0x2a2a3e).setOrigin(0.5);
+    const bar = this.add.rectangle(cx - 159, cy, 0, 10, 0xff7b00).setOrigin(0, 0.5);
+    const pct = this.add.text(cx, cy + 30, 'loading… 0%', { fontFamily: 'monospace', fontSize: '13px', color: '#888888' }).setOrigin(0.5);
+    this.load.on('progress', (p: number) => {
+      bar.width = Math.round(318 * p);
+      pct.setText(`loading… ${Math.round(p * 100)}%`);
+    });
+
     this.load.image('player', 'assets/player.png');
     this.load.image('platform', 'assets/platform.png');
     this.load.image('coin', 'assets/coin.png');
