@@ -7,6 +7,7 @@ import { HudScene } from './scenes/HudScene';
 import { GameOverScene } from './scenes/GameOverScene';
 import { ShopScene } from './scenes/ShopScene';
 import { AchievementsScene } from './scenes/AchievementsScene';
+import { HowToScene } from './scenes/HowToScene';
 import { PauseScene } from './scenes/PauseScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { SaveData } from './core/SaveData';
@@ -47,7 +48,7 @@ const config: Phaser.Types.Core.GameConfig = {
     height: TUNING.height,
   },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: TUNING.gravityY }, debug: false } },
-  scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, PauseScene, SettingsScene],
+  scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, PauseScene, SettingsScene],
 };
 
 const game = new Phaser.Game(config);

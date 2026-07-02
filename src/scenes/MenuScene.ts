@@ -41,6 +41,7 @@ export class MenuScene extends Phaser.Scene {
       { line: 'D      Daily challenge', tap: () => this.scene.start('Game', { daily: true }) },
       { line: 'C      Shop', tap: () => this.scene.start('Shop') },
       { line: 'A      Achievements', tap: () => this.scene.start('Achievements') },
+      { line: 'H      How to play', tap: () => this.scene.start('HowTo') },
       { line: 'S      Settings', tap: () => this.scene.start('Settings', { from: 'Menu' }) },
     ];
     items.forEach((item, i) => this.add.text(cx, 380 + i * 30, item.line, {
@@ -62,6 +63,7 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-D', () => this.scene.start('Game', { daily: true }));
     kb.once('keydown-C', () => this.scene.start('Shop'));
     kb.once('keydown-A', () => this.scene.start('Achievements'));
+    kb.once('keydown-H', () => this.scene.start('HowTo'));
     kb.once('keydown-S', () => this.scene.start('Settings', { from: 'Menu' }));
     kb.on('keydown-F9', () => this.toggleDebug());
     // Panel hotkeys registered ONCE (not per toggle, which stacked stale once-listeners);
