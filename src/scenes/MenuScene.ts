@@ -3,10 +3,12 @@ import { TUNING } from '../tuning';
 import { save } from '../main';
 import { defaultAnalytics } from '../core/analytics';
 import { APP_VERSION, BUILD_LABEL } from '../core/buildInfo';
+import { DevOverlay } from '../entities/DevOverlay';
 
 export class MenuScene extends Phaser.Scene {
   private debugPanel: Phaser.GameObjects.Container | null = null;
   private lavaStrip!: Phaser.GameObjects.TileSprite;
+  private devOverlay?: DevOverlay;
 
   constructor() { super('Menu'); }
 
@@ -109,6 +111,8 @@ export class MenuScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(80).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start('Changelog'));
 
+    if (import.meta.env.DEV) this.devOverlay = new DevOverlay(this);
+
     // Auto-show What's New once after a version change (confirms a fresh deploy landed).
     // Set lastSeenVersion BEFORE starting so the return to Menu doesn't re-open (no loop).
     if (save.get().lastSeenVersion !== APP_VERSION) {
@@ -119,5 +123,6 @@ export class MenuScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     this.lavaStrip.tilePositionX += delta * 0.02;
+    this.devOverlay?.update();
   }
 }

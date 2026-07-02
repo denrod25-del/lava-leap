@@ -24,6 +24,7 @@ import { TutorialOverlay } from '../entities/TutorialOverlay';
 import { bossBoundaryCrossed } from '../core/boss';
 import { track } from '../core/track';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
+import { DevOverlay } from '../entities/DevOverlay';
 import type { InputSource } from '../core/InputState';
 
 export class GameScene extends Phaser.Scene {
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   private revivedThisRun = false;
   public daily = false;
   private dateKeyToday = '';
+  private devOverlay?: DevOverlay;
 
   constructor() { super('Game'); }
 
@@ -226,6 +228,8 @@ export class GameScene extends Phaser.Scene {
 
     this.input.keyboard!.on('keydown-ESC', () => this.pauseGame());
     this.input.keyboard!.on('keydown-P', () => this.pauseGame());
+
+    if (import.meta.env.DEV) this.devOverlay = new DevOverlay(this);
   }
 
   update(time: number, delta: number): void {
@@ -328,6 +332,8 @@ export class GameScene extends Phaser.Scene {
 
     const maxScroll = TUNING.groundY + TUNING.height / 2 - TUNING.height;
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
+
+    this.devOverlay?.update();
   }
 
   private handleHit(source: 'enemy' | 'boss'): void {
