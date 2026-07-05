@@ -103,10 +103,24 @@ export class Player {
 
     // Maintain an active dash (overrides normal horizontal movement & gravity).
     if (this.dashTimer > 0) {
+      // Dash-jump cancel (the signature move): tapping jump mid-dash ends the dash
+      // and converts it into a full-strength jump that KEEPS the dash's horizontal
+      // speed. Consumes one jump from the air budget.
+      const jumpEdge = (jumpDown && !this.jumpHeldLast) || input.jumpPressed;
+      if (jumpEdge && this.jumpsUsed < this.maxJumps) {
+        this.dashTimer = 0;
+        body.setAllowGravity(true);
+        this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed); // momentum carries
+        this.sprite.setVelocityY(-TUNING.jumpVelocity);
+        this.jumpsUsed = Math.min(this.maxJumps, this.jumpsUsed + 1);
+        this.jumpHeldLast = jumpDown;
+        this.events.emit('dashJumpCancel', {});
+        return;
+      }
       this.dashTimer -= dt;
       this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed);
       this.sprite.setVelocityY(0);
-      (body as Body).setAllowGravity(false);
+      body.setAllowGravity(false);
       this.jumpHeldLast = jumpDown;
       return; // skip the rest while dashing
     }
