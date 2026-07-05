@@ -23,7 +23,15 @@ export class AudioDirector {
     events.on('jump', () => this.sfx('sfx-jump', 0.4));
     events.on('doubleJump', () => this.sfx('sfx-jump', 0.35));
     events.on('wallJump', () => this.sfx('sfx-jump', 0.45));
-    events.on('dash', () => this.sfx('sfx-ui-select', 0.3));
+    events.on('dash', () => this.sfxDetuned('sfx-ui-select', 0.3, this.flowTier() * 150));
+    events.on('dashJumpCancel', () => this.sfxDetuned('sfx-jump', 0.45, 200 + this.flowTier() * 150));
+    events.on('flowTier', ({ tier }) => {
+      if (tier > this.lastFlowTier) {
+        this.sfxDetuned('sfx-ding', 0.4, tier * 250); // rising pitch per tier
+        if (tier === 3) this.sfx('sfx-swell', 0.5);   // Blazing "on fire" sting
+      }
+      this.lastFlowTier = tier;
+    });
     events.on('coinCollected', () => this.sfx('sfx-coin', 0.5));
     events.on('platformCrumble', () => this.sfx('sfx-crack', 0.5));
     events.on('zoneEntered', () => this.sfx('sfx-swell', 0.5));
@@ -40,11 +48,21 @@ export class AudioDirector {
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
   }
 
+  private lastFlowTier = 0;
+
   private musicVol(): number { return (this.save.get().settings.musicVol / 10) * 0.8; }
   private sfxMult(): number { return this.save.get().settings.sfxVol / 10; }
 
   private sfx(key: string, base: number): void {
     this.scene.sound.play(key, { volume: base * this.sfxMult() });
+  }
+
+  private flowTier(): number {
+    return (this.scene.registry.get('flow') as { tier?: number } | undefined)?.tier ?? 0;
+  }
+
+  private sfxDetuned(key: string, base: number, detune: number): void {
+    this.scene.sound.play(key, { volume: base * this.sfxMult(), detune });
   }
 
   /** Call each frame. lavaDistancePx = player feet to lava surface. */
