@@ -4,6 +4,10 @@ export interface GameEventMap {
   doubleJump: Record<string, never>;
   wallJump: Record<string, never>;
   dash: Record<string, never>;
+  /** Jump tapped mid-dash: the dash converts into a momentum-keeping jump. */
+  dashJumpCancel: Record<string, never>;
+  /** Flow tier changed (either direction). Emitted by GameScene, consumed by juice/audio. */
+  flowTier: { tier: number; name: string };
   land: { impactVy: number };
   coinCollected: { x: number; y: number };
   platformCrumble: { x: number; y: number };

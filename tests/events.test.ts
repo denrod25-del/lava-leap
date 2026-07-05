@@ -30,4 +30,16 @@ describe('GameEvents', () => {
     ev.emit('death', { height: 10, zoneIndex: 0 });
     expect(n).toBe(0);
   });
+
+  it('delivers dashJumpCancel and flowTier events', () => {
+    const ev = new GameEvents();
+    let cancels = 0;
+    let lastTier: { tier: number; name: string } | null = null;
+    ev.on('dashJumpCancel', () => { cancels += 1; });
+    ev.on('flowTier', (p) => { lastTier = p; });
+    ev.emit('dashJumpCancel', {});
+    ev.emit('flowTier', { tier: 2, name: 'HOT' });
+    expect(cancels).toBe(1);
+    expect(lastTier).toEqual({ tier: 2, name: 'HOT' });
+  });
 });
