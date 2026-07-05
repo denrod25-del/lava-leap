@@ -2,6 +2,12 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.6.0', date: '2026-07-05', notes: [
+    'DASH-FLOW: jump mid-dash to launch and keep your speed — the new signature move.',
+    'Dash through danger: enemies and fireballs can\'t touch you mid-dash (lava still wins).',
+    'New FLOW meter: stay airborne and chain dashes, stomps & coins to heat up — Cool → Warm → Hot → Blazing, up to ×2 score.',
+    'Coins grabbed mid-air now refresh your dash. Chain across the whole screen.',
+  ]},
   { version: '0.5.3', date: '2026-07-02', notes: [
     'Reduce Motion setting — turns off camera shake and the death slow-mo.',
     'The lava now glows: a heat haze rises off the surface.',
