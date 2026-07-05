@@ -1,0 +1,75 @@
+import { test, expect } from '@playwright/test';
+
+function collectErrors(page: import('@playwright/test').Page): string[] {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(String(e)));
+  return errors;
+}
+
+test('dash → jump-cancel chains raise Flow and expose HUD state', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('Escape'); // dismiss auto-shown What's New (fresh profile)
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Space');  // start run
+  await page.waitForTimeout(800);
+
+  // Repeated jump → air-dash → jump-cancel chains (Space, Shift, Space).
+  // A short `delay` on each press is required: Playwright's zero-delay press()
+  // fires keydown+keyup in the same tick, which Phaser's variable-height
+  // jump-cut (cut upward velocity on release) can consume before the physics
+  // step ever registers airtime — the jump never leaves the ground and dash's
+  // `!onGround` guard silently no-ops every beat (flow stays 0). A 40ms delay
+  // gives the engine a frame of "key held" so the jump/dash actually fire.
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Space', { delay: 40 });
+    await page.waitForTimeout(120);
+    await page.keyboard.press('Shift', { delay: 40 });
+    await page.waitForTimeout(60);
+    await page.keyboard.press('Space', { delay: 40 });
+    await page.waitForTimeout(320);
+  }
+
+  // Read Flow state via the shared game registry (window.__game is the app's
+  // established verification handle; scene.registry === game.registry).
+  const flow = await page.evaluate(() => {
+    const g = (window as unknown as { __game?: { registry: { get(k: string): unknown } } }).__game;
+    return g?.registry.get('flow') as
+      { value: number; tier: number; name: string; multiplier: number } | undefined;
+  });
+  expect(flow, 'flow registry entry missing — GameScene wiring broken').toBeTruthy();
+  expect(flow!.value).toBeGreaterThan(0);
+  expect(flow!.multiplier).toBeGreaterThanOrEqual(1);
+  expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
+});
+
+test('reduced motion: flow visuals stay quiet and the game runs clean', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.addInitScript(() => {
+    // Seed a save with reducedMotion on. Partial blob is fine — SaveData.load()
+    // deep-merges defaults. lastSeenVersion must match package.json to suppress
+    // the What's New auto-popup.
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2,
+      settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: true },
+      tutorialDone: true,
+      lastSeenVersion: '0.6.0',
+    }));
+  });
+  await page.goto('/');
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('Space'); // start run (no popups: seeded save)
+  await page.waitForTimeout(800);
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Space', { delay: 40 });
+    await page.waitForTimeout(120);
+    await page.keyboard.press('Shift', { delay: 40 });
+    await page.waitForTimeout(400);
+  }
+  await expect(page.locator('canvas')).toBeVisible();
+  expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
+});
