@@ -32,6 +32,9 @@ export class AudioDirector {
       if (tier > this.lastFlowTier) {
         this.sfxDetuned('sfx-ding', 0.4, tier * 250); // rising pitch per tier
         if (tier === 3) this.sfx('sfx-swell', 0.5);   // Blazing "on fire" sting
+      } else if (tier < this.lastFlowTier) {
+        // Subtle low tick on cooling down a tier — informative, not punishing.
+        this.sfxDetuned('sfx-expire', 0.25, -150);
       }
       this.lastFlowTier = tier;
     });
