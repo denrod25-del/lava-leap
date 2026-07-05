@@ -9,6 +9,9 @@ export class JuiceController {
   private emberEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private dustEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private sparkEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private trailEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private edgeGlow: Phaser.GameObjects.Rectangle[] = [];
+  private lastFlowTier = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -36,6 +39,25 @@ export class JuiceController {
       tint: [0xff8a3d, 0xff4d00, 0xffd166], alpha: { start: 0.9, end: 0 },
       frequency: 1000 / JUICE.emberRatePerSec,
     }).setDepth(6);
+
+    // Dash trail: follows the player, emits only while dashing; density/tint scale
+    // with the Flow tier (updateFlow).
+    this.trailEmitter = scene.add.particles(0, 0, 'px4', {
+      speed: { min: 10, max: 40 }, lifespan: 300,
+      scale: { start: 1.6, end: 0 }, alpha: { start: 0.9, end: 0 },
+      frequency: 24, emitting: false, follow: this.player,
+    }).setDepth(7);
+
+    // Screen-edge heat glow (fades in from HOT; disabled by Reduce Motion).
+    const mkEdge = (x: number, y: number, w: number, h: number) =>
+      scene.add.rectangle(x, y, w, h, 0xff4d00, 1)
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(45).setAlpha(0);
+    this.edgeGlow = [
+      mkEdge(0, 0, 18, TUNING.height),
+      mkEdge(TUNING.width - 18, 0, 18, TUNING.height),
+      mkEdge(0, 0, TUNING.width, 12),
+      mkEdge(0, TUNING.height - 12, TUNING.width, 12),
+    ];
 
     events.on('jump', () => this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY));
     events.on('doubleJump', () => this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY));
@@ -87,6 +109,22 @@ export class JuiceController {
       this.sparkEmitter.explode(6, x, y);
       this.dustAt(x, y, 5);
     });
+    events.on('dashJumpCancel', () => {
+      // The signature move: stretch + a spark kick so the launch reads.
+      this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY);
+      this.sparkEmitter.explode(8, this.player.x, this.player.y);
+    });
+    events.on('flowTier', ({ tier, name }) => {
+      if (tier > this.lastFlowTier) {
+        // Tier-up: name popup + spark burst; Blazing gets an ignition flash.
+        this.popup(this.player.x, this.player.y - 20, name);
+        this.sparkEmitter.explode(8 + tier * 4, this.player.x, this.player.y);
+        if (tier === 3 && !this.save.get().settings.reducedMotion) {
+          this.flash(0xff4d00, 0.25, 300);
+        }
+      }
+      this.lastFlowTier = tier;
+    });
   }
 
   private magnetSparkleAcc = 0;
@@ -106,6 +144,23 @@ export class JuiceController {
     } else {
       this.magnetSparkleAcc = 0;
     }
+  }
+
+  /** Call each frame with the Flow tier + dash state. Scales the dash trail and
+   *  the screen-edge heat glow; Reduce Motion keeps the trail plain and glow off. */
+  updateFlow(tier: number, dashing: boolean): void {
+    const reduced = this.save.get().settings.reducedMotion;
+    const tints = [0xffffff, 0xffd166, 0xff8a3d, 0xff4d00];
+    this.trailEmitter.emitting = dashing;
+    if (reduced) {
+      this.trailEmitter.setFrequency(24);
+      this.trailEmitter.particleTint = 0xffffff;
+    } else {
+      this.trailEmitter.setFrequency(24 - tier * 5); // denser (hotter) trail per tier
+      this.trailEmitter.particleTint = tints[tier];
+    }
+    const target = reduced ? 0 : tier >= 3 ? 0.16 : tier === 2 ? 0.09 : 0;
+    for (const r of this.edgeGlow) r.alpha += (target - r.alpha) * 0.08;
   }
 
   private ensureParticleTexture(): void {
