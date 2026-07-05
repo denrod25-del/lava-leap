@@ -382,6 +382,9 @@ export class GameScene extends Phaser.Scene {
       const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
       body.reset(TUNING.playerStartX, safeY);
       this.player.sprite.setVelocity(0, 0);
+      // Absorb the revive lift into maxHeight NOW (plain height, no heat bonus) so
+      // the next frame's Flow heat scoring can't treat the teleport as climbed height.
+      this.score.updateHeight(Math.max(0, TUNING.groundY - safeY));
       this.powerups.hasShield = true;
       this.registry.set('powerup', this.powerups.hudState);
       // Dedicated revive event for juice/sfx — NOT powerupCollected, so the revive
