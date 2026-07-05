@@ -17,21 +17,29 @@ export class TutorialOverlay {
   private jumped = false;
   private airJumped = false;
   private moved = false;
+  private dashed = false;
+  private cancelled = false;
   private offs: Array<() => void> = [];
 
   constructor(private scene: Phaser.Scene, events: GameEvents, isTouch: boolean, private onDone: () => void) {
     this.offs.push(events.on('jump', () => { this.jumped = true; }));
     this.offs.push(events.on('doubleJump', () => { this.airJumped = true; }));
+    this.offs.push(events.on('dash', () => { this.dashed = true; }));
+    this.offs.push(events.on('dashJumpCancel', () => { this.cancelled = true; }));
 
     this.steps = isTouch ? [
       { text: 'HOLD THE LEFT SIDE — slide to run', done: () => this.moved, holdMs: 6000 },
       { text: 'TAP THE RIGHT SIDE to jump', done: () => this.jumped, holdMs: 6000 },
       { text: 'TAP AGAIN IN THE AIR — double & triple jump!', done: () => this.airJumped, holdMs: 6000 },
+      { text: 'TAP DASH in the air — dash through enemies!', done: () => this.dashed, holdMs: 6000 },
+      { text: 'TAP JUMP mid-dash to LAUNCH — build your FLOW!', done: () => this.cancelled, holdMs: 6000 },
       { text: '⚠ THE LAVA RISES — CLIMB!', done: () => false, holdMs: 4000 },
     ] : [
       { text: '←/→ or A/D to run', done: () => this.moved, holdMs: 6000 },
       { text: 'SPACE or ↑ to jump (hold = higher)', done: () => this.jumped, holdMs: 6000 },
       { text: 'JUMP AGAIN IN THE AIR — double jump!', done: () => this.airJumped, holdMs: 6000 },
+      { text: 'SHIFT or X in the air — DASH through enemies!', done: () => this.dashed, holdMs: 6000 },
+      { text: 'JUMP mid-dash to LAUNCH — build your FLOW!', done: () => this.cancelled, holdMs: 6000 },
       { text: '⚠ THE LAVA RISES — CLIMB!', done: () => false, holdMs: 4000 },
     ];
 
