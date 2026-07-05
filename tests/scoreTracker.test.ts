@@ -27,4 +27,31 @@ describe('ScoreTracker', () => {
     expect(s.coins).toBe(1);
     expect(s.score).toBe(250 + 40);
   });
+
+  it('heat bonus adds (multiplier − 1) × height gained to the score', () => {
+    const s = new ScoreTracker();
+    s.addHeatBonus(100, 2);  // +100 bonus
+    s.updateHeight(100);     // +100 height
+    expect(s.score).toBe(200);
+  });
+
+  it('heat bonus at ×1 adds nothing', () => {
+    const s = new ScoreTracker();
+    s.addHeatBonus(500, 1);
+    s.updateHeight(100);
+    expect(s.score).toBe(100);
+  });
+
+  it('heat bonus accumulates sub-point fractions across frames', () => {
+    const s = new ScoreTracker();
+    for (let i = 0; i < 50; i++) s.addHeatBonus(1, 1.25); // 50 × 0.25 = 12.5
+    expect(s.score).toBe(12); // floor of the accumulated float
+  });
+
+  it('negative or zero gain never adds heat bonus', () => {
+    const s = new ScoreTracker();
+    s.addHeatBonus(0, 2);
+    s.addHeatBonus(-10, 2);
+    expect(s.score).toBe(0);
+  });
 });
