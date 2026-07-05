@@ -22,11 +22,20 @@ export class Player {
   /** Max jumps before landing (ground + air). 2 = double (keyboard); GameScene sets
    *  3 on touch devices for the triple jump (mobile is harder to climb). */
   maxJumps = 2;
+  /** Fractional moveSpeed bonus from the Flow tier (set by GameScene each frame). */
+  flowSpeedNudge = 0;
 
   get wallSliding(): boolean { return this._wallSliding; }
 
   /** True while an air-dash is in progress. */
   get dashing(): boolean { return this.dashTimer > 0; }
+
+  /** Dash i-frames: untouchable by enemies/boss projectiles while dashing.
+   *  Lava is exempt — GameScene's lava check never consults this. */
+  get invulnerable(): boolean { return this.dashTimer > 0; }
+
+  /** Refresh the air-dash mid-air (coin grabs; stomp/bounce already refresh). */
+  refreshDash(): void { this.dashAvailable = true; }
 
   /** Tiny upward kick on successful stomp, refreshes air abilities. */
   stompBounce(): void {
@@ -105,7 +114,7 @@ export class Player {
 
     // Horizontal movement: run at runAxis × moveSpeed (analog on touch, ±1 on keyboard).
     // Facing tracks travel direction.
-    this.sprite.setVelocityX(runAxis * TUNING.moveSpeed);
+    this.sprite.setVelocityX(runAxis * TUNING.moveSpeed * (1 + this.flowSpeedNudge));
     if (runAxis < -0.05) this.sprite.setFlipX(true);
     else if (runAxis > 0.05) this.sprite.setFlipX(false);
 
