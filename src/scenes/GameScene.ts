@@ -7,6 +7,7 @@ import { CoinManager } from '../entities/CoinManager';
 import { Lava } from '../entities/Lava';
 import { ScoreTracker } from '../core/ScoreTracker';
 import { ComboTracker } from '../core/ComboTracker';
+import { FlowMeter, combinedMultiplier } from '../core/FlowMeter';
 import { save } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
@@ -36,6 +37,8 @@ export class GameScene extends Phaser.Scene {
   private lava!: Lava;
   private score = new ScoreTracker();
   private combo!: ComboTracker;
+  private flow!: FlowMeter;
+  private peakFlowTier = 0;
   private dead = false;
   private booked = false;
   private bgFar!: Phaser.GameObjects.TileSprite;
@@ -138,6 +141,9 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('coins', 0);
     this.registry.set('combo', { multiplier: 1, remaining01: 0 });
     this.registry.set('powerup', { kind: null, shield: false, remainMs: 0 });
+    this.flow = new FlowMeter();
+    this.peakFlowTier = 0;
+    this.registry.set('flow', { value: 0, tier: 0, name: 'COOL', multiplier: 1 });
 
     this.dateKeyToday = dateKey(new Date());
     save.update((b) => recordRunStart(b.analytics, this.daily));
@@ -218,6 +224,13 @@ export class GameScene extends Phaser.Scene {
       track(phase === 'start' ? 'boss_start' : 'boss_clear', { index: zoneIndex });
     });
 
+    // Flow chain beats: each aggressive action bumps the meter.
+    this.gameEvents.on('dash', () => this.flow.beat());
+    this.gameEvents.on('dashJumpCancel', () => this.flow.beat());
+    this.gameEvents.on('coinCollected', () => this.flow.beat());
+    this.gameEvents.on('enemyStomped', () => this.flow.beat());
+    this.gameEvents.on('bouncePad', () => this.flow.beat());
+
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
 
@@ -236,6 +249,20 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     const sampled = this.inputSrc.sample();
     this.player.update(sampled);
+    // Flow: build while airborne/dashing, drain when camping on the ground.
+    const pbody = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+    const grounded = pbody.blocked.down || pbody.touching.down;
+    const prevTier = this.flow.tier;
+    this.flow.update(delta, !grounded, this.player.dashing);
+    if (this.flow.tier !== prevTier) {
+      this.gameEvents.emit('flowTier', { tier: this.flow.tier, name: this.flow.tierName });
+    }
+    this.peakFlowTier = Math.max(this.peakFlowTier, this.flow.tier);
+    this.player.flowSpeedNudge = this.flow.speedNudge;
+    this.registry.set('flow', {
+      value: this.flow.value, tier: this.flow.tier,
+      name: this.flow.tierName, multiplier: this.flow.heatMultiplier,
+    });
     this.tutorial?.update(sampled, delta);
     if (sampled.pausePressed) this.pauseGame();
     this.platforms.update(time);
@@ -292,6 +319,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
+    // Flow heat: new height gained this frame earns (heatMultiplier − 1) extra points.
+    this.score.addHeatBonus(Math.max(0, heightClimbed - this.score.maxHeight), this.flow.heatMultiplier);
     this.score.updateHeight(heightClimbed);
     this.registry.set('height', Math.floor(this.score.maxHeight));
     this.registry.set('coins', this.score.coins);
@@ -364,7 +393,7 @@ export class GameScene extends Phaser.Scene {
     this.dead = true;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
-    track('death', { height: Math.floor(heightClimbed), zone: this.zoneIndex, source });
+    track('death', { height: Math.floor(heightClimbed), zone: this.zoneIndex, source, peak_flow: this.peakFlowTier });
     if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
     this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
     this.time.delayedCall(450, () => {
@@ -414,7 +443,9 @@ export class GameScene extends Phaser.Scene {
   /** Register a combo action: bump the multiplier, award multiplied bonus, sync HUD. */
   private comboAction(basePoints: number): void {
     this.combo.bump();
-    this.score.addBonus(Math.floor(basePoints * this.combo.multiplier));
+    // Flow × Combo, capped — "Flow = how you climb, Combo = what you grab."
+    const combined = combinedMultiplier(this.combo.multiplier, this.flow.heatMultiplier);
+    this.score.addBonus(Math.floor(basePoints * combined));
     this.gameEvents.emit('comboChanged', { multiplier: this.combo.multiplier });
     this.registry.set('combo', { multiplier: this.combo.multiplier, remaining01: this.combo.remaining01 });
   }
