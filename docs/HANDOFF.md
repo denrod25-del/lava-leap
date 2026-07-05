@@ -2,17 +2,17 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-02 (v0.5.3)._
+_Last updated: 2026-07-05 (v0.6.0)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.5.3, shipped & live
-- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.5.3 · <commit>` with correct cache headers (verified).
-- **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.5.1 · local `LavaLeap-v0.5.1-debug.apk` (v0.5.2/0.5.3 are web-only changes; no APK rebuild needed).
-- **Tests:** 102 unit (Vitest) + 10 e2e (Playwright, incl. an audio-pipeline spec: decode/unlock/music-handoff/one-shots), all green; typecheck + build clean.
+## Current state — v0.6.0, shipped & live
+- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.6.0 · <commit>` with correct cache headers (verified).
+- **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.6.0 with `LavaLeap-v0.6.0-debug.apk` attached.
+- **Tests:** 124 unit (Vitest) + 13 e2e (Playwright, incl. audio-pipeline + dash-flow chain/momentum/reduced-motion specs), all green; typecheck + build clean.
 - Everything pushed; working tree clean.
 
 ## Version history (all shipped)
@@ -26,7 +26,8 @@ _Last updated: 2026-07-02 (v0.5.3)._
 | v0.5.0 | First-run tutorial, How-to-Play, start-screen polish, fast fall, loading bar, favicon/OG/meta, analytics hooks (`window.dataLayer`), lava bubbles |
 | v0.5.1 | Build/version visibility (auto-injected version+commit+date on title/Settings/dev-overlay), "What's New" auto-shown on version change, Vercel deploy + cache headers |
 | v0.5.2 | Public HTML shell: static lava-themed pre-loader with build stamp (visible pre-JS, removed on Phaser READY), `<noscript>` readable content (description+controls), JSON-LD VideoGame, meta-description copy swap, defensive SW/CacheStorage cleanup on boot; build info injected into static HTML via a vite `transformIndexHtml` plugin (`%APP_VERSION%`/`%BUILD_ID%`/`%BUILD_DATE%` placeholders) |
-| **v0.5.3** | **A11y + feel pass**: Reduce Motion setting (gates camera shake AND death slow-mo; `settings.reducedMotion`, backfilled on legacy saves + migration test), lava surface heat-glow (generated gradient canvas texture `lava-glow`, ADD blend, tracks `surfaceY`), title-screen subtitle + tagline |
+| v0.5.3 | A11y + feel pass: Reduce Motion setting (gates camera shake AND death slow-mo; `settings.reducedMotion`, backfilled on legacy saves + migration test), lava surface heat-glow (generated gradient canvas texture `lava-glow`, ADD blend, tracks `surfaceY`), title-screen subtitle + tagline |
+| **v0.6.0** | **DASH-FLOW — the signature-move update** (differentiation from Icy Tower): dash-jump cancel (jump mid-dash keeps dash speed, full jumpVelocity by design, buffers when out of jump slots), dash i-frames (`Player.invulnerable` gates boss fireballs; enemies already died to dash; lava NEVER gated), coin-grab dash refresh, pure `FlowMeter` (`src/core/FlowMeter.ts`) — 4 tiers COOL/WARM/HOT/BLAZING ×1/1.25/1.6/2 heat multiplier on height+pickups, `combinedMultiplier` caps Flow×Combo at 8; **passive airtime stalls at the WARM boundary** (hot flow holds airborne; HOT/BLAZING need chain beats); HUD right-edge meter, tier trail/edge-glow/stings (reducedMotion-gated, dt-correct lerp), 2 tutorial steps, revive-lift absorbed pre-heat-scoring |
 
 ## Key technical facts / gotchas
 - **Architecture:** pure logic in `src/core/` (never imports Phaser; unit-tested); Phaser in `src/scenes/` + `src/entities/`. Tuning in `src/tuning.ts`. In `GameScene` the event hub is `this.gameEvents` (Phaser owns `this.events`); input source is `this.inputSrc`.
@@ -39,6 +40,8 @@ _Last updated: 2026-07-02 (v0.5.3)._
 - **Deliberately out of scope** (endless-game genre conflicts): level select, 3-star phase ratings, per-phase timer/best-time, landscape orientation, left/right d-pad buttons.
 - **Workflow:** brainstorming → writing-plans → subagent-driven-development (fresh implementer subagent per milestone + a holistic reviewer), each milestone live-verified via `window.__game`. Specs in `docs/superpowers/specs/`, plans in `docs/superpowers/plans/` (these live in the **outer workspace repo**, not this repo).
 - **Tester distribution:** Gmail blocks `.apk` attachments → host on GitHub Releases and email the download link (draft to `cleonwheatley@gmail.com`; the Gmail connector only creates drafts, the user sends).
+- **Playwright gameplay-input trap:** zero-delay `keyboard.press()` fires keydown+keyup in one tick — the variable-height jump-cut consumes the jump before physics registers airtime, so jumps/dashes silently no-op. Use `{ delay: 40 }` on gameplay key presses.
+- **`window.__game` is DEV-ONLY** (`import.meta.env.DEV` in main.ts) — production builds strip it; e2e specs that read it must run against the dev server (the Playwright config does).
 
 ## Open / next candidates (nothing in progress)
 - Signed **Play Store** build (AAB): $25 one-time account + keystore — steps in `MOBILE.md`.
