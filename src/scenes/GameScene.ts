@@ -206,6 +206,7 @@ export class GameScene extends Phaser.Scene {
 
     this.boss = new BossController(this, this.gameEvents);
     this.boss.registerPlayerOverlap(this.player.sprite, () => {
+      if (this.player.invulnerable) return; // dash i-frames: fireballs pass through
       this.gameEvents.emit('playerHit', { source: 'boss' });
       this.handleHit('boss');
     });
@@ -406,6 +407,7 @@ export class GameScene extends Phaser.Scene {
 
   private onCoin(): void {
     this.score.addCoin();
+    this.player.refreshDash(); // mid-air coin grab refreshes the dash (chain enabler)
     this.comboAction(COMBO_POINTS.coin);
   }
 
