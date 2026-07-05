@@ -7,6 +7,9 @@ export class HudScene extends Phaser.Scene {
   private puText?: Phaser.GameObjects.Text;
   private comboText?: Phaser.GameObjects.Text;
   private comboBar?: Phaser.GameObjects.Rectangle;
+  private flowTrack?: Phaser.GameObjects.Rectangle;
+  private flowFill?: Phaser.GameObjects.Rectangle;
+  private flowLabel?: Phaser.GameObjects.Text;
   private toastQueue: string[] = [];
   private toastShowing = false;
 
@@ -54,6 +57,29 @@ export class HudScene extends Phaser.Scene {
       }).setOrigin(0.5, 0).setDepth(25);
       this.comboBar = this.add.rectangle(cx - 40, 64, 80 * combo.remaining01, 4, 0xffcf4d)
         .setOrigin(0, 0).setDepth(25);
+    }
+
+    // Flow meter: slim vertical bar on the right edge (visual only — never interactive,
+    // so it can't eat the right-half tap-to-jump zone on touch).
+    const flow = this.registry.get('flow') as
+      { value: number; tier: number; name: string; multiplier: number } | undefined;
+    this.flowTrack?.destroy(); this.flowTrack = undefined;
+    this.flowFill?.destroy(); this.flowFill = undefined;
+    this.flowLabel?.destroy(); this.flowLabel = undefined;
+    if (flow && flow.value > 0.02) {
+      const colors = [0x9ad1ff, 0xffd166, 0xff8a3d, 0xff4d00];       // COOL→BLAZING
+      const labelColors = ['#9ad1ff', '#ffd166', '#ff8a3d', '#ff4d00'];
+      const x = TUNING.width - 18, top = 120, hMax = 160;
+      this.flowTrack = this.add.rectangle(x, top, 8, hMax, 0x000000, 0.35)
+        .setOrigin(0.5, 0).setDepth(25);
+      const h = Math.max(2, Math.round(hMax * flow.value));
+      this.flowFill = this.add.rectangle(x, top + hMax - h, 8, h, colors[flow.tier])
+        .setOrigin(0.5, 0).setDepth(26);
+      if (flow.tier > 0) {
+        this.flowLabel = this.add.text(x + 4, top + hMax + 8, `${flow.name} ×${flow.multiplier}`, {
+          fontFamily: 'monospace', fontSize: '11px', color: labelColors[flow.tier],
+        }).setOrigin(1, 0).setDepth(26);
+      }
     }
   }
 
