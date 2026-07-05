@@ -112,7 +112,10 @@ export const COMBO_POINTS = {
 // Dash-Flow: momentum-as-a-resource. Builds airborne/dashing + on chain beats,
 // drains when camping on the ground. value ∈ [0,1] maps to 4 tiers.
 export const FLOW = {
-  buildAirbornePerSec: 0.06,  // passive build while airborne
+  // Passive airborne build is deliberately a garnish: a no-dash hopper (~70% airtime)
+  // plateaus around WARM. HOT/BLAZING require chain beats. (0.06 let hoppers reach
+  // BLAZING passively in ~20s, trivializing the mastery layer.)
+  buildAirbornePerSec: 0.02,
   buildDashingPerSec: 0.30,   // strong build while a dash is active
   beatBonus: 0.12,            // burst per chain beat (dash/cancel/coin/stomp/bounce)
   drainGroundPerSec: 0.25,    // drain while grounded past the grace window

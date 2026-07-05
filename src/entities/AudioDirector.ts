@@ -23,6 +23,9 @@ export class AudioDirector {
     events.on('jump', () => this.sfx('sfx-jump', 0.4));
     events.on('doubleJump', () => this.sfx('sfx-jump', 0.35));
     events.on('wallJump', () => this.sfx('sfx-jump', 0.45));
+    // flowTier() reads the registry, which GameScene refreshes every frame — so these
+    // detunes can be one frame (≤16ms) stale after a tier change. Intentional: inaudible,
+    // and the tier-up stings below use the event payload, never the registry.
     events.on('dash', () => this.sfxDetuned('sfx-ui-select', 0.3, this.flowTier() * 150));
     events.on('dashJumpCancel', () => this.sfxDetuned('sfx-jump', 0.45, 200 + this.flowTier() * 150));
     events.on('flowTier', ({ tier }) => {

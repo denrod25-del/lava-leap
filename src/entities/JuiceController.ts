@@ -148,7 +148,7 @@ export class JuiceController {
 
   /** Call each frame with the Flow tier + dash state. Scales the dash trail and
    *  the screen-edge heat glow; Reduce Motion keeps the trail plain and glow off. */
-  updateFlow(tier: number, dashing: boolean): void {
+  updateFlow(tier: number, dashing: boolean, dtMs: number): void {
     const reduced = this.save.get().settings.reducedMotion;
     const tints = [0xffffff, 0xffd166, 0xff8a3d, 0xff4d00];
     this.trailEmitter.emitting = dashing;
@@ -160,7 +160,10 @@ export class JuiceController {
       this.trailEmitter.particleTint = tints[tier];
     }
     const target = reduced ? 0 : tier >= 3 ? 0.16 : tier === 2 ? 0.09 : 0;
-    for (const r of this.edgeGlow) r.alpha += (target - r.alpha) * 0.08;
+    // Exponential smoothing normalized to a 60fps step so the glow settles at the
+    // same real-time rate on any refresh rate (~0.9s to 99%).
+    const k = 1 - Math.pow(1 - 0.08, dtMs / 16.667);
+    for (const r of this.edgeGlow) r.alpha += (target - r.alpha) * k;
   }
 
   private ensureParticleTexture(): void {

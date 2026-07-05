@@ -291,7 +291,7 @@ export class GameScene extends Phaser.Scene {
     if (fx.rocket) this.player.applyRocket();
     if (fx.magnet) this.coins.attractTo(this.player.sprite, POWERUP.magnetRadius, POWERUP.magnetPull, delta);
     this.juice.update(fx.magnet, delta);
-    this.juice.updateFlow(this.flow.tier, this.player.dashing);
+    this.juice.updateFlow(this.flow.tier, this.player.dashing, delta);
     this.lava.setSpeedFactor(fx.slowLava ? POWERUP.slowLavaFactor : 1);
     this.registry.set('powerup', this.powerups.hudState);
 

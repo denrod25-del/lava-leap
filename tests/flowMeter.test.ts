@@ -24,6 +24,27 @@ describe('FlowMeter', () => {
     expect(f.value).toBeCloseTo(FLOW.buildDashingPerSec, 5);
   });
 
+  it('passive airborne build stalls at the WARM boundary — beats required beyond', () => {
+    const f = new FlowMeter();
+    f.update(60_000, true, false); // a full minute airborne, never dashing
+    expect(f.value).toBe(FLOW.tierThresholds[0]);
+    expect(f.tier).toBe(1); // WARM, never HOT from passive airtime alone
+  });
+
+  it('hot flow HOLDS (no passive gain, no drain) while airborne without dashing', () => {
+    const f = new FlowMeter();
+    f.value = 0.7;
+    f.update(5000, true, false);
+    expect(f.value).toBe(0.7);
+  });
+
+  it('dashing still builds past the WARM boundary', () => {
+    const f = new FlowMeter();
+    f.value = FLOW.tierThresholds[0];
+    f.update(1000, true, true);
+    expect(f.value).toBeCloseTo(FLOW.tierThresholds[0] + FLOW.buildDashingPerSec, 5);
+  });
+
   it('beat() adds a burst and clamps at 1', () => {
     const f = new FlowMeter();
     f.beat();
