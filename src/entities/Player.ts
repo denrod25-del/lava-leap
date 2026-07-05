@@ -22,7 +22,7 @@ export class Player {
   /** Max jumps before landing (ground + air). 2 = double (keyboard); GameScene sets
    *  3 on touch devices for the triple jump (mobile is harder to climb). */
   maxJumps = 2;
-  /** Fractional moveSpeed bonus from the Flow tier (set by GameScene each frame). */
+  /** Fractional moveSpeed bonus from the Flow tier (GameScene wires this per-frame; stays 0 until then). */
   flowSpeedNudge = 0;
 
   get wallSliding(): boolean { return this._wallSliding; }
@@ -41,7 +41,7 @@ export class Player {
   stompBounce(): void {
     this.sprite.setVelocityY(-TUNING.stompBounceVelocity);
     this.jumpsUsed = 0;
-    this.dashAvailable = true;
+    this.refreshDash();
   }
 
   constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents) {
@@ -106,16 +106,21 @@ export class Player {
       // Dash-jump cancel (the signature move): tapping jump mid-dash ends the dash
       // and converts it into a full-strength jump that KEEPS the dash's horizontal
       // speed. Consumes one jump from the air budget.
+      // Full jumpVelocity (not the weaker doubleJumpVelocity) by design — the payoff of the move.
       const jumpEdge = (jumpDown && !this.jumpHeldLast) || input.jumpPressed;
       if (jumpEdge && this.jumpsUsed < this.maxJumps) {
         this.dashTimer = 0;
         body.setAllowGravity(true);
-        this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed); // momentum carries
+        this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed); // momentum carries (wall contact clamps it next physics step)
         this.sprite.setVelocityY(-TUNING.jumpVelocity);
         this.jumpsUsed = Math.min(this.maxJumps, this.jumpsUsed + 1);
         this.jumpHeldLast = jumpDown;
         this.events.emit('dashJumpCancel', {});
         return;
+      } else if (jumpEdge) {
+        // No jump slots left to cancel with — still arm the buffer so the press
+        // lands after the dash ends (wall touch or landing frees a jump).
+        this.bufferTimer = TUNING.jumpBufferMs;
       }
       this.dashTimer -= dt;
       this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed);
@@ -204,14 +209,14 @@ export class Player {
   applyRocket(): void {
     this.sprite.setVelocityY(-POWERUP.rocketVelocity);
     this.jumpsUsed = 0;
-    this.dashAvailable = true;
+    this.refreshDash();
   }
 
   /** Launch off a bounce pad: stronger than a jump, refreshes air abilities. */
   bounce(): void {
     this.sprite.setVelocityY(-TUNING.bouncePadVelocity);
     this.jumpsUsed = 0;
-    this.dashAvailable = true;
+    this.refreshDash();
   }
 
   private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
