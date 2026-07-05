@@ -109,6 +109,21 @@ export const COMBO_POINTS = {
   powerup: 15,
 } as const;
 
+// Dash-Flow: momentum-as-a-resource. Builds airborne/dashing + on chain beats,
+// drains when camping on the ground. value ∈ [0,1] maps to 4 tiers.
+export const FLOW = {
+  buildAirbornePerSec: 0.06,  // passive build while airborne
+  buildDashingPerSec: 0.30,   // strong build while a dash is active
+  beatBonus: 0.12,            // burst per chain beat (dash/cancel/coin/stomp/bounce)
+  drainGroundPerSec: 0.25,    // drain while grounded past the grace window
+  groundGraceMs: 350,         // brief ground touches don't drain
+  tierThresholds: [0.25, 0.55, 0.85] as const, // Warm, Hot, Blazing lower bounds
+  tierNames: ['COOL', 'WARM', 'HOT', 'BLAZING'] as const,
+  heatMultipliers: [1, 1.25, 1.6, 2] as const, // score multiplier per tier
+  speedNudge: [0, 0, 0.04, 0.08] as const,     // fraction added to moveSpeed per tier
+  combinedCap: 8,             // max (combo.multiplier × heatMultiplier) for pickups
+} as const;
+
 export interface UpgradeDef { id: 'powerupDuration' | 'startShield' | 'revive'; name: string; maxLevel: number; costs: number[]; desc: string }
 export const UPGRADES: UpgradeDef[] = [
   { id: 'powerupDuration', name: 'Power-Up Time', maxLevel: 3, costs: [150, 300, 500], desc: '+15% power-up duration / level' },
