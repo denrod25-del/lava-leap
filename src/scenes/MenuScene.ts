@@ -57,6 +57,9 @@ export class MenuScene extends Phaser.Scene {
       { line: "N      What's New", tap: () => this.scene.start('Changelog') },
       { line: 'S      Settings', tap: () => this.scene.start('Settings', { from: 'Menu' }) },
     ];
+    if (leaderboard.enabled) {
+      items.splice(2, 0, { line: 'L      Leaderboard', tap: () => this.scene.start('Leaderboard') });
+    }
     const uiVol = () => 0.35 * (save.get().settings.sfxVol / 10);
     items.forEach((item, i) => this.add.text(cx, 380 + i * 30, item.line, {
       fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0',
@@ -84,6 +87,7 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-H', () => this.scene.start('HowTo'));
     kb.once('keydown-N', () => this.scene.start('Changelog'));
     kb.once('keydown-S', () => this.scene.start('Settings', { from: 'Menu' }));
+    if (leaderboard.enabled) kb.once('keydown-L', () => this.scene.start('Leaderboard'));
     kb.on('keydown-F9', () => this.toggleDebug());
     // Panel hotkeys registered ONCE (not per toggle, which stacked stale once-listeners);
     // they no-op unless the panel is open.

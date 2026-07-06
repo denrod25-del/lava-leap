@@ -11,6 +11,7 @@ import { HowToScene } from './scenes/HowToScene';
 import { ChangelogScene } from './scenes/ChangelogScene';
 import { PauseScene } from './scenes/PauseScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { LeaderboardScene } from './scenes/LeaderboardScene';
 import { SaveData } from './core/SaveData';
 import { createLeaderboard } from './core/leaderboard';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './core/leaderboardConfig';
@@ -56,7 +57,7 @@ const config: Phaser.Types.Core.GameConfig = {
     height: TUNING.height,
   },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: TUNING.gravityY }, debug: false } },
-  scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, ChangelogScene, PauseScene, SettingsScene],
+  scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, ChangelogScene, PauseScene, SettingsScene, LeaderboardScene],
 };
 
 // Defensive stale-build protection: this app has no service worker (deliberate),
