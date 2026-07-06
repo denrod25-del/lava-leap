@@ -157,4 +157,32 @@ describe('SaveData', () => {
     expect(s.get().settings.musicVol).toBe(3);           // existing nested values preserved
     expect(s.get().settings.reducedMotion).toBe(true);
   });
+
+  it('generates a playerId on first construction and persists it', () => {
+    const store = fakeStore();
+    const s = new SaveData(store, () => 'fixed-uuid-1');
+    expect(s.get().identity.playerId).toBe('fixed-uuid-1');
+    // persisted, so a reload keeps the same id (real generator not called again)
+    const again = new SaveData(store, () => 'DIFFERENT');
+    expect(again.get().identity.playerId).toBe('fixed-uuid-1');
+  });
+
+  it('defaults identity.name to empty (name assigned later by the name flow)', () => {
+    expect(new SaveData(fakeStore(), () => 'id').get().identity.name).toBe('');
+  });
+
+  it('backfills identity on a legacy save without it (and mints a playerId)', () => {
+    const legacy = {
+      version: 2, highScore: 7, coinBank: 3, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.7.0',
+      // no identity
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }), () => 'legacy-id');
+    expect(s.get().identity).toEqual({ playerId: 'legacy-id', name: '' });
+    expect(s.get().highScore).toBe(7); // existing data preserved
+  });
 });

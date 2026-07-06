@@ -31,6 +31,8 @@ export interface SaveBlob {
   tutorialDone: boolean;
   /** Last app version whose "What's New" screen was shown; drives the once-per-version auto-show. */
   lastSeenVersion: string;
+  /** Account-free persistent identity for the online leaderboard. */
+  identity: { playerId: string; name: string };
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -50,6 +52,7 @@ function defaults(): SaveBlob {
     upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
     tutorialDone: false,
     lastSeenVersion: '',
+    identity: { playerId: '', name: '' },
   };
 }
 
@@ -60,8 +63,12 @@ function defaults(): SaveBlob {
 export class SaveData {
   private blob: SaveBlob;
 
-  constructor(private store: KeyValueStore) {
+  constructor(private store: KeyValueStore, private idGen: () => string = () => crypto.randomUUID()) {
     this.blob = this.load();
+    if (!this.blob.identity.playerId) {
+      this.blob.identity.playerId = this.idGen();
+      try { this.store.setItem(KEY, JSON.stringify(this.blob)); } catch { /* storage unavailable */ }
+    }
   }
 
   get(): SaveBlob {
@@ -103,6 +110,7 @@ export class SaveData {
             settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
             analytics: { ...defaultAnalytics(), ...parsed.analytics },
             upgrades: { ...defaults().upgrades, ...parsed.upgrades },
+            identity: { ...defaults().identity, ...parsed.identity },
           };
         }
       }
