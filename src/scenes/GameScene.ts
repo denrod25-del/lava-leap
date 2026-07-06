@@ -18,6 +18,7 @@ import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
 import { TouchSteerInput } from '../entities/input/TouchSteerInput';
+import { AutoTouchInput } from '../entities/input/AutoTouchInput';
 import { EnemyManager } from '../entities/EnemyManager';
 import { PowerupController } from '../entities/PowerupController';
 import { BossController } from '../entities/BossController';
@@ -168,20 +169,32 @@ export class GameScene extends Phaser.Scene {
     for (const p of this.stream.active) this.platforms.spawn(p);
 
     this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
-    // Touch supplies a follow-finger steer target + JUMP/DASH buttons; keyboard supplies
-    // keys. Player.update() reads whichever and runs the SAME manual moveset for both.
+    // Input source by device + chosen scheme. AUTO (touch default): hold-to-steer +
+    // tap-to-dash with automatic jumping. MANUAL: the two-thumb scheme. Keyboard
+    // unchanged. Changing the Settings row takes effect here, on the next run.
     const wantTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0;
-    this.inputSrc = wantTouch ? new TouchSteerInput(this) : new KeyboardInput(this);
-    // Touch climbing is harder, so grant a triple jump (ground + 2 air); keyboard stays double.
+    const scheme = save.get().settings.controlScheme;
+    const controlType: 'keyboard' | 'touch-manual' | 'touch-auto' =
+      wantTouch ? (scheme === 'auto' ? 'touch-auto' : 'touch-manual') : 'keyboard';
+    if (controlType === 'touch-auto') {
+      this.inputSrc = new AutoTouchInput(this, () => this.player.sprite.x, () => this.player.dashing);
+      this.player.autoJump = true;
+    } else if (controlType === 'touch-manual') {
+      this.inputSrc = new TouchSteerInput(this);
+    } else {
+      this.inputSrc = new KeyboardInput(this);
+    }
+    // Touch climbing is harder, so grant a triple jump (ground + 2 air); keyboard stays
+    // double. Auto keeps 3 too: dash-jump launches consume jump slots.
     this.player.maxJumps = wantTouch ? 3 : 2;
     // First-run tutorial (once ever; Settings can reset the flag).
     this.tutorial = undefined;
     if (!save.get().tutorialDone) {
-      this.tutorial = new TutorialOverlay(this, this.gameEvents, wantTouch ? 'touch-manual' : 'keyboard', () => {
+      this.tutorial = new TutorialOverlay(this, this.gameEvents, controlType, () => {
         save.update((b) => { b.tutorialDone = true; });
       });
     }
-    track('start_game', { daily: this.daily, control_type: wantTouch ? 'touch' : 'keyboard' });
+    track('start_game', { daily: this.daily, control_type: controlType });
     this.physics.add.collider(this.player.sprite, this.platforms.group);
 
     this.coins = new CoinManager(this);
