@@ -2,17 +2,17 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-05 (v0.6.0)._
+_Last updated: 2026-07-06 (v0.7.0)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.6.0, shipped & live
-- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.6.0 · <commit>` with correct cache headers (verified).
-- **GitHub release + APK:** https://github.com/denrod25-del/lava-leap/releases/tag/v0.6.0 with `LavaLeap-v0.6.0-debug.apk` attached.
-- **Tests:** 124 unit (Vitest) + 13 e2e (Playwright, incl. audio-pipeline + dash-flow chain/momentum/reduced-motion specs), all green; typecheck + build clean.
+## Current state — v0.7.0, shipped & live (web)
+- **Web (live):** https://lava-leap-84pb.vercel.app — Vercel auto-deploys on push to `master`; serves `v0.7.0 · <commit>`.
+- **GitHub release + APK:** latest release is still **v0.6.0** (with `LavaLeap-v0.6.0-debug.apk`) — v0.7.0 shipped web-only at the user's choice; APK rebuild + release + tester email are open follow-ups.
+- **Tests:** 129 unit (Vitest) + 15 e2e (Playwright; run e2e with `--workers=1` — default 5-worker parallelism has a pre-existing local flake from concurrent SwiftShader contexts), all green; typecheck + build clean.
 - Everything pushed; working tree clean.
 
 ## Version history (all shipped)
@@ -27,7 +27,8 @@ _Last updated: 2026-07-05 (v0.6.0)._
 | v0.5.1 | Build/version visibility (auto-injected version+commit+date on title/Settings/dev-overlay), "What's New" auto-shown on version change, Vercel deploy + cache headers |
 | v0.5.2 | Public HTML shell: static lava-themed pre-loader with build stamp (visible pre-JS, removed on Phaser READY), `<noscript>` readable content (description+controls), JSON-LD VideoGame, meta-description copy swap, defensive SW/CacheStorage cleanup on boot; build info injected into static HTML via a vite `transformIndexHtml` plugin (`%APP_VERSION%`/`%BUILD_ID%`/`%BUILD_DATE%` placeholders) |
 | v0.5.3 | A11y + feel pass: Reduce Motion setting (gates camera shake AND death slow-mo; `settings.reducedMotion`, backfilled on legacy saves + migration test), lava surface heat-glow (generated gradient canvas texture `lava-glow`, ADD blend, tracks `surfaceY`), title-screen subtitle + tagline |
-| **v0.6.0** | **DASH-FLOW — the signature-move update** (differentiation from Icy Tower): dash-jump cancel (jump mid-dash keeps dash speed, full jumpVelocity by design, buffers when out of jump slots), dash i-frames (`Player.invulnerable` gates boss fireballs; enemies already died to dash; lava NEVER gated), coin-grab dash refresh, pure `FlowMeter` (`src/core/FlowMeter.ts`) — 4 tiers COOL/WARM/HOT/BLAZING ×1/1.25/1.6/2 heat multiplier on height+pickups, `combinedMultiplier` caps Flow×Combo at 8; **passive airtime stalls at the WARM boundary** (hot flow holds airborne; HOT/BLAZING need chain beats); HUD right-edge meter, tier trail/edge-glow/stings (reducedMotion-gated, dt-correct lerp), 2 tutorial steps, revive-lift absorbed pre-heat-scoring |
+| **v0.7.0** | **AUTO-JUMP control mode (new mobile DEFAULT)** — the user reversed the v4.x manual-controls decision after playing v0.6.0, so the scheme is now a Setting (`settings.controlScheme: 'auto'\|'manual'`, default auto, deep-merge backfilled + migration test). AUTO = hold anywhere to steer toward the finger (pure `steerAxis` in `src/core/autoSteer.ts`), jumping automatic (`Player.autoJump`, full-height, emits `jump`, runs AFTER the buffer-arm line — ordering prevents a same-frame tap minting a free air jump), TAP = dash / TAP mid-dash = launch (taps resolve on pointer-UP: ≤180ms + ≤14px drift; `isDashing()` at release routes dash vs cancel), steer-pointer handoff promotes a still-held finger, no fast-fall/DASH-button in auto, auto jumps are NOT Flow beats, MANUAL scheme byte-identical. Settings row CONTROLS, 3rd tutorial variant (4 steps), scheme-aware HowTo |
+| v0.6.0 | DASH-FLOW — the signature-move update (differentiation from Icy Tower): dash-jump cancel (jump mid-dash keeps dash speed, full jumpVelocity by design, buffers when out of jump slots), dash i-frames (`Player.invulnerable` gates boss fireballs; enemies already died to dash; lava NEVER gated), coin-grab dash refresh, pure `FlowMeter` (`src/core/FlowMeter.ts`) — 4 tiers COOL/WARM/HOT/BLAZING ×1/1.25/1.6/2 heat multiplier on height+pickups, `combinedMultiplier` caps Flow×Combo at 8; **passive airtime stalls at the WARM boundary** (hot flow holds airborne; HOT/BLAZING need chain beats); HUD right-edge meter, tier trail/edge-glow/stings (reducedMotion-gated, dt-correct lerp), 2 tutorial steps, revive-lift absorbed pre-heat-scoring |
 
 ## Key technical facts / gotchas
 - **Architecture:** pure logic in `src/core/` (never imports Phaser; unit-tested); Phaser in `src/scenes/` + `src/entities/`. Tuning in `src/tuning.ts`. In `GameScene` the event hub is `this.gameEvents` (Phaser owns `this.events`); input source is `this.inputSrc`.
@@ -41,6 +42,7 @@ _Last updated: 2026-07-05 (v0.6.0)._
 - **Workflow:** brainstorming → writing-plans → subagent-driven-development (fresh implementer subagent per milestone + a holistic reviewer), each milestone live-verified via `window.__game`. Specs in `docs/superpowers/specs/`, plans in `docs/superpowers/plans/` (these live in the **outer workspace repo**, not this repo).
 - **Tester distribution:** Gmail blocks `.apk` attachments → host on GitHub Releases and email the download link (draft to `cleonwheatley@gmail.com`; the Gmail connector only creates drafts, the user sends).
 - **Playwright gameplay-input trap:** zero-delay `keyboard.press()` fires keydown+keyup in one tick — the variable-height jump-cut consumes the jump before physics registers airtime, so jumps/dashes silently no-op. Use `{ delay: 40 }` on gameplay key presses.
+- **Playwright touch-start trap:** the Menu's tap-to-start zone is a 600×365 rect — taps below y≈365 of the canvas hit dead space and the run never starts. Tap at ~30% height and poll for `Game.player` to exist rather than fixed-waiting.
 - **`window.__game` is DEV-ONLY** (`import.meta.env.DEV` in main.ts) — production builds strip it; e2e specs that read it must run against the dev server (the Playwright config does).
 
 ## Open / next candidates (nothing in progress)
