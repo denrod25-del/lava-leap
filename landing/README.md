@@ -2,7 +2,7 @@
 
 Static marketing site for Lava Leap (plain HTML/CSS/JS, no build step). Lives in
 `landing/` so it never collides with the game, which deploys from the repo root
-to https://lava-leap-two.vercel.app.
+to https://lava-leap-84pb.vercel.app.
 
 ## Deploying (separate Vercel project)
 
@@ -39,8 +39,10 @@ soon" — pulling `config.js` is a safe kill-switch.
   already ships the snippet; expect `cta_click`, `waitlist_join`, and
   `scroll_depth` custom events.
 - Update the hardcoded URLs once the landing domain is decided: the canonical
-  link, `og:url`/`og:image`, `twitter:image`, and JSON-LD in `index.html`,
-  plus `robots.txt` and `sitemap.xml`, currently point at
-  `https://lava-leap-two.vercel.app` (the game's domain).
+  links (in `index.html`, `privacy.html`, `terms.html`), `og:url`/`og:image`,
+  `twitter:image`, and JSON-LD in `index.html`, plus `robots.txt` and
+  `sitemap.xml`, currently point at `https://lava-leap-two.vercel.app` — a
+  stale placeholder (the game actually lives at `lava-leap-84pb`). The Play
+  links already point at the live game.
 - Full task list, acceptance criteria, and known follow-ups:
   `CLAUDE-CODE-HANDOFF.md` and `DEPLOY.md`.
