@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.7.0', date: '2026-07-06', notes: [
+    'NEW DEFAULT mobile controls: AUTO-JUMP — hold anywhere to steer, jumping is automatic.',
+    'TAP to dash · tap mid-dash to LAUNCH — the whole FLOW game, one-handed.',
+    'Prefer the two-thumb controls? Settings → CONTROLS → MANUAL.',
+  ]},
   { version: '0.6.0', date: '2026-07-05', notes: [
     'DASH-FLOW: jump mid-dash to launch and keep your speed — the new signature move.',
     'Dash through danger: enemies and fireballs can\'t touch you mid-dash (lava still wins).',
