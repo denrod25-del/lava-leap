@@ -12,9 +12,16 @@ import { ChangelogScene } from './scenes/ChangelogScene';
 import { PauseScene } from './scenes/PauseScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { SaveData } from './core/SaveData';
+import { createLeaderboard } from './core/leaderboard';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './core/leaderboardConfig';
 
 /** Single shared save — all scenes import this. */
 export const save = new SaveData(window.localStorage);
+
+/** Single shared leaderboard client — disabled (no-op) unless VITE_SUPABASE_* are set. */
+export const leaderboard = createLeaderboard({
+  url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, fetchImpl: window.fetch.bind(window),
+});
 
 let crashShown = false;
 function showCrashOverlay(message: string): void {
