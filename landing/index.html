@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#140a08">
+
+<!-- Primary meta -->
+<title>Lava Leap — Arcade Lava Climber | Play Free in Browser</title>
+<meta name="description" content="Climb an endless tower, outrun the rising lava, chain combos, dash, double-jump, bank coins, and battle the Lava Titan. Play free in your browser or download the Android APK.">
+<meta name="author" content="B. Symbolic">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://lava-leap-two.vercel.app/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lava Leap">
+<meta property="og:title" content="Lava Leap — Arcade Lava Climber">
+<meta property="og:description" content="Climb an endless tower, outrun the rising lava, and battle the Lava Titan. Free in your browser + Android.">
+<meta property="og:url" content="https://lava-leap-two.vercel.app/">
+<meta property="og:image" content="https://lava-leap-two.vercel.app/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lava Leap — pixel-art hero leaping over rising lava">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lava Leap — Arcade Lava Climber">
+<meta name="twitter:description" content="Climb an endless tower, outrun the rising lava, and battle the Lava Titan. Free to play.">
+<meta name="twitter:image" content="https://lava-leap-two.vercel.app/og-cover.png">
+
+<!-- Icons / manifest -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+
+<!-- Vercel Web Analytics (plain-HTML install). Auto-tracks pageviews once
+     deployed on Vercel; custom events fire via window.va(...) in the runtime.
+     Enable Analytics for the project in the Vercel dashboard first. -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+
+<!-- Fonts: preconnect + swap to avoid render-blocking -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- JSON-LD: VideoGame schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Lava Leap",
+  "description": "An endless arcade lava climber. Scale a tower of platforms, outrun rising lava, chain combos, dash and double-jump, bank coins, and battle the Lava Titan boss.",
+  "url": "https://lava-leap-two.vercel.app/",
+  "image": "https://lava-leap-two.vercel.app/og-cover.png",
+  "genre": ["Arcade", "Platformer", "Endless Runner"],
+  "gamePlatform": ["Web Browser", "Android"],
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (browser), Android",
+  "author": { "@type": "Organization", "name": "B. Symbolic" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<style>
+  :root{
+    --coal:#140a08; --ash:#2a1512; --ash-border:#4a2318;
+    --ember:#ff5714; --molten:#ffb703; --crust:#e8c9a0;
+    --smoke:#a38b7d; --toxic:#3ddc97; --danger:#ff5714;
+    --scan:rgba(255,87,20,.04); --shadow:5px 5px 0 #000;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+  body{
+    background:var(--coal);color:var(--crust);
+    font-family:'DM Mono',monospace;line-height:1.6;
+    overflow-x:hidden;image-rendering:pixelated;
+    opacity:0;animation:pageIn .5s ease forwards;
+  }
+  @keyframes pageIn{to{opacity:1}}
+
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
+    background:repeating-linear-gradient(0deg,transparent 0 3px,var(--scan) 3px 4px)}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
+    box-shadow:inset 0 0 240px rgba(0,0,0,.85)}
+
+  h1,h2,h3,.pix{font-family:'Press Start 2P',monospace;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+
+  .skip{position:absolute;left:-999px;top:0;z-index:100;background:var(--molten);color:var(--coal);
+    font-family:'Press Start 2P';font-size:11px;padding:14px 18px;text-decoration:none}
+  .skip:focus{left:8px;top:8px}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--toxic);outline-offset:3px}
+
+  .btn{font-family:'Press Start 2P';font-size:12px;text-decoration:none;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:16px 22px;border:0;cursor:pointer;position:relative;
+    transition:transform .08s ease,background .15s ease;min-height:48px}
+  .btn:active{transform:translate(3px,3px)}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .btn-play{background:var(--molten);color:#2a1512;box-shadow:var(--shadow)}
+  .btn-play:hover{background:#ffcb3a}
+  .btn-wait{background:var(--ash);color:var(--crust);box-shadow:var(--shadow);border:2px solid var(--ember)}
+  .btn-wait:hover{background:#3a1d18}
+
+  /* HERO */
+  header{position:relative;overflow:hidden;border-bottom:4px solid var(--ash)}
+  .stage{position:relative;height:min(80vh,660px);min-height:480px;
+    background:linear-gradient(180deg,#1b0d0a 0%,#3a160c 55%,var(--ember) 100%)}
+  .lava{position:absolute;left:0;right:0;bottom:0;height:34%;
+    background:linear-gradient(180deg,var(--molten),var(--ember) 60%,#c81d0a);
+    box-shadow:0 -8px 0 #ff7a2e,0 -12px 40px rgba(255,120,0,.7);
+    animation:bubble 3.2s ease-in-out infinite;will-change:height}
+  @keyframes bubble{50%{height:37%}}
+  .lava::before{content:"";position:absolute;top:-10px;left:0;right:0;height:10px;
+    background:repeating-linear-gradient(90deg,var(--molten) 0 14px,transparent 14px 28px);opacity:.8}
+  .embers{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .ember-bit{position:absolute;bottom:-12px;width:6px;height:6px;background:var(--molten);
+    box-shadow:0 0 8px var(--ember);animation:rise linear infinite;opacity:0}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-70vh);opacity:0}}
+  .plat{position:absolute;height:16px;background:#6b3a22;box-shadow:0 4px 0 #3a1d10,inset 0 4px 0 #8a5030}
+  .p1{width:120px;left:8%;bottom:52%}
+  .p2{width:96px;left:38%;bottom:64%}
+  .p3{width:110px;right:12%;bottom:48%}
+  .hero-guy{position:absolute;left:50%;bottom:60%;width:96px;height:96px;margin-left:-48px;
+    background:url('/lava-titan.png') center/contain no-repeat;
+    image-rendering:pixelated;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));
+    animation:hop 1.8s ease-in-out infinite}
+  @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+  .hero-copy{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;text-align:center;z-index:2;padding:0 20px}
+  .eyebrow{font-family:'Press Start 2P';font-size:11px;color:var(--molten);letter-spacing:2px;
+    margin-bottom:22px;text-shadow:2px 2px 0 #000}
+  h1{font-size:clamp(30px,7vw,64px);color:#fff;text-shadow:4px 4px 0 var(--ember),8px 8px 0 #000;margin-bottom:18px}
+  .tag{font-size:clamp(13px,2vw,17px);color:var(--crust);max-width:540px;text-shadow:1px 1px 0 #000}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:34px}
+  .cta-note{margin-top:20px;font-size:12px;color:var(--crust);text-shadow:1px 1px 0 #000;letter-spacing:.5px}
+
+  .sticky-play{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(20,10,8,.94);border-top:3px solid var(--ember);backdrop-filter:blur(4px)}
+  .sticky-play .btn{width:100%}
+
+  /* TICKER */
+  .ticker{background:var(--ember);color:#2a1512;border-bottom:4px solid #000;overflow:hidden;padding:12px 0}
+  .ticker-track{display:inline-flex;white-space:nowrap;will-change:transform;animation:scroll 26s linear infinite}
+  .ticker span{font-family:'Press Start 2P';font-size:11px;padding:0 28px}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+
+  /* SECTIONS */
+  section{padding:88px 0}
+  .kicker{font-family:'Press Start 2P';font-size:10px;color:var(--ember);letter-spacing:2px;margin-bottom:20px}
+  h2{font-size:clamp(20px,4vw,30px);color:#fff;margin-bottom:16px;text-shadow:3px 3px 0 var(--ember)}
+  .lede{color:var(--smoke);font-size:15px;max-width:620px;margin-bottom:40px}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  /* PROOF — screenshot carousel */
+  .carousel{border:3px solid var(--ember);box-shadow:8px 8px 0 #000;background:#000;
+    position:relative;aspect-ratio:16/9;overflow:hidden}
+  .slides{display:flex;height:100%;transition:transform .4s ease;will-change:transform}
+  @media (prefers-reduced-motion:reduce){.slides{transition:none}}
+  .slide{min-width:100%;height:100%;position:relative}
+  .slide-art{position:absolute;inset:0}
+  .slide figcaption{position:absolute;left:0;bottom:0;right:0;font-family:'Press Start 2P';font-size:11px;
+    color:var(--crust);background:rgba(20,10,8,.82);padding:14px 16px}
+  .car-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:44px;
+    background:var(--molten);color:var(--coal);border:0;cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 #000}
+  .car-btn:active{transform:translateY(-50%) translate(2px,2px)}
+  .car-prev{left:12px}
+  .car-next{right:12px}
+  .dots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:8px}
+  .dot{width:12px;height:12px;background:var(--ash);border:2px solid var(--molten);cursor:pointer;padding:0}
+  .dot[aria-current="true"]{background:var(--molten)}
+
+  /* FEATURES */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+  .card{background:var(--ash);border:2px solid var(--ash-border);padding:24px;box-shadow:6px 6px 0 #000;
+    transition:transform .1s ease,border-color .15s ease}
+  .card:hover{transform:translate(-2px,-2px);border-color:var(--ember)}
+  .card .ico{font-size:26px;display:block;margin-bottom:14px;line-height:1}
+  .card h3{font-size:11px;color:#fff;margin-bottom:10px}
+  .card p{font-size:13px;color:var(--smoke)}
+
+  /* CONTROLS */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--ash-border);box-shadow:6px 6px 0 #000}
+  .step{padding:30px;border-right:2px solid var(--ash-border);background:var(--ash)}
+  .step:last-child{border-right:0}
+  .step .key{display:inline-block;background:var(--coal);border:2px solid var(--ember);color:var(--molten);
+    font-family:'Press Start 2P';font-size:12px;padding:10px 12px;margin-bottom:16px}
+  .step h3{font-size:11px;color:#fff;margin-bottom:10px}
+  .step p{font-size:13px;color:var(--smoke)}
+
+  /* LEADERBOARD */
+  .lb-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+  .board{border:2px solid var(--ash-border);box-shadow:6px 6px 0 #000;background:var(--ash)}
+  .board-row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;
+    padding:16px 18px;border-bottom:2px solid var(--ash-border)}
+  .board-row:last-child{border-bottom:0}
+  .board-row .rank{font-family:'Press Start 2P';font-size:13px;color:var(--molten)}
+  .board-row .who{font-size:14px;color:var(--crust)}
+  .board-row .sc{font-family:'Press Start 2P';font-size:11px;color:#fff}
+  .board-row.you{background:#1c0e0b;border-left:4px solid var(--toxic)}
+  .board-row.you .who{color:var(--toxic)}
+  .stat-cards{display:grid;gap:16px}
+  .stat{border:2px solid var(--ash-border);box-shadow:4px 4px 0 #000;background:var(--ash);padding:20px}
+  .stat .lbl{font-family:'Press Start 2P';font-size:8px;color:var(--ember);letter-spacing:1px}
+  .stat .val{font-family:'Press Start 2P';font-size:16px;color:#fff;margin-top:12px}
+  .stat .sub{font-size:12px;color:var(--smoke);margin-top:8px}
+
+  /* TRUST */
+  .trust{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+  .trust-item{border:2px solid var(--ash-border);background:var(--ash);box-shadow:4px 4px 0 #000;padding:20px}
+  .trust-item .ico{font-size:22px;display:block;margin-bottom:12px}
+  .trust-item h3{font-size:10px;color:#fff;margin-bottom:8px}
+  .trust-item p{font-size:12px;color:var(--smoke)}
+  .trust-item a{color:var(--molten);text-decoration:underline}
+  .build-meta{margin-top:28px;font-size:12px;color:var(--smoke);display:flex;gap:20px;flex-wrap:wrap}
+  .build-meta b{color:var(--crust);font-weight:400}
+
+  /* WAITLIST */
+  .signup{background:linear-gradient(180deg,var(--ash),#1c0e0b);border:2px solid var(--ember);
+    box-shadow:8px 8px 0 #000;padding:48px;text-align:center;max-width:640px;margin:0 auto}
+  .signup h2{text-shadow:3px 3px 0 var(--ember)}
+  .form{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+  .form input[type=email]{flex:1;min-width:240px;background:var(--coal);border:2px solid var(--ash-border);
+    color:var(--crust);font-family:'DM Mono';font-size:15px;padding:15px 16px;outline:none;min-height:48px}
+  .form input[type=email]:focus{border-color:var(--molten)}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .status{margin-top:18px;font-family:'Press Start 2P';font-size:10px;line-height:1.7;min-height:14px;color:var(--toxic)}
+  .status.err{color:var(--danger)}
+  .status.ok{color:var(--toxic)}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--coal);border-top-color:var(--molten);
+    border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* FOOTER */
+  footer{border-top:4px solid var(--ash);padding:48px 0 40px;color:var(--smoke);font-size:12px}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:32px;margin-bottom:32px}
+  footer .pix{font-size:16px;color:var(--molten);display:block;margin-bottom:14px}
+  .foot-col h4{font-family:'Press Start 2P';font-size:9px;color:var(--crust);margin-bottom:14px;letter-spacing:1px}
+  .foot-col a{display:block;color:var(--smoke);text-decoration:none;padding:5px 0;min-height:32px}
+  .foot-col a:hover{color:var(--molten)}
+  .foot-col .soon{display:block;color:#6f5c52;padding:5px 0;min-height:32px;cursor:default}
+  .foot-col .soon em{font-style:normal;font-size:9px;color:var(--ember);margin-left:6px;letter-spacing:1px}
+  .foot-bottom{border-top:2px solid var(--ash);padding-top:24px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  @media(max-width:900px){
+    .lb-wrap{grid-template-columns:1fr}
+    .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:760px){
+    section{padding:60px 0}
+    .steps{grid-template-columns:1fr}
+    .step{border-right:0;border-bottom:2px solid var(--ash-border)}
+    .step:last-child{border-bottom:0}
+    .shots{grid-template-columns:1fr}
+    .hero-guy,.plat{display:none}
+    .sticky-play{display:block}
+    .signup{padding:32px 20px}
+    .foot-grid{grid-template-columns:1fr}
+    footer{padding-bottom:96px}
+  }
+  @media(max-height:520px) and (orientation:landscape){
+    .stage{height:auto;min-height:0;padding:60px 0}
+    .hero-copy{position:static}
+    .lava,.plat,.hero-guy,.embers{display:none}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#play">Skip to content</a>
+
+<header>
+  <div class="stage">
+    <div class="embers" aria-hidden="true" id="embers"></div>
+    <div class="plat p1" aria-hidden="true"></div>
+    <div class="plat p2" aria-hidden="true"></div>
+    <div class="plat p3" aria-hidden="true"></div>
+    <div class="hero-guy" aria-hidden="true"></div>
+    <div class="lava" aria-hidden="true" id="lava"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">▲ FREE BROWSER ARCADE ▲</p>
+      <h1>LAVA LEAP</h1>
+      <p class="tag">Jump fast. Climb higher. Don't let the lava catch you. Scale an endless tower, chain combos, bank coins, and battle the Lava Titan.</p>
+      <div class="cta-row">
+        <a href="https://lava-leap-84pb.vercel.app" class="btn btn-play" data-cta="play-hero" target="_blank" rel="noopener noreferrer">▶ Play Free in Browser</a>
+        <a href="https://github.com/denrod25-del/lava-leap/releases/latest" class="btn btn-wait" data-cta="apk-hero" target="_blank" rel="noopener noreferrer">Download Android APK</a>
+      </div>
+      <p class="cta-note">No installation required • Free to Play • Browser + Android</p>
+    </div>
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>🔥 ENDLESS CLIMB</span><span>🕹 PLAYS IN ANY BROWSER</span><span>⚡ DASH + DOUBLE JUMP</span><span>💀 RISING LAVA</span><span>🐉 LAVA TITAN BOSS</span><span>🪙 COINS & SHOP</span><span>📅 DAILY CHALLENGE</span>
+    <span>🔥 ENDLESS CLIMB</span><span>🕹 PLAYS IN ANY BROWSER</span><span>⚡ DASH + DOUBLE JUMP</span><span>💀 RISING LAVA</span><span>🐉 LAVA TITAN BOSS</span><span>🪙 COINS & SHOP</span><span>📅 DAILY CHALLENGE</span>
+  </div>
+</div>
+
+<main>
+<!-- PROOF -->
+<section id="proof" aria-labelledby="proof-h">
+  <div class="wrap reveal">
+    <p class="kicker">SEE IT MOVE</p>
+    <h2 id="proof-h">See Lava Leap in action</h2>
+    <p class="lede">Rising lava, crumbling ledges, a dash to clear the gap. Swipe through the climb.</p>
+    <div class="carousel" role="group" tabindex="0" aria-roledescription="carousel" aria-label="Lava Leap gameplay screenshots">
+      <div class="slides" id="slides">
+        <figure class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: The Climb">
+          <span class="slide-art" aria-hidden="true" style="background:
+            linear-gradient(180deg,#1b0d0a,#3a160c 60%,#ff5714),
+            repeating-linear-gradient(90deg,#6b3a22 0 60px,transparent 60px 180px)"></span>
+          <figcaption>THE CLIMB — outrun the rising lava</figcaption>
+        </figure>
+        <figure class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: Combo x8">
+          <span class="slide-art" aria-hidden="true" style="background:
+            radial-gradient(circle at 50% 40%,#ffb703,transparent 48%),linear-gradient(180deg,#2a1512,#c81d0a)"></span>
+          <figcaption>COMBO x8 — chain clean leaps</figcaption>
+        </figure>
+        <figure class="slide" role="group" aria-roledescription="slide" aria-label="3 of 3: Lava Titan">
+          <span class="slide-art" aria-hidden="true" style="background:
+            radial-gradient(circle at 50% 55%,#8f3437,transparent 58%),linear-gradient(180deg,#1b0d0a,#ff5714)"></span>
+          <figcaption>LAVA TITAN — survive the boss</figcaption>
+        </figure>
+      </div>
+      <button class="car-btn car-prev" id="carPrev" aria-label="Previous screenshot">‹</button>
+      <button class="car-btn car-next" id="carNext" aria-label="Next screenshot">›</button>
+      <div class="dots" id="carDots" role="tablist" aria-label="Choose screenshot"></div>
+    </div>
+    <p style="color:var(--smoke);font-size:12px;margin-top:16px">Stylized frames — real gameplay captures coming soon.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="play" style="background:#0e0605" aria-labelledby="feat-h">
+  <div class="wrap reveal">
+    <p class="kicker">WHAT'S INSIDE</p>
+    <h2 id="feat-h">Simple to start. Brutal to master.</h2>
+    <p class="lede">Ten systems stacked into one endless climb.</p>
+    <div class="grid">
+      <article class="card"><span class="ico" aria-hidden="true">🗼</span><h3>Endless Climb</h3><p>Scale a tower of platforms that never ends — how high can you get?</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">🌋</span><h3>Rising Lava</h3><p>The molten tide never stops climbing. Keep moving or get swallowed.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">⬆️</span><h3>Double Jump</h3><p>A mid-air second jump to reach ledges that look impossible.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">💨</span><h3>Dash Ability</h3><p>Burst sideways to cross wide gaps and dodge hazards on the fly.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">🔗</span><h3>Combo System</h3><p>Chain clean leaps to stack multipliers and rack up your score.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">🐉</span><h3>Boss Battles</h3><p>Climb far enough and the Lava Titan wakes up to end your run.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">🪙</span><h3>Coins &amp; Shop</h3><p>Bank coins as you climb and spend them in the in-game shop.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">📅</span><h3>Daily Challenge</h3><p>A fresh daily run everyone climbs — come back every day for a new seed.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">🎖️</span><h3>Achievements</h3><p>Unlock achievements as you hit new heights, combos, and milestones.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">⚡</span><h3>Power-Ups</h3><p>Grab power-ups mid-climb to survive longer and push your score higher.</p></article>
+      <article class="card"><span class="ico" aria-hidden="true">📱</span><h3>Browser + Android</h3><p>Play in any browser or grab the Android build from GitHub Releases.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- CONTROLS -->
+<section aria-labelledby="ctrl-h">
+  <div class="wrap reveal">
+    <p class="kicker">CONTROLS</p>
+    <h2 id="ctrl-h">You already know how to play.</h2>
+    <div class="steps">
+      <div class="step"><span class="key">← → / A D</span><h3>MOVE</h3><p>Run left and right across the tower. Down to fast-fall when you need to drop quick.</p></div>
+      <div class="step"><span class="key">SPACE</span><h3>JUMP + AGAIN</h3><p>Space to jump — press again in the air for a double jump to reach the next ledge.</p></div>
+      <div class="step"><span class="key">SHIFT</span><h3>DASH</h3><p>Burst sideways to cross gaps, dodge hazards, and keep your combo alive.</p></div>
+    </div>
+    <p style="color:var(--smoke);font-size:13px;margin-top:22px">On mobile: hold the left half of the screen to run, tap the right half to jump — tap again mid-air for double and triple jumps.</p>
+  </div>
+</section>
+
+<!-- LEADERBOARD -->
+<section id="leaderboard" style="background:#0e0605" aria-labelledby="lb-h">
+  <div class="wrap reveal">
+    <p class="kicker">THE RANKINGS</p>
+    <h2 id="lb-h">Global leaderboards are coming</h2>
+    <p class="lede">For now, every run tracks your personal <strong>High Score</strong> and coin <strong>Bank</strong> right in the game. Online rankings that pit your climb against everyone else are on the way.</p>
+    <div class="lb-wrap">
+      <div class="board" aria-label="Leaderboard preview — coming soon">
+        <div class="board-row"><span class="rank">1</span><span class="who">— — —</span><span class="sc">SOON</span></div>
+        <div class="board-row"><span class="rank">2</span><span class="who">— — —</span><span class="sc">SOON</span></div>
+        <div class="board-row"><span class="rank">3</span><span class="who">— — —</span><span class="sc">SOON</span></div>
+        <div class="board-row you"><span class="rank">★</span><span class="who">Could be you</span><span class="sc">?</span></div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat"><span class="lbl">TRACKED NOW</span><div class="val">HIGH SCORE</div><p class="sub">Your personal best, saved locally in-game</p></div>
+        <div class="stat"><span class="lbl">TRACKED NOW</span><div class="val">COIN BANK</div><p class="sub">Coins you've banked to spend in the shop</p></div>
+        <div class="stat"><span class="lbl">COMING SOON</span><div class="val">GLOBAL RANKS</div><p class="sub">Online leaderboards across all climbers</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section id="trust" aria-labelledby="trust-h">
+  <div class="wrap reveal">
+    <p class="kicker">NO CATCH</p>
+    <h2 id="trust-h">Free, safe, and open</h2>
+    <p class="lede">Play instantly in the browser, or grab the Android build straight from GitHub Releases.</p>
+    <div class="trust">
+      <div class="trust-item"><span class="ico" aria-hidden="true">🕹</span><h3>Browser Playable</h3><p>Runs in any modern browser. Click and climb.</p></div>
+      <div class="trust-item"><span class="ico" aria-hidden="true">🙅</span><h3>No Account Required</h3><p>No sign-up wall. Jump straight into a run.</p></div>
+      <div class="trust-item"><span class="ico" aria-hidden="true">🪶</span><h3>Lightweight Download</h3><p>The Android APK is small and quick to install.</p></div>
+      <div class="trust-item"><span class="ico" aria-hidden="true">🔓</span><h3>Open Source</h3><p>Full source is public on <a href="https://github.com/denrod25-del/lava-leap" target="_blank" rel="noopener noreferrer">GitHub</a>.</p></div>
+      <div class="trust-item"><span class="ico" aria-hidden="true">🛡</span><h3>APK on GitHub Releases</h3><p>Download directly from the <a href="https://github.com/denrod25-del/lava-leap/releases/latest" target="_blank" rel="noopener noreferrer">release page</a> — avoid third-party mirrors.</p></div>
+      <div class="trust-item"><span class="ico" aria-hidden="true">📦</span><h3>GitHub Releases</h3><p>Every build is on the <a href="https://github.com/denrod25-del/lava-leap/releases" target="_blank" rel="noopener noreferrer">Releases page</a>.</p></div>
+    </div>
+    <p class="build-meta">
+      <span>Version <b id="verNum">v1.0.0</b></span>
+      <span>Last updated <b id="verDate">—</b></span>
+      <span>Platform <b>Browser + Android</b></span>
+    </p>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section id="waitlist" style="background:#0e0605" aria-labelledby="wl-h">
+  <div class="wrap">
+    <div class="signup reveal">
+      <p class="kicker" style="text-align:center">GET IN EARLY</p>
+      <h2 id="wl-h">Join the waitlist</h2>
+      <p style="color:var(--smoke);font-size:14px">Be first to hear about new biomes, the next mobile release, and leaderboard seasons. No spam — just lava.</p>
+      <form class="form" id="waitForm" novalidate>
+        <label for="email" class="hp">Email address</label>
+        <input type="email" id="email" name="email" placeholder="player@arcade.io"
+               autocomplete="email" required aria-describedby="wlStatus" inputmode="email">
+        <!-- honeypot: bots fill this, humans never see it -->
+        <input type="text" id="company" name="company" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit" class="btn btn-play" id="wlBtn" data-cta="waitlist-submit">LOCK IT IN</button>
+      </form>
+      <p class="status" id="wlStatus" role="status" aria-live="polite"></p>
+      <p style="color:var(--smoke);font-size:11px;margin-top:20px;line-height:1.7">
+        We only store your email to notify you about Lava Leap. No spam, no sharing, unsubscribe anytime.
+        Questions? <a href="mailto:hello@bsymbolic.com" style="color:var(--molten);text-decoration:underline">hello@bsymbolic.com</a>
+      </p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer aria-labelledby="foot-h">
+  <div class="wrap">
+    <h2 id="foot-h" class="pix" style="position:absolute;left:-9999px">Footer</h2>
+    <div class="foot-grid">
+      <div class="foot-col">
+        <span class="pix">LAVA LEAP</span>
+        <p style="color:var(--smoke);font-size:12px;max-width:280px">An endless arcade lava climber for people who can't leave a high score alone.</p>
+      </div>
+      <nav class="foot-col" aria-label="Game links">
+        <h4>GAME</h4>
+        <a href="https://lava-leap-84pb.vercel.app" data-cta="play-footer" target="_blank" rel="noopener noreferrer">Play in Browser</a>
+        <a href="https://github.com/denrod25-del/lava-leap/releases/latest" data-cta="apk-footer" target="_blank" rel="noopener noreferrer">Download APK</a>
+        <a href="#leaderboard">Leaderboards</a>
+        <a href="#waitlist">Join Waitlist</a>
+      </nav>
+      <nav class="foot-col" aria-label="Community and project links">
+        <h4>COMMUNITY</h4>
+        <a href="https://github.com/denrod25-del/lava-leap" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <span class="soon">Discord <em>Coming soon</em></span>
+        <span class="soon">X / Twitter <em>Coming soon</em></span>
+        <span class="soon">YouTube <em>Coming soon</em></span>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year">2026</span> B. Symbolic · <a href="/privacy" style="color:var(--smoke)">Privacy</a> · <a href="/terms" style="color:var(--smoke)">Terms</a> · <a href="mailto:hello@bsymbolic.com" style="color:var(--smoke)">Contact</a></span>
+      <span>Build <b id="footVer" style="color:var(--crust);font-weight:400">v1.0.0</b> · <span id="footDate">—</span></span>
+    </div>
+  </div>
+</footer>
+
+<!-- sticky mobile play button -->
+<div class="sticky-play">
+  <a href="https://lava-leap-84pb.vercel.app" class="btn btn-play" data-cta="play-sticky" target="_blank" rel="noopener noreferrer">▶ Play Free in Browser</a>
+</div>
+
+<!-- Per-environment config (copy config.example.js → config.js). Loads before runtime. -->
+<script src="/config.js" onerror="/* optional: page still renders without it */"></script>
+<script>
+/* ============================================================
+   Lava Leap — landing page runtime
+   Tier: Strict for the waitlist path (handles user PII).
+   Config lives up top; no secrets beyond the public anon key.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  // ---- CONFIG ----
+  // Supabase values are read from window.LAVA_CONFIG, injected by /config.js
+  // (which is gitignored and populated per-environment). The anon key is safe
+  // to expose in a browser; Row Level Security + a UNIQUE constraint enforce
+  // the real rules server-side. See config.example.js and DEPLOY.md.
+  var USER = (window.LAVA_CONFIG || {});
+  var CONFIG = {
+    SUPABASE_URL: USER.SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: USER.SUPABASE_ANON_KEY || '',
+    WAITLIST_TABLE: USER.WAITLIST_TABLE || 'waitlist',
+    BUILD_VERSION: USER.BUILD_VERSION || 'v1.0.0',
+    BUILD_DATE: USER.BUILD_DATE || '2026-07-05'
+  };
+
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // ---- analytics: Vercel Web Analytics custom events (safe if absent) ----
+  // window.va is defined by the snippet in <head>; before script.js loads it
+  // queues calls, so events are never lost and nothing throws off-Vercel.
+  function track(event, props) {
+    try {
+      if (typeof window.va === 'function') {
+        window.va('event', { name: event, data: props || {} });
+      }
+    } catch (e) { /* analytics must never break the page */ }
+  }
+
+  // ---- CTA click tracking (delegated) ----
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-cta]');
+    if (el) track('cta_click', { id: el.getAttribute('data-cta') });
+  });
+
+  // ---- build metadata ----
+  function setText(id, val) { var n = document.getElementById(id); if (n) n.textContent = val; }
+  setText('verNum', CONFIG.BUILD_VERSION);
+  setText('footVer', CONFIG.BUILD_VERSION);
+  setText('verDate', CONFIG.BUILD_DATE);
+  setText('footDate', CONFIG.BUILD_DATE);
+  setText('year', String(new Date().getFullYear()));
+
+  // ---- floating embers (built in JS so markup stays clean) ----
+  (function embers() {
+    var host = document.getElementById('embers');
+    if (!host || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var COUNT = 14;
+    for (var i = 0; i < COUNT; i++) {
+      var b = document.createElement('span');
+      b.className = 'ember-bit';
+      b.style.left = (Math.random() * 100) + '%';
+      b.style.animationDuration = (4 + Math.random() * 5) + 's';
+      b.style.animationDelay = (Math.random() * 6) + 's';
+      var s = 3 + Math.floor(Math.random() * 4);
+      b.style.width = s + 'px'; b.style.height = s + 'px';
+      host.appendChild(b);
+    }
+  })();
+
+  // ---- parallax lava (rAF-throttled, respects reduced motion) ----
+  (function parallax() {
+    var lava = document.getElementById('lava');
+    if (!lava || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        var y = window.scrollY || 0;
+        lava.style.transform = 'translateY(' + Math.min(y * 0.15, 120) + 'px)';
+        ticking = false;
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
+  // ---- scroll reveal ----
+  (function reveals() {
+    var items = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(function (n) { n.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    items.forEach(function (n) { io.observe(n); });
+  })();
+
+  // ---- scroll-depth tracking (25/50/75/100) ----
+  (function scrollDepth() {
+    var marks = [25, 50, 75, 100], hit = {};
+    function check() {
+      var h = document.documentElement;
+      var scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+      marks.forEach(function (m) {
+        if (!hit[m] && scrolled >= m) { hit[m] = true; track('scroll_depth', { percent: m }); }
+      });
+    }
+    window.addEventListener('scroll', check, { passive: true });
+  })();
+
+  // ---- screenshot carousel (keyboard + dots + swipe, reduced-motion safe) ----
+  (function carousel() {
+    var track_ = document.getElementById('slides');
+    if (!track_) return;
+    var slides = track_.children;
+    var total = slides.length;
+    var prev = document.getElementById('carPrev');
+    var next = document.getElementById('carNext');
+    var dotWrap = document.getElementById('carDots');
+    var idx = 0;
+
+    // build dots
+    for (var i = 0; i < total; i++) {
+      var d = document.createElement('button');
+      d.className = 'dot';
+      d.setAttribute('role', 'tab');
+      d.setAttribute('aria-label', 'Screenshot ' + (i + 1));
+      d.dataset.i = String(i);
+      dotWrap.appendChild(d);
+    }
+    var dots = dotWrap.children;
+
+    function go(n) {
+      idx = (n + total) % total;
+      track_.style.transform = 'translateX(-' + (idx * 100) + '%)';
+      for (var j = 0; j < total; j++) {
+        dots[j].setAttribute('aria-current', j === idx ? 'true' : 'false');
+      }
+    }
+    prev.addEventListener('click', function () { go(idx - 1); });
+    next.addEventListener('click', function () { go(idx + 1); });
+    dotWrap.addEventListener('click', function (ev) {
+      var t = ev.target.closest('.dot');
+      if (t) go(parseInt(t.dataset.i, 10));
+    });
+    // keyboard arrows when carousel focused
+    document.querySelector('.carousel').addEventListener('keydown', function (ev) {
+      if (ev.key === 'ArrowLeft') { go(idx - 1); }
+      else if (ev.key === 'ArrowRight') { go(idx + 1); }
+    });
+    // touch swipe
+    var startX = 0;
+    track_.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
+    track_.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) { go(dx < 0 ? idx + 1 : idx - 1); }
+    }, { passive: true });
+
+    go(0);
+  })();
+
+  // ---- WAITLIST: real submit to Supabase REST ----
+  var form = document.getElementById('waitForm');
+  var input = document.getElementById('email');
+  var honeypot = document.getElementById('company');
+  var btn = document.getElementById('wlBtn');
+  var statusEl = document.getElementById('wlStatus');
+
+  function setStatus(msg, kind) {
+    statusEl.className = 'status' + (kind ? ' ' + kind : '');
+    statusEl.innerHTML = msg;
+  }
+  function submitting(on) {
+    btn.disabled = on;
+    input.disabled = on;
+    if (on) setStatus('<span class="spinner" aria-hidden="true"></span> SUBMITTING…', '');
+  }
+
+  function isConfigured() {
+    return /^https:\/\/.+\.supabase\.co/.test(CONFIG.SUPABASE_URL) &&
+           CONFIG.SUPABASE_ANON_KEY.length > 20;
+  }
+
+  function join(email) {
+    // POST to Supabase REST. The DB enforces email format (CHECK) + uniqueness (UNIQUE).
+    var url = CONFIG.SUPABASE_URL + '/rest/v1/' + CONFIG.WAITLIST_TABLE;
+    var opts = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ email: email, source: 'landing' })
+    };
+    // 10s timeout so a dead network can't leave the form disabled forever;
+    // aborting an already-settled fetch is a no-op, so no cleanup needed
+    if (typeof AbortController === 'function') {
+      var controller = new AbortController();
+      opts.signal = controller.signal;
+      setTimeout(function () { controller.abort(); }, 10000);
+    }
+    return fetch(url, opts);
+  }
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+
+    // spam trap: if the honeypot is filled, silently succeed (don't tip off bots)
+    if (honeypot && honeypot.value.trim() !== '') {
+      setStatus("✓ YOU'RE ON THE LIST — WELCOME, LEAPER", 'ok');
+      form.reset();
+      return;
+    }
+
+    var email = (input.value || '').trim().toLowerCase();
+
+    // client-side validation (UX only — server re-validates)
+    if (!EMAIL_RE.test(email) || email.length > 254) {
+      setStatus('✗ ENTER A VALID EMAIL', 'err');
+      input.focus();
+      return;
+    }
+
+    if (!isConfigured()) {
+      setStatus('✗ WAITLIST OPENS SOON — CHECK BACK SHORTLY', 'err');
+      return;
+    }
+
+    submitting(true);
+
+    var req;
+    try {
+      req = join(email);
+    } catch (err) {
+      // ancient browsers without fetch: fail visibly, never leave the form stuck
+      setStatus('✗ SOMETHING BROKE — TRY AGAIN', 'err');
+      submitting(false);
+      return;
+    }
+
+    req
+      .then(function (res) {
+        if (res.status === 201 || res.status === 200 || res.status === 204) {
+          setStatus("✓ YOU'RE ON THE LIST — WELCOME, LEAPER", 'ok');
+          form.reset();
+          track('waitlist_join', { source: 'landing' });
+        } else if (res.status === 409) {
+          // UNIQUE violation → already registered
+          setStatus("✓ YOU'RE ALREADY ON THE LIST", 'ok');
+          form.reset();
+        } else {
+          return res.text().then(function (body) {
+            // DB abuse backstop trips as a 400 with 'rate limit' in the message
+            if ((res.status === 400 || res.status === 429) && /rate.?limit/i.test(body)) {
+              setStatus('✗ SIGNUPS ARE BUSY — TRY AGAIN IN A MINUTE', 'err');
+            } else {
+              setStatus('✗ SOMETHING BROKE — TRY AGAIN', 'err');
+            }
+          });
+        }
+      })
+      .catch(function () {
+        setStatus('✗ NETWORK ERROR — CHECK CONNECTION', 'err');
+      })
+      // .then, not .finally — the catch above handles rejections, so this always
+      // runs, and it works on Promise implementations without .finally
+      .then(function () {
+        submitting(false);
+      });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lava-leap-two.vercel.app/sitemap.xml
