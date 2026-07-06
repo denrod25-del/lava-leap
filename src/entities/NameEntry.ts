@@ -10,7 +10,7 @@ export function promptName(current: string): Promise<string | null> {
       + 'align-items:center;justify-content:center;background:rgba(8,8,16,0.86);font-family:monospace;color:#fff;padding:20px';
     wrap.innerHTML = `
       <div style="font-size:20px;color:#ffb066;margin-bottom:14px">LEADERBOARD NAME</div>
-      <input id="ll-name" maxlength="12" value="${suggestion.replace(/"/g, '&quot;')}"
+      <input id="ll-name" maxlength="12"
         style="font-family:monospace;font-size:20px;text-align:center;padding:10px 14px;width:220px;
         border:2px solid #16e0e0;border-radius:8px;background:#10101a;color:#fff;text-transform:none" />
       <div id="ll-name-err" style="font-size:12px;color:#ff6b6b;height:16px;margin-top:8px"></div>
@@ -21,6 +21,9 @@ export function promptName(current: string): Promise<string | null> {
     document.body.appendChild(wrap);
     const input = wrap.querySelector('#ll-name') as HTMLInputElement;
     const err = wrap.querySelector('#ll-name-err') as HTMLDivElement;
+    // Set programmatically (not via attribute interpolation) so the suggestion can
+    // never break out of the markup, however it was produced.
+    input.value = suggestion;
     input.focus(); input.select();
 
     const close = (val: string | null): void => { wrap.remove(); resolve(val); };

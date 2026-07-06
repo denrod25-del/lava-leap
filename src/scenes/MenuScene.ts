@@ -120,14 +120,19 @@ export class MenuScene extends Phaser.Scene {
 
     // Auto-show What's New once after a version change (confirms a fresh deploy landed).
     // Set lastSeenVersion BEFORE starting so the return to Menu doesn't re-open (no loop).
-    if (save.get().lastSeenVersion !== APP_VERSION) {
+    const autoShowingChangelog = save.get().lastSeenVersion !== APP_VERSION;
+    if (autoShowingChangelog) {
       save.update((b) => { b.lastSeenVersion = APP_VERSION; });
       this.scene.start('Changelog');
     }
 
-    // First-run leaderboard name prompt (once): only when online play is available
-    // and the player hasn't set a name. Skipping keeps the generated handle at submit.
-    if (leaderboard.enabled && !save.get().identity.name && !save.get().leaderboardPrompted) {
+    // First-run leaderboard name prompt (once): only when online play is available and the
+    // player hasn't set a name. Deferred past a What's-New boot (scene.start is queued, not
+    // synchronous — execution would fall through here) so the overlay never stacks on the
+    // Changelog scene; the flag stays unset when deferred, so it offers cleanly next boot.
+    // Skipping keeps the generated handle at submit.
+    if (leaderboard.enabled && !save.get().identity.name && !save.get().leaderboardPrompted
+        && !autoShowingChangelog) {
       save.update((b) => { b.leaderboardPrompted = true; });
       void promptName('').then((name) => {
         if (name) save.update((b) => { b.identity.name = name; });
