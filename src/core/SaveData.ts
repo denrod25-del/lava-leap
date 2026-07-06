@@ -63,7 +63,9 @@ function defaults(): SaveBlob {
 export class SaveData {
   private blob: SaveBlob;
 
-  constructor(private store: KeyValueStore, private idGen: () => string = () => crypto.randomUUID()) {
+  constructor(private store: KeyValueStore, private idGen: () => string = () =>
+    (crypto.randomUUID?.() ?? '10000000-1000-4000-8000-100000000000'.replace(/[018]/g,
+      (c) => (Number(c) ^ (Math.floor(Math.random() * 256) & (15 >> (Number(c) / 4)))).toString(16)))) {
     this.blob = this.load();
     if (!this.blob.identity.playerId) {
       this.blob.identity.playerId = this.idGen();
