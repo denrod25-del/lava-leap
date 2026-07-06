@@ -8,7 +8,7 @@ import { Lava } from '../entities/Lava';
 import { ScoreTracker } from '../core/ScoreTracker';
 import { ComboTracker } from '../core/ComboTracker';
 import { FlowMeter, combinedMultiplier } from '../core/FlowMeter';
-import { save } from '../main';
+import { save, leaderboard } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
 import { AudioDirector } from '../entities/AudioDirector';
@@ -16,6 +16,8 @@ import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
+import { allTimeBoard, dailyBoard } from '../core/leaderboard';
+import { generateHandle } from '../core/playerName';
 import { KeyboardInput } from '../entities/input/KeyboardInput';
 import { TouchSteerInput } from '../entities/input/TouchSteerInput';
 import { AutoTouchInput } from '../entities/input/AutoTouchInput';
@@ -58,6 +60,7 @@ export class GameScene extends Phaser.Scene {
   private revivedThisRun = false;
   public daily = false;
   private dateKeyToday = '';
+  private runStartMs = 0;
   private devOverlay?: DevOverlay;
 
   constructor() { super('Game'); }
@@ -147,6 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('flow', { value: 0, tier: 0, name: 'COOL', multiplier: 1 });
 
     this.dateKeyToday = dateKey(new Date());
+    this.runStartMs = this.time.now;
     save.update((b) => recordRunStart(b.analytics, this.daily));
     this.tracker = new AchievementTracker(this.gameEvents, save, (a) => {
       this.registry.set('toast', `${a.name} — ${a.description}`);
@@ -410,6 +414,25 @@ export class GameScene extends Phaser.Scene {
     this.dead = true;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
+
+    // Auto-submit to the leaderboard (fire-and-forget; no-op when disabled/offline).
+    const durationMs = Math.max(1000, Math.round(this.time.now - this.runStartMs));
+    let lbName = save.get().identity.name;
+    if (!lbName) {
+      lbName = generateHandle(Math.random);
+      const named = lbName;
+      save.update((b) => { b.identity.name = named; });
+    }
+    const playerId = save.get().identity.playerId;
+    const boards = this.daily ? [allTimeBoard(), dailyBoard(new Date())] : [allTimeBoard()];
+    for (const board of boards) {
+      void leaderboard.submit({
+        playerId, name: lbName, board,
+        score: finalScore, height: Math.floor(heightClimbed), durationMs, coins: this.score.coins,
+      });
+      track('leaderboard_submit', { board, ok: leaderboard.enabled });
+    }
+
     track('death', { height: Math.floor(heightClimbed), zone: this.zoneIndex, source, peak_flow: this.peakFlowTier });
     if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
     this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
@@ -423,6 +446,7 @@ export class GameScene extends Phaser.Scene {
         daily: this.daily,
         dailyBest: this.daily ? save.get().dailyBest[this.dateKeyToday] ?? 0 : 0,
         earned: [...this.tracker.earnedThisRun],
+        playerId,
       });
     });
   }
