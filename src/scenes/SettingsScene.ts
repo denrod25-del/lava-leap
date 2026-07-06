@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
-import { save } from '../main';
+import { save, leaderboard } from '../main';
 import { APP_NAME, APP_VERSION, BUILD_ID, BUILD_DATE } from '../core/buildInfo';
+import { promptName } from '../entities/NameEntry';
 
-const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Reduce motion', 'Controls', 'Replay tutorial'] as const;
+const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Reduce motion', 'Controls', 'Replay tutorial', 'Name'] as const;
 
 export class SettingsScene extends Phaser.Scene {
   private idx = 0;
@@ -25,7 +26,7 @@ export class SettingsScene extends Phaser.Scene {
         .setOrigin(0.5)
         // Tap a row to select it.
         .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => { this.idx = i; this.render(); }),
+        .on('pointerdown', () => { this.idx = i; this.render(); if (i === 6) this.editName(); }),
     );
     this.add.text(cx, 460, '←/→ adjust · ↑/↓ select · ESC back', {
       fontFamily: 'monospace', fontSize: '13px', color: '#888888',
@@ -62,6 +63,7 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   private adjust(d: number): void {
+    if (this.idx === 6) { this.editName(); return; }
     save.update((b) => {
       if (this.idx === 0) b.settings.musicVol = Phaser.Math.Clamp(b.settings.musicVol + d, 0, 10);
       else if (this.idx === 1) b.settings.sfxVol = Phaser.Math.Clamp(b.settings.sfxVol + d, 0, 10);
@@ -74,6 +76,13 @@ export class SettingsScene extends Phaser.Scene {
     this.render();
   }
 
+  private editName(): void {
+    if (!leaderboard.enabled) return;
+    void promptName(save.get().identity.name).then((name) => {
+      if (name !== null) { save.update((b) => { b.identity.name = name; }); this.render(); }
+    });
+  }
+
   private render(): void {
     const blob = save.get();
     const s = blob.settings;
@@ -84,6 +93,7 @@ export class SettingsScene extends Phaser.Scene {
       s.reducedMotion ? 'ON ' : 'OFF',
       s.controlScheme === 'auto' ? 'AUTO (1-hand)' : 'MANUAL (2-thumb)',
       blob.tutorialDone ? 'DONE — ◀/▶ to re-arm' : 'ON NEXT RUN',
+      leaderboard.enabled ? (blob.identity.name || '(tap to set)') : 'offline',
     ];
     this.rows.forEach((r, i) => r.setText(`${i === this.idx ? '> ' : '  '}${ROWS[i].padEnd(13)} ${vals[i]}`)
       .setColor(i === this.idx ? '#16e0e0' : '#ffffff'));

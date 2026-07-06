@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
-import { save } from '../main';
+import { save, leaderboard } from '../main';
 import { defaultAnalytics } from '../core/analytics';
 import { APP_VERSION, BUILD_LABEL } from '../core/buildInfo';
 import { DevOverlay } from '../entities/DevOverlay';
+import { promptName } from '../entities/NameEntry';
 
 export class MenuScene extends Phaser.Scene {
   private debugPanel: Phaser.GameObjects.Container | null = null;
@@ -122,6 +123,15 @@ export class MenuScene extends Phaser.Scene {
     if (save.get().lastSeenVersion !== APP_VERSION) {
       save.update((b) => { b.lastSeenVersion = APP_VERSION; });
       this.scene.start('Changelog');
+    }
+
+    // First-run leaderboard name prompt (once): only when online play is available
+    // and the player hasn't set a name. Skipping keeps the generated handle at submit.
+    if (leaderboard.enabled && !save.get().identity.name && !save.get().leaderboardPrompted) {
+      save.update((b) => { b.leaderboardPrompted = true; });
+      void promptName('').then((name) => {
+        if (name) save.update((b) => { b.identity.name = name; });
+      });
     }
   }
 

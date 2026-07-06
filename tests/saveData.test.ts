@@ -15,6 +15,7 @@ describe('SaveData', () => {
     expect(s.get().settings).toEqual(DEFAULT_SETTINGS);
     expect(s.get().equippedCosmetic).toBe('default');
     expect(s.get().ownedCosmetics).toContain('default');
+    expect(s.get().leaderboardPrompted).toBe(false);
   });
 
   it('persists updates and reloads them', () => {

@@ -33,6 +33,8 @@ export interface SaveBlob {
   lastSeenVersion: string;
   /** Account-free persistent identity for the online leaderboard. */
   identity: { playerId: string; name: string };
+  /** True once the first-run leaderboard-name prompt has been offered. */
+  leaderboardPrompted: boolean;
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -53,6 +55,7 @@ function defaults(): SaveBlob {
     tutorialDone: false,
     lastSeenVersion: '',
     identity: { playerId: '', name: '' },
+    leaderboardPrompted: false,
   };
 }
 
