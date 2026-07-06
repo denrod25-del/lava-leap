@@ -415,25 +415,30 @@ export class GameScene extends Phaser.Scene {
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
 
-    // Auto-submit to the leaderboard (fire-and-forget; no-op when disabled/offline).
-    const durationMs = Math.max(1000, Math.round(this.time.now - this.runStartMs));
-    let lbName = save.get().identity.name;
-    if (!lbName) {
-      lbName = generateHandle(Math.random);
-      const named = lbName;
-      save.update((b) => { b.identity.name = named; });
-    }
+    // Auto-submit to the leaderboard (fire-and-forget; skipped entirely when disabled
+    // so dormant-mode deaths can't burn identity.name and suppress the first-run
+    // name nudge after the backend is activated).
     const playerId = save.get().identity.playerId;
-    const boards = this.daily ? [allTimeBoard(), dailyBoard(new Date())] : [allTimeBoard()];
-    for (const board of boards) {
-      void leaderboard.submit({
-        playerId, name: lbName, board,
-        // height = the run's PEAK (not the death position — a long fall before dying
-        // would post a misleadingly low height and loosen the server's score≈height
-        // consistency check).
-        score: finalScore, height: Math.floor(this.score.maxHeight), durationMs, coins: this.score.coins,
-      });
-      track('leaderboard_submit', { board, ok: leaderboard.enabled });
+    let submitDone: Promise<unknown> = Promise.resolve();
+    if (leaderboard.enabled) {
+      const durationMs = Math.max(1000, Math.round(this.time.now - this.runStartMs));
+      let lbName = save.get().identity.name;
+      if (!lbName) {
+        lbName = generateHandle(Math.random);
+        const named = lbName;
+        save.update((b) => { b.identity.name = named; });
+      }
+      const boards = this.daily ? [allTimeBoard(), dailyBoard(new Date())] : [allTimeBoard()];
+      submitDone = Promise.allSettled(boards.map((board) => {
+        track('leaderboard_submit', { board, enabled: true });
+        return leaderboard.submit({
+          playerId, name: lbName, board,
+          // height = the run's PEAK (not the death position — a long fall before dying
+          // would post a misleadingly low height and loosen the server's score≈height
+          // consistency check).
+          score: finalScore, height: Math.floor(this.score.maxHeight), durationMs, coins: this.score.coins,
+        });
+      }));
     }
 
     track('death', { height: Math.floor(heightClimbed), zone: this.zoneIndex, source, peak_flow: this.peakFlowTier });
@@ -450,6 +455,7 @@ export class GameScene extends Phaser.Scene {
         dailyBest: this.daily ? save.get().dailyBest[this.dateKeyToday] ?? 0 : 0,
         earned: [...this.tracker.earnedThisRun],
         playerId,
+        submitDone,
       });
     });
   }

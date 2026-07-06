@@ -24,6 +24,10 @@ create or replace function public.submit_score(
 declare
   dur_s numeric := greatest(p_duration_ms, 1) / 1000.0;
 begin
+  -- NULL args would otherwise slip past the comparisons below and error on the
+  -- NOT NULL constraints (harmless but noisy) — reject them up front.
+  if p_player_id is null or p_name is null or p_board is null
+     or p_score is null or p_height is null or p_duration_ms is null or p_coins is null then return; end if;
   if p_score < 0 or p_height < 0 or p_duration_ms < 1000 or p_duration_ms > 7200000 then return; end if;
   if p_coins < 0 or p_coins > 100000 then return; end if;
   if length(p_name) < 1 or length(p_name) > 12 then return; end if;
@@ -70,7 +74,7 @@ grant execute on function public.player_rank(text,uuid) to anon;
 
 -- MANUAL VERIFICATION (run after applying):
 --  select public.submit_score('11111111-1111-1111-1111-111111111111','TestA','alltime',1200,1180,60000,5);  -- ok
---  select public.submit_score('11111111-1111-1111-1111-111111111111','TestA','alltime',999999999,9,2000,0); -- rejected (height cap)
+--  select public.submit_score('11111111-1111-1111-1111-111111111111','TestA','alltime',999999999,9,2000,0); -- rejected (score-vs-height consistency cap)
 --  immediate re-submit within 2s: silently ignored
 --  select public.submit_score('11111111-1111-1111-1111-111111111111','TestA','alltime',800,790,60000,0);    -- kept 1200 (max; wait >2s after the first submit)
 --  select * from public.top_scores('alltime', 50);      -- TestA @ 1200, rank 1
