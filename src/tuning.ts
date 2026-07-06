@@ -96,6 +96,15 @@ export const TOUCH = {
   fastFallThreshold: 40, // px the run stick must be pulled DOWN to fast-fall
 } as const;
 
+// AUTO control scheme (one-handed): hold anywhere = steer toward the finger,
+// tap = dash (tap mid-dash = dash-jump launch), jumping is automatic.
+export const AUTO = {
+  steerRange: 140,   // px finger-to-player distance for full run speed
+  steerDeadzone: 12, // px; closer than this = stand still
+  tapMaxMs: 180,     // press shorter than this counts as a tap...
+  tapMaxDrift: 14,   // ...if the finger moved less than this (px)
+} as const;
+
 export const COMBO = {
   step: 0.5,
   max: 5,
