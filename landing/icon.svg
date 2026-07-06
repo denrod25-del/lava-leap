@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <rect width="32" height="32" fill="#140a08"/>
+  <!-- lava pool -->
+  <rect x="0" y="24" width="32" height="8" fill="#ff5714"/>
+  <rect x="0" y="23" width="32" height="1" fill="#ffb703"/>
+  <!-- pixel platforms -->
+  <rect x="4"  y="18" width="7" height="2" fill="#6b3a22"/>
+  <rect x="21" y="14" width="7" height="2" fill="#6b3a22"/>
+  <!-- hero (molten block) mid-leap -->
+  <rect x="14" y="8" width="4" height="4" fill="#ffb703"/>
+  <rect x="13" y="9" width="1" height="2" fill="#ffb703"/>
+  <rect x="18" y="9" width="1" height="2" fill="#ffb703"/>
+  <rect x="14" y="12" width="4" height="1" fill="#ff5714"/>
+</svg>
