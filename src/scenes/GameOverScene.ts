@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { TUNING } from '../tuning';
-import { save } from '../main';
+import { save, leaderboard } from '../main';
 import { track } from '../core/track';
+import { allTimeBoard, dailyBoard } from '../core/leaderboard';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
-  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[] }): void {
+  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string }): void {
     this.sound.stopAll();
     const cx = TUNING.width / 2;
     this.add.text(cx, 200, 'YOU MELTED', { fontFamily: 'monospace', fontSize: '40px', color: '#ff2d6b' }).setOrigin(0.5);
@@ -32,5 +33,19 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(cx, 500, 'Press SPACE / tap to retry', { fontFamily: 'monospace', fontSize: '20px', color: '#16e0e0' })
       .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', retry);
     this.input.keyboard!.once('keydown-SPACE', retry);
+
+    // Online ranks (async, non-blocking). Absent/offline → nothing shows.
+    if (leaderboard.enabled && data.playerId) {
+      const rankText = this.add.text(cx, 440, '', { fontFamily: 'monospace', fontSize: '16px', color: '#7ad9e8' }).setOrigin(0.5);
+      void leaderboard.rankOf(allTimeBoard(), data.playerId).then((r) => {
+        if (r && rankText.active) rankText.setText(`GLOBAL #${r.rank}`);
+      });
+      if (data.daily) {
+        const dRank = this.add.text(cx, 462, '', { fontFamily: 'monospace', fontSize: '14px', color: '#7ad9e8' }).setOrigin(0.5);
+        void leaderboard.rankOf(dailyBoard(new Date()), data.playerId).then((r) => {
+          if (r && dRank.active) dRank.setText(`DAILY #${r.rank}`);
+        });
+      }
+    }
   }
 }
