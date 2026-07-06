@@ -14,14 +14,22 @@ export class HowToScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '15px', color: '#ffffff', align: 'center', lineSpacing: 6,
     }).setOrigin(0.5);
 
-    const controls = touch
-      ? ['HOLD LEFT SIDE   run (slide = analog speed)',
-         'PULL STICK DOWN  fast fall',
-         'TAP RIGHT SIDE   jump / double / TRIPLE jump',
-         'DASH BUTTON      air dash — jump mid-dash to launch!']
-      : ['←/→ or A/D      run', '↓ or S          fast fall',
+    const scheme = save.get().settings.controlScheme;
+    const controls = !touch
+      ? ['←/→ or A/D      run', '↓ or S          fast fall',
          'SPACE / ↑        jump (hold = higher, again = double)',
-         'SHIFT / X        air dash — jump mid-dash to launch!', 'P / ESC          pause'];
+         'SHIFT / X        air dash — jump mid-dash to launch!', 'P / ESC          pause']
+      : scheme === 'auto'
+        ? ['HOLD ANYWHERE    steer toward your finger',
+           'JUMPING          automatic — just steer!',
+           'TAP              air dash (kills enemies)',
+           'TAP MID-DASH     launch — keep your FLOW hot!',
+           'Settings → CONTROLS to switch to MANUAL']
+        : ['HOLD LEFT SIDE   run (slide = analog speed)',
+           'PULL STICK DOWN  fast fall',
+           'TAP RIGHT SIDE   jump / double / TRIPLE jump',
+           'DASH BUTTON      air dash — jump mid-dash to launch!',
+           'Settings → CONTROLS to switch to AUTO'];
     this.add.text(cx, 205, 'CONTROLS', { fontFamily: 'monospace', fontSize: '18px', color: '#16e0e0' }).setOrigin(0.5);
     this.add.text(cx, 240 + controls.length * 11, controls.join('\n'), {
       fontFamily: 'monospace', fontSize: '14px', color: '#cfd8e3', lineSpacing: 8,

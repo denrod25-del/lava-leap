@@ -22,7 +22,7 @@ import { AutoTouchInput } from '../entities/input/AutoTouchInput';
 import { EnemyManager } from '../entities/EnemyManager';
 import { PowerupController } from '../entities/PowerupController';
 import { BossController } from '../entities/BossController';
-import { TutorialOverlay } from '../entities/TutorialOverlay';
+import { TutorialOverlay, type TutorialControlType } from '../entities/TutorialOverlay';
 import { bossBoundaryCrossed } from '../core/boss';
 import { track } from '../core/track';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
@@ -174,7 +174,7 @@ export class GameScene extends Phaser.Scene {
     // unchanged. Changing the Settings row takes effect here, on the next run.
     const wantTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0;
     const scheme = save.get().settings.controlScheme;
-    const controlType: 'keyboard' | 'touch-manual' | 'touch-auto' =
+    const controlType: TutorialControlType =
       wantTouch ? (scheme === 'auto' ? 'touch-auto' : 'touch-manual') : 'keyboard';
     if (controlType === 'touch-auto') {
       this.inputSrc = new AutoTouchInput(this, () => this.player.sprite.x, () => this.player.dashing);
