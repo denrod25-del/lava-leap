@@ -428,7 +428,10 @@ export class GameScene extends Phaser.Scene {
     for (const board of boards) {
       void leaderboard.submit({
         playerId, name: lbName, board,
-        score: finalScore, height: Math.floor(heightClimbed), durationMs, coins: this.score.coins,
+        // height = the run's PEAK (not the death position — a long fall before dying
+        // would post a misleadingly low height and loosen the server's score≈height
+        // consistency check).
+        score: finalScore, height: Math.floor(this.score.maxHeight), durationMs, coins: this.score.coins,
       });
       track('leaderboard_submit', { board, ok: leaderboard.enabled });
     }
