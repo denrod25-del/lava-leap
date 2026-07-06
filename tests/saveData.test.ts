@@ -141,4 +141,20 @@ describe('SaveData', () => {
     expect(s.get().dailyBest['2026-06-10']).toBe(10);
     expect(s.get().dailyBest['2026-06-01']).toBeUndefined();
   });
+
+  it('defaults settings.controlScheme to auto and backfills it on an old save', () => {
+    expect(new SaveData(fakeStore()).get().settings.controlScheme).toBe('auto');
+    const legacy = {
+      version: 2, highScore: 9, coinBank: 2, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 3, sfxVol: 8, screenShake: true, reducedMotion: true }, // pre-controlScheme
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.6.0',
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }));
+    expect(s.get().settings.controlScheme).toBe('auto'); // backfilled by the deep-merge
+    expect(s.get().settings.musicVol).toBe(3);           // existing nested values preserved
+    expect(s.get().settings.reducedMotion).toBe(true);
+  });
 });

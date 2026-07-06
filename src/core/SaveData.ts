@@ -7,9 +7,12 @@ export interface Settings {
   screenShake: boolean;
   /** Accessibility: skip camera shake and the death slow-mo when true. */
   reducedMotion: boolean;
+  /** Mobile control scheme: 'auto' (steer + tap-dash, jumping automatic — default)
+   *  or 'manual' (two-thumb: run joystick + tap-jump + DASH button). */
+  controlScheme: 'auto' | 'manual';
 }
 
-export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false };
+export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' };
 
 export interface SaveBlob {
   version: 2;
