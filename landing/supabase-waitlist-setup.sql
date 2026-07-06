@@ -46,13 +46,23 @@ create policy "anon can insert waitlist"
 -- flood still does. The landing page maps this error to a friendly
 -- "signups are busy — try again in a minute" message (it matches on
 -- 'rate limit' in the response body — keep that phrase if you edit this).
+-- SECURITY DEFINER is required: the trigger fires as the `anon` role, which
+-- has no SELECT policy, so without it the count(*) always sees zero rows and
+-- the backstop never trips. Running as the function owner (the table owner)
+-- bypasses RLS for the count only. search_path is pinned per SECURITY
+-- DEFINER best practice.
 create or replace function public.waitlist_rate_limit()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 declare
   recent int;
 begin
+  -- server-owned timestamp: overwrite any client-supplied value so the
+  -- rate window can't be distorted by backdated inserts
+  new.created_at := now();
   select count(*) into recent
   from public.waitlist
   where created_at > now() - interval '1 minute';

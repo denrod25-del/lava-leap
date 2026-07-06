@@ -10,8 +10,9 @@ The game's Vercel project builds from the repo root — do not point it here.
 Instead:
 
 1. In Vercel, create a new project (e.g. `lava-leap-landing`) from this repo.
-2. Set **Root Directory** to `landing` and **Framework Preset** to "Other"
-   (no build command, no output directory — it's static).
+2. Set **Root Directory** to `landing` and **Framework Preset** to "Other".
+   `vercel.json` supplies the build command (`node build-config.mjs`, which
+   only generates `config.js`) and serves the directory as-is.
 3. Deploy to a preview URL first, smoke-test, then promote to production.
 
 All asset paths in `index.html` are root-absolute (`/lava-titan.png`,
@@ -26,12 +27,17 @@ All asset paths in `index.html` are root-absolute (`/lava-titan.png`,
    case-insensitive email, server-side format CHECK, insert-only RLS for the
    `anon` role, and a rate-limit trigger.
 2. Copy the Project URL + anon public key from Project Settings → API.
-3. `cp config.example.js config.js` and fill in the values. `config.js` is
-   gitignored — create it directly on the deploy (or inject it via an
-   env-driven deploy step). Never use the service-role key client-side.
+3. In the Vercel project, set Environment Variables `SUPABASE_URL` and
+   `SUPABASE_ANON_KEY` (optionally `BUILD_VERSION` / `BUILD_DATE`), then
+   redeploy. The build step (`build-config.mjs`) generates `config.js` from
+   them at deploy time, so keys never land in git. Never use the
+   service-role key client-side.
+4. For local preview, `cp config.example.js config.js` and fill in the
+   values — `config.js` is gitignored.
 
-Until a valid `config.js` is present, the form degrades to "waitlist opens
-soon" — pulling `config.js` is a safe kill-switch.
+If the env vars are missing or malformed, the build still succeeds but skips
+`config.js` and the form degrades to "waitlist opens soon" — clearing the
+env vars and redeploying is a safe kill-switch.
 
 ## After deploy
 
