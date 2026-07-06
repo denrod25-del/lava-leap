@@ -169,10 +169,18 @@ export class Player {
       this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
     }
 
+    // Buffer a jump on a held rising-edge OR an explicit press pulse (touch taps send
+    // jumpPressed without a sustained hold). Both are edge-triggered, so holding never
+    // auto-repeats jumps.
+    if ((jumpDown && !this.jumpHeldLast) || input.jumpPressed) this.bufferTimer = TUNING.jumpBufferMs;
+    else this.bufferTimer = Math.max(0, this.bufferTimer - dt);
+
     // AUTO mode: bounce off the ground automatically. Full height by design —
     // there is no held key, so no variable-height cut applies. Emits 'jump' so
-    // juice/audio/tutorial react exactly like a manual jump. Clearing coyote +
-    // buffer prevents the buffered-jump block below from double-firing.
+    // juice/audio/tutorial react exactly like a manual jump. Runs AFTER the
+    // buffer-arm line above and zeroes the buffer, so a same-frame tap pulse
+    // (e.g. a late dash-cancel tap) can't re-arm it into a free air jump next
+    // frame — one tap, one action.
     if (this.autoJump && onGround) {
       this.sprite.setVelocityY(-TUNING.jumpVelocity);
       this.jumpsUsed = 1;
@@ -180,12 +188,6 @@ export class Player {
       this.bufferTimer = 0;
       this.events.emit('jump', {});
     }
-
-    // Buffer a jump on a held rising-edge OR an explicit press pulse (touch taps send
-    // jumpPressed without a sustained hold). Both are edge-triggered, so holding never
-    // auto-repeats jumps.
-    if ((jumpDown && !this.jumpHeldLast) || input.jumpPressed) this.bufferTimer = TUNING.jumpBufferMs;
-    else this.bufferTimer = Math.max(0, this.bufferTimer - dt);
 
     const canGroundJump = this.coyoteTimer > 0 && this.jumpsUsed === 0;
     if (this.bufferTimer > 0) {

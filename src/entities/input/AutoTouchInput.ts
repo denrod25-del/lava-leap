@@ -20,7 +20,8 @@ export class AutoTouchInput implements InputSource {
   private dashQueued = false;
   private jumpQueued = false; // mid-dash cancel taps route here
   private pauseQueued = false;
-  private downAt = new Map<number, { t: number; x: number; y: number }>();
+  /** Per-pointer press records: t/x/y from pointerdown, lx = latest x (for handoff). */
+  private downAt = new Map<number, { t: number; x: number; y: number; lx: number }>();
 
   constructor(
     scene: Phaser.Scene,
@@ -42,7 +43,7 @@ export class AutoTouchInput implements InputSource {
 
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.includes(pause)) return;
-      this.downAt.set(p.id, { t: p.downTime, x: p.x, y: p.y });
+      this.downAt.set(p.id, { t: p.downTime, x: p.x, y: p.y, lx: p.x });
       if (this.steerPointerId === null) {
         this.steerPointerId = p.id;
         this.steering = true;
@@ -51,6 +52,8 @@ export class AutoTouchInput implements InputSource {
     });
 
     scene.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      const d = this.downAt.get(p.id);
+      if (d) d.lx = p.x; // track every held finger so a promoted one steers from its true position
       if (p.id === this.steerPointerId) this.steerX = p.x;
     });
 
@@ -60,6 +63,15 @@ export class AutoTouchInput implements InputSource {
       if (p.id === this.steerPointerId) {
         this.steerPointerId = null;
         this.steering = false;
+        // Steer handoff: if another finger is still held (e.g. thumb lifted while
+        // the tapping finger is down), promote it so steering never stutters.
+        const next = this.downAt.entries().next();
+        if (!next.done) {
+          const [id, rec] = next.value;
+          this.steerPointerId = id;
+          this.steering = true;
+          this.steerX = rec.lx;
+        }
       }
       // Tap = short press with little drift → dash, or the launch if mid-dash.
       if (d && (p.upTime - d.t) <= AUTO.tapMaxMs
