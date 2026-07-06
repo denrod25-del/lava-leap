@@ -24,6 +24,8 @@ export class Player {
   maxJumps = 2;
   /** Fractional moveSpeed bonus from the Flow tier (GameScene wires this per-frame; stays 0 until then). */
   flowSpeedNudge = 0;
+  /** AUTO control scheme: bounce off the ground automatically each landing. */
+  autoJump = false;
 
   get wallSliding(): boolean { return this._wallSliding; }
 
@@ -165,6 +167,18 @@ export class Player {
       this.coyoteTimer = TUNING.coyoteMs;
     } else {
       this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
+    }
+
+    // AUTO mode: bounce off the ground automatically. Full height by design —
+    // there is no held key, so no variable-height cut applies. Emits 'jump' so
+    // juice/audio/tutorial react exactly like a manual jump. Clearing coyote +
+    // buffer prevents the buffered-jump block below from double-firing.
+    if (this.autoJump && onGround) {
+      this.sprite.setVelocityY(-TUNING.jumpVelocity);
+      this.jumpsUsed = 1;
+      this.coyoteTimer = 0;
+      this.bufferTimer = 0;
+      this.events.emit('jump', {});
     }
 
     // Buffer a jump on a held rising-edge OR an explicit press pulse (touch taps send
