@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.8.0', date: '2026-07-06', notes: [
+    'GLOBAL LEADERBOARDS: climb the All-Time board and today’s Daily-seed board.',
+    'Auto-submits your best runs; pick a name in Settings → NAME.',
+    'Everyone plays the same Daily mountain — who climbs it highest?',
+  ]},
   { version: '0.7.0', date: '2026-07-06', notes: [
     'NEW DEFAULT mobile controls: AUTO-JUMP — hold anywhere to steer, jumping is automatic.',
     'TAP to dash · tap mid-dash to LAUNCH — the whole FLOW game, one-handed.',
