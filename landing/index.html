@@ -715,7 +715,17 @@
 
     submitting(true);
 
-    join(email)
+    var req;
+    try {
+      req = join(email);
+    } catch (err) {
+      // ancient browsers without fetch: fail visibly, never leave the form stuck
+      setStatus('✗ SOMETHING BROKE — TRY AGAIN', 'err');
+      submitting(false);
+      return;
+    }
+
+    req
       .then(function (res) {
         if (res.status === 201 || res.status === 200 || res.status === 204) {
           setStatus("✓ YOU'RE ON THE LIST — WELCOME, LEAPER", 'ok');
@@ -726,15 +736,22 @@
           setStatus("✓ YOU'RE ALREADY ON THE LIST", 'ok');
           form.reset();
         } else {
-          return res.text().then(function () {
-            setStatus('✗ SOMETHING BROKE — TRY AGAIN', 'err');
+          return res.text().then(function (body) {
+            // DB abuse backstop trips as a 400 with 'rate limit' in the message
+            if ((res.status === 400 || res.status === 429) && /rate.?limit/i.test(body)) {
+              setStatus('✗ SIGNUPS ARE BUSY — TRY AGAIN IN A MINUTE', 'err');
+            } else {
+              setStatus('✗ SOMETHING BROKE — TRY AGAIN', 'err');
+            }
           });
         }
       })
       .catch(function () {
         setStatus('✗ NETWORK ERROR — CHECK CONNECTION', 'err');
       })
-      .finally(function () {
+      // .then, not .finally — the catch above handles rejections, so this always
+      // runs, and it works on Promise implementations without .finally
+      .then(function () {
         submitting(false);
       });
   });

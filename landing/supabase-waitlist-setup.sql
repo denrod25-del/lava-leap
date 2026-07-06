@@ -39,8 +39,13 @@ create policy "anon can insert waitlist"
 -- (No SELECT policy for anon = the list is unreadable from the client.)
 -- Read it from the Supabase dashboard or a service-role backend only.
 
--- ---- Optional: lightweight rate limiting via a DB trigger ----
--- Blocks more than 5 inserts per minute from the same source burst.
+-- ---- Optional: global abuse backstop via a DB trigger ----
+-- This is NOT per-user rate limiting (anon inserts carry no client identity
+-- here) — it is a table-wide circuit breaker against bot floods. The ceiling
+-- is deliberately high so a genuine launch spike never trips it; a scripted
+-- flood still does. The landing page maps this error to a friendly
+-- "signups are busy — try again in a minute" message (it matches on
+-- 'rate limit' in the response body — keep that phrase if you edit this).
 create or replace function public.waitlist_rate_limit()
 returns trigger
 language plpgsql
@@ -51,7 +56,7 @@ begin
   select count(*) into recent
   from public.waitlist
   where created_at > now() - interval '1 minute';
-  if recent > 60 then
+  if recent > 300 then
     raise exception 'rate limit exceeded';
   end if;
   return new;
