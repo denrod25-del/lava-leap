@@ -62,9 +62,9 @@ export function createLeaderboard(cfg: Cfg): LeaderboardClient {
       try {
         const rows = await rpc('top_scores', { p_board: board, p_limit: limit });
         if (!Array.isArray(rows)) return [];
-        return (rows as TopScoreRow[]).map((r) => ({
-          rank: r.rank, playerId: r.player_id, name: r.name, score: r.score, height: r.height,
-        }));
+        return (rows as TopScoreRow[])
+          .filter((r) => typeof r.score === 'number')
+          .map((r) => ({ rank: r.rank, playerId: r.player_id, name: r.name, score: r.score, height: r.height }));
       } catch { return []; }
     },
     async rankOf(board, playerId) {

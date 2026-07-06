@@ -64,4 +64,26 @@ describe('createLeaderboard — enabled', () => {
     const empty = createLeaderboard({ ...cfg, fetchImpl: vi.fn(() => okJson([])) });
     expect(await empty.rankOf('alltime', 'p')).toBeNull();
   });
+
+  it('aborts a hung request after timeoutMs and fails soft', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi.fn((_url: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_res, rej) => {
+          init?.signal?.addEventListener('abort', () => rej(new DOMException('Aborted', 'AbortError')));
+        }));
+      const lb = createLeaderboard({ ...cfg, fetchImpl: fetchImpl as unknown as typeof fetch, timeoutMs: 100 });
+      const p = lb.top('alltime');
+      vi.advanceTimersByTime(101);
+      expect(await p).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('filters malformed rows missing a numeric score', async () => {
+    const rows = [{ rank: 1, player_id: 'a', name: 'Ann', score: 900, height: 880 }, { rank: 2, player_id: 'b', name: 'Bad' }];
+    const lb = createLeaderboard({ ...cfg, fetchImpl: vi.fn(() => okJson(rows)) });
+    expect((await lb.top('alltime')).length).toBe(1);
+  });
 });
