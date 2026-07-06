@@ -177,7 +177,7 @@ export class GameScene extends Phaser.Scene {
     // First-run tutorial (once ever; Settings can reset the flag).
     this.tutorial = undefined;
     if (!save.get().tutorialDone) {
-      this.tutorial = new TutorialOverlay(this, this.gameEvents, wantTouch, () => {
+      this.tutorial = new TutorialOverlay(this, this.gameEvents, wantTouch ? 'touch-manual' : 'keyboard', () => {
         save.update((b) => { b.tutorialDone = true; });
       });
     }
