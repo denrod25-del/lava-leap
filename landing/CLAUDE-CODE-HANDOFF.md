@@ -1,5 +1,10 @@
 # Lava Leap Landing — Claude Code Handoff
 
+> **Note (kept for reference, partially superseded):** URLs in this document
+> that reference `lava-leap-two.vercel.app` are stale — the live game actually
+> deploys to `lava-leap-84pb.vercel.app`. See `README.md` for the current
+> deployment layout and remaining follow-ups.
+
 **Goal:** Deploy the production landing page (+ privacy/terms) to the existing Vercel project, wire the real waitlist backend, enable analytics, and verify everything works. The design is finished — do not redesign. Preserve the retro pixel-art identity exactly.
 
 **Coding standard for this task:** NASA-light default. The waitlist path is **Strict** (handles user PII + a public API key): validate at boundaries, check every return value, no silent catch, bounded work, smallest scope. State the tier in your PR description.

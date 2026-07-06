@@ -20,8 +20,7 @@ create table if not exists public.waitlist (
   constraint email_len check (char_length(email) <= 254)
 );
 
--- Fast lookups / de-dupe
-create index if not exists waitlist_email_idx on public.waitlist (email);
+-- Fast lookups (the UNIQUE constraint on email already provides its own index)
 create index if not exists waitlist_created_idx on public.waitlist (created_at desc);
 
 -- ---- Row Level Security ----

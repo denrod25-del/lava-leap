@@ -320,7 +320,7 @@
     <p class="kicker">SEE IT MOVE</p>
     <h2 id="proof-h">See Lava Leap in action</h2>
     <p class="lede">Rising lava, crumbling ledges, a dash to clear the gap. Swipe through the climb.</p>
-    <div class="carousel" role="group" aria-roledescription="carousel" aria-label="Lava Leap gameplay screenshots">
+    <div class="carousel" role="group" tabindex="0" aria-roledescription="carousel" aria-label="Lava Leap gameplay screenshots">
       <div class="slides" id="slides">
         <figure class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: The Climb">
           <span class="slide-art" aria-hidden="true" style="background:
@@ -343,7 +343,7 @@
       <button class="car-btn car-next" id="carNext" aria-label="Next screenshot">›</button>
       <div class="dots" id="carDots" role="tablist" aria-label="Choose screenshot"></div>
     </div>
-    <p style="color:var(--smoke);font-size:12px;margin-top:16px">Placeholder frames — swap the <code>.slide-art</code> backgrounds for real <code>&lt;img&gt;</code> captures when ready.</p>
+    <p style="color:var(--smoke);font-size:12px;margin-top:16px">Stylized frames — real gameplay captures coming soon.</p>
   </div>
 </section>
 
@@ -677,7 +677,7 @@
   function join(email) {
     // POST to Supabase REST. The DB enforces email format (CHECK) + uniqueness (UNIQUE).
     var url = CONFIG.SUPABASE_URL + '/rest/v1/' + CONFIG.WAITLIST_TABLE;
-    return fetch(url, {
+    var opts = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -686,7 +686,15 @@
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ email: email, source: 'landing' })
-    });
+    };
+    // 10s timeout so a dead network can't leave the form disabled forever;
+    // aborting an already-settled fetch is a no-op, so no cleanup needed
+    if (typeof AbortController === 'function') {
+      var controller = new AbortController();
+      opts.signal = controller.signal;
+      setTimeout(function () { controller.abort(); }, 10000);
+    }
+    return fetch(url, opts);
   }
 
   form.addEventListener('submit', function (ev) {
