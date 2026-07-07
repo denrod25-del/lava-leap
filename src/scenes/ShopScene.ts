@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { TUNING, UPGRADES } from '../tuning';
 import { save } from '../main';
+import { CHARACTERS, frameKey } from '../core/characters';
+import { track } from '../core/track';
 
 export interface CosmeticDef { id: string; name: string; tint: number; price: number }
 
@@ -15,15 +17,17 @@ export const COSMETICS: CosmeticDef[] = [
 
 export class ShopScene extends Phaser.Scene {
   private idx = 0;
-  private tab: 'cosmetics' | 'upgrades' = 'cosmetics';
+  private tab: 'characters' | 'cosmetics' | 'upgrades' = 'characters';
   private rows: Phaser.GameObjects.Text[] = [];
   private bankText!: Phaser.GameObjects.Text;
   private tabBtn!: Phaser.GameObjects.Text;
+  private preview?: Phaser.GameObjects.Image;
 
   constructor() { super('Shop'); }
 
   /** Number of selectable rows in the active tab. */
   private listLength(): number {
+    if (this.tab === 'characters') return CHARACTERS.length;
     return this.tab === 'cosmetics' ? COSMETICS.length : UPGRADES.length;
   }
 
@@ -70,16 +74,39 @@ export class ShopScene extends Phaser.Scene {
     kb.on('keydown-TAB', (e: KeyboardEvent) => { e.preventDefault(); this.switchTab(); });
     kb.on('keydown-ENTER', () => this.buyOrEquip());
     kb.on('keydown-ESC', () => this.scene.start('Menu'));
+
+    // Character preview (characters tab only): the highlighted hero's idle frame,
+    // tinted with the equipped cosmetic so the player sees the exact combo.
+    this.preview = this.add.image(cx + 150, 210, frameKey(CHARACTERS[0].id, 'idle-0'))
+      .setScale(2.5).setVisible(false);
+
     this.render();
   }
 
   private switchTab(): void {
-    this.tab = this.tab === 'cosmetics' ? 'upgrades' : 'cosmetics';
+    this.tab = this.tab === 'characters' ? 'cosmetics'
+             : this.tab === 'cosmetics' ? 'upgrades' : 'characters';
     this.idx = 0;
     this.render();
   }
 
   private buyOrEquip(): void {
+    if (this.tab === 'characters') {
+      const ch = CHARACTERS[this.idx];
+      const blob = save.get();
+      const sfxMult = blob.settings.sfxVol / 10;
+      if (blob.ownedCharacters.includes(ch.id)) {
+        save.update((b) => { b.character = ch.id; });
+        track('character_equip', { id: ch.id });
+        this.sound.play('sfx-ui-select', { volume: 0.4 * sfxMult });
+      } else if (blob.coinBank >= ch.price) { // scaffold for future paid characters
+        save.update((b) => { b.coinBank -= ch.price; b.ownedCharacters.push(ch.id); b.character = ch.id; });
+        track('character_equip', { id: ch.id });
+        this.sound.play('sfx-kaching', { volume: 0.6 * sfxMult });
+      }
+      this.render();
+      return;
+    }
     if (this.tab === 'upgrades') { this.buyUpgrade(); return; }
     const c = COSMETICS[this.idx];
     const blob = save.get();
@@ -112,8 +139,28 @@ export class ShopScene extends Phaser.Scene {
     const blob = save.get();
     this.bankText.setText(`Bank: ${blob.coinBank} coins`);
 
+    if (this.tab === 'characters') {
+      this.tabBtn.setText('[ CHARACTERS | Cosmetics | Upgrades ]');
+      const equippedTint = COSMETICS.find((c) => c.id === blob.equippedCosmetic)?.tint ?? 0xffffff;
+      CHARACTERS.forEach((ch, i) => {
+        const equipped = blob.character === ch.id;
+        const owned = blob.ownedCharacters.includes(ch.id);
+        const status = equipped ? '[EQUIPPED]' : owned ? '[owned]' : `${ch.price}c`;
+        const cursor = i === this.idx ? '> ' : '  ';
+        this.rows[i].setText(`${cursor}${ch.name.padEnd(8)} ${status}`).setTint(0xffffff).setAlpha(1);
+      });
+      for (let i = CHARACTERS.length; i < this.rows.length; i++) this.rows[i].setText('');
+      if (this.preview) {
+        this.preview.setTexture(frameKey(CHARACTERS[this.idx].id, 'idle-0'));
+        this.preview.setTint(equippedTint);
+        this.preview.setVisible(true);
+      }
+      return;
+    }
+    this.preview?.setVisible(false);
+
     if (this.tab === 'upgrades') {
-      this.tabBtn.setText('[ Cosmetics | UPGRADES ]');
+      this.tabBtn.setText('[ Characters | Cosmetics | UPGRADES ]');
       this.rows.forEach((row, i) => {
         if (i >= UPGRADES.length) { row.setText('').setTint(0xffffff).setAlpha(1); return; }
         const u = UPGRADES[i];
@@ -128,7 +175,7 @@ export class ShopScene extends Phaser.Scene {
       return;
     }
 
-    this.tabBtn.setText('[ COSMETICS | Upgrades ]');
+    this.tabBtn.setText('[ Characters | COSMETICS | Upgrades ]');
     COSMETICS.forEach((c, i) => {
       const owned = blob.ownedCosmetics.includes(c.id);
       const equipped = blob.equippedCosmetic === c.id;
