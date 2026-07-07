@@ -11,3 +11,4 @@ playwright-report/
 .playwright
 *.apk
 /assets/
+tools/hero-raw/
