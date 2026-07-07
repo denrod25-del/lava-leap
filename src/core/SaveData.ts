@@ -1,5 +1,6 @@
 import type { KeyValueStore } from './ScoreTracker';
 import { defaultAnalytics, type AnalyticsState } from './analytics';
+import { DEFAULT_CHARACTER, isCharacter } from './characters';
 
 export interface Settings {
   musicVol: number;   // 0-10
@@ -35,6 +36,10 @@ export interface SaveBlob {
   identity: { playerId: string; name: string };
   /** True once the first-run leaderboard-name prompt has been offered. */
   leaderboardPrompted: boolean;
+  /** Equipped character id (purely cosmetic). */
+  character: string;
+  /** Owned character ids — the free roster is always granted. */
+  ownedCharacters: string[];
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -56,6 +61,8 @@ function defaults(): SaveBlob {
     lastSeenVersion: '',
     identity: { playerId: '', name: '' },
     leaderboardPrompted: false,
+    character: DEFAULT_CHARACTER,
+    ownedCharacters: ['ember', 'classic'],
   };
 }
 
@@ -109,7 +116,7 @@ export class SaveData {
           // and `analytics` are deep-merged so sub-fields introduced in a later
           // version (e.g. v3's analytics.deathsBySource) exist on old saves —
           // otherwise recordDeath/recordStomp would touch undefined and crash.
-          return {
+          const merged = {
             ...defaults(),
             ...parsed,
             settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
@@ -117,6 +124,9 @@ export class SaveData {
             upgrades: { ...defaults().upgrades, ...parsed.upgrades },
             identity: { ...defaults().identity, ...parsed.identity },
           };
+          if (!isCharacter(merged.character)) merged.character = DEFAULT_CHARACTER;
+          merged.ownedCharacters = [...new Set([...defaults().ownedCharacters, ...(parsed.ownedCharacters ?? [])])];
+          return merged;
         }
       }
     } catch {

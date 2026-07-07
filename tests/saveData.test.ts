@@ -186,4 +186,42 @@ describe('SaveData', () => {
     expect(s.get().identity).toEqual({ playerId: 'legacy-id', name: '' });
     expect(s.get().highScore).toBe(7); // existing data preserved
   });
+
+  it('defaults character to ember and owns both free characters', () => {
+    const s = new SaveData(fakeStore(), () => 'id');
+    expect(s.get().character).toBe('ember');
+    expect(s.get().ownedCharacters).toEqual(['ember', 'classic']);
+  });
+
+  it('backfills character fields on a legacy save (and always owns the free roster)', () => {
+    const legacy = {
+      version: 2, highScore: 3, coinBank: 1, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.8.1',
+      identity: { playerId: 'x', name: 'A' }, leaderboardPrompted: true,
+      // no character / ownedCharacters
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }), () => 'id');
+    expect(s.get().character).toBe('ember');
+    expect(s.get().ownedCharacters).toEqual(['ember', 'classic']);
+    expect(s.get().highScore).toBe(3);
+  });
+
+  it('falls back to ember when the saved character is unknown', () => {
+    const bad = {
+      version: 2, highScore: 0, coinBank: 0, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.8.1',
+      identity: { playerId: 'x', name: 'A' }, leaderboardPrompted: true,
+      character: 'zzz', ownedCharacters: ['ember', 'classic'],
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(bad) }));
+    expect(s.get().character).toBe('ember');
+  });
 });
