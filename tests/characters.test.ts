@@ -1,0 +1,41 @@
+import { describe, it, expect } from 'vitest';
+import {
+  CHARACTERS, DEFAULT_CHARACTER, FRAME_NAMES,
+  staticKey, frameKey, animKey, isCharacter,
+} from '../src/core/characters';
+
+describe('characters roster', () => {
+  it('has ember (default) and classic, both free', () => {
+    expect(DEFAULT_CHARACTER).toBe('ember');
+    expect(CHARACTERS.map((c) => c.id)).toEqual(['ember', 'classic']);
+    expect(CHARACTERS.every((c) => c.price === 0)).toBe(true);
+  });
+  it('isCharacter recognizes roster ids only', () => {
+    expect(isCharacter('ember')).toBe(true);
+    expect(isCharacter('classic')).toBe(true);
+    expect(isCharacter('nope')).toBe(false);
+    expect(isCharacter('')).toBe(false);
+  });
+});
+
+describe('key helpers', () => {
+  it('build prefixed texture/anim keys', () => {
+    expect(staticKey('ember')).toBe('ember-static');
+    expect(frameKey('classic', 'run-3')).toBe('classic-run-3');
+    expect(animKey('ember', 'jump')).toBe('ember-jump');
+  });
+});
+
+describe('FRAME_NAMES', () => {
+  it('lists the 15 per-character frame files', () => {
+    expect(FRAME_NAMES).toHaveLength(15);
+    expect(FRAME_NAMES).toContain('run-0');
+    expect(FRAME_NAMES).toContain('run-5');
+    expect(FRAME_NAMES).toContain('jump-1');
+    expect(FRAME_NAMES).toContain('jump-5');
+    expect(FRAME_NAMES).toContain('idle-0');
+    expect(FRAME_NAMES).toContain('idle-3');
+    expect(FRAME_NAMES).not.toContain('jump-0'); // jump frames are 1..5
+    expect(FRAME_NAMES).not.toContain('player'); // static is separate
+  });
+});
