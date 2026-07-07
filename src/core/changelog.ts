@@ -2,6 +2,10 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.8.2', date: '2026-07-07', notes: [
+    'Character select! Choose Ember or Classic in the Shop → Characters tab.',
+    'Cosmetic tints still stack over whichever hero you pick.',
+  ]},
   { version: '0.8.1', date: '2026-07-06', notes: [
     'New hero! Meet your red-capped lava climber — fresh look, same moves.',
   ]},
