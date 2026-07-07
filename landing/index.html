@@ -683,11 +683,14 @@
             setUi(true);
             track('sound_toggle', { on: true });
           }).catch(function () {
-            // playback blocked or file unavailable — stay visibly off
+            // playback blocked or file unavailable — stay visibly off;
+            // the error flag separates failures from users pausing
             setUi(false);
+            track('sound_toggle', { on: false, error: true });
           });
         } else {
           setUi(true);
+          track('sound_toggle', { on: true });
         }
       } else {
         audio.pause();
