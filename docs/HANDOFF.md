@@ -2,18 +2,20 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-06 (v0.8.0)._
+_Last updated: 2026-07-06 (v0.8.1)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.8.0, shipped & LIVE with ONLINE LEADERBOARDS
-- **Web (live):** https://lava-leap-84pb.vercel.app — serves `v0.8.0` with the Supabase env baked in (leaderboards ENABLED in production; verified by grepping the deployed bundle for the project ref).
+## Current state — v0.8.1, shipped & LIVE (new hero + online leaderboards)
+- **Web (live):** https://lava-leap-84pb.vercel.app — serves `v0.8.1`; leaderboards ENABLED in production (Supabase env baked in, unaffected by v8.1).
+- **v0.8.1 = new hero sprite** (art-only, zero code change): red-cap girl climber, PixelLab char `ca3219eb`, regenerated into the same 16 files. Normalizer `tools/normalize_hero_frames.py` (Pillow): union-bbox per set → ONE uniform LANCZOS downscale (jump apex forced 0.814) so she's the same size in every state → bottom-anchored 48×48 (in-engine footGap=0). Cosmetic tints all stayed distinct (no COSMETICS change). Raw frames in gitignored `tools/hero-raw/`.
+- **e2e determinism:** `.env.test` (blank Supabase creds, committed) + `playwright.config` `--mode test`/`reuseExistingServer:false` — e2e now always exercises the dormant-leaderboards default regardless of a dev's local `.env` (a local `.env` had flipped the disabled-leaderboard spec to enabled).
 - **Backend:** Supabase project `alnvkpzzyahuztyrtjxv` (user's account, free tier) — `scores` table + `submit_score`/`top_scores`/`player_rank` RPCs from `supabase/migrations/0001_leaderboards.sql`. Live-verified: valid submit lands, absurd score silently rejected, direct table write blocked by RLS (42501), in-game death → auto-submit → GameOver `GLOBAL #`. Anon key is public-by-design; `service_role` never used. Local `.env` (gitignored) + the two `VITE_SUPABASE_*` vars in Vercel (GAME project — a separate `landing/` Vercel project also exists on this repo; env vars must go on lava-leap-84pb).
 - **GitHub release + APK:** latest release is still **v0.6.0** — v0.7.0/v0.8.0 shipped web-only; APK rebuild + release + tester email are open follow-ups.
-- **Tests:** 152 unit (Vitest) + 16 e2e (Playwright; `--workers=1` — pre-existing local flake at default parallelism), all green; typecheck + build clean.
+- **Tests:** 152 unit (Vitest) + 16 e2e (Playwright; **run `--workers=1`** — pre-existing local flake at default parallelism), all green; typecheck + build clean.
 - Everything pushed; working tree clean.
 
 ## Version history (all shipped)
