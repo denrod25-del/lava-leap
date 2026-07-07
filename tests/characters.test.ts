@@ -3,6 +3,7 @@ import {
   CHARACTERS, DEFAULT_CHARACTER, FRAME_NAMES,
   staticKey, frameKey, animKey, isCharacter,
 } from '../src/core/characters';
+import { characterAnims } from '../src/animManifest';
 
 describe('characters roster', () => {
   it('has ember (default) and classic, both free', () => {
@@ -37,5 +38,16 @@ describe('FRAME_NAMES', () => {
     expect(FRAME_NAMES).toContain('idle-3');
     expect(FRAME_NAMES).not.toContain('jump-0'); // jump frames are 1..5
     expect(FRAME_NAMES).not.toContain('player'); // static is separate
+  });
+});
+
+describe('animManifest ↔ FRAME_NAMES consistency', () => {
+  it('every anim frame file is a known FRAME_NAME (prefixed per character)', () => {
+    for (const def of characterAnims('ember')) {
+      for (const f of def.frames) {
+        expect(f.startsWith('ember-')).toBe(true);
+        expect(FRAME_NAMES).toContain(f.slice('ember-'.length));
+      }
+    }
   });
 });

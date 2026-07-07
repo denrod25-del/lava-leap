@@ -125,7 +125,8 @@ export class SaveData {
             identity: { ...defaults().identity, ...parsed.identity },
           };
           if (!isCharacter(merged.character)) merged.character = DEFAULT_CHARACTER;
-          merged.ownedCharacters = [...new Set([...defaults().ownedCharacters, ...(parsed.ownedCharacters ?? [])])];
+          const ownedRaw = Array.isArray(parsed.ownedCharacters) ? parsed.ownedCharacters : [];
+          merged.ownedCharacters = [...new Set([...defaults().ownedCharacters, ...ownedRaw])];
           return merged;
         }
       }

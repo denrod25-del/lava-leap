@@ -224,4 +224,19 @@ describe('SaveData', () => {
     const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(bad) }));
     expect(s.get().character).toBe('ember');
   });
+
+  it('ignores a corrupt non-array ownedCharacters', () => {
+    const bad = {
+      version: 2, highScore: 0, coinBank: 0, equippedCosmetic: 'default', ownedCosmetics: ['default'],
+      achievements: {}, dailyBest: {},
+      settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' },
+      analytics: { runs: 0, dailyPlays: 0, achievementsUnlocked: 0, coinsBanked: 0, deathsByBucket: {}, deathsByZone: {},
+                   enemiesStomped: 0, powerupsUsed: 0, bossClears: 0, deathsBySource: {} },
+      upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.8.1',
+      identity: { playerId: 'x', name: 'A' }, leaderboardPrompted: true,
+      character: 'ember', ownedCharacters: 'junk',
+    };
+    const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(bad) }));
+    expect(s.get().ownedCharacters).toEqual(['ember', 'classic']);
+  });
 });
