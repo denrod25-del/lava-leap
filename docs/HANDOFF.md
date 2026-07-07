@@ -2,15 +2,16 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-06 (v0.8.1)._
+_Last updated: 2026-07-07 (v0.8.2)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.8.1, shipped & LIVE (new hero + online leaderboards)
-- **Web (live):** https://lava-leap-84pb.vercel.app — serves `v0.8.1`; leaderboards ENABLED in production (Supabase env baked in, unaffected by v8.1).
+## Current state — v0.8.2, shipped & LIVE (character select + leaderboards)
+- **Web (live):** https://lava-leap-84pb.vercel.app — serves `v0.8.2`; leaderboards ENABLED in production.
+- **v0.8.2 = character select:** free 2-hero roster — **Ember** (red-cap climber, default) + **Classic** (pre-v8.1 hero, byte-identical restore from git `9102382^`). Assets per character at `public/assets/characters/<id>/` (16 files each), loaded under prefixed keys (`classic-run-0`) with per-character anims via `characterAnims(id)`; `src/core/characters.ts` roster is the single source of truth (adding a character = 16 files + one entry). SaveData `character` (fallback to ember on bad ids) + `ownedCharacters` (Array.isArray-guarded union w/ free roster). Shop opens on a new **Characters tab** (3-tab cycle) with a preview sprite tinted by the equipped cosmetic; equip = next run; purely cosmetic (hitbox/physics identical). **E2E gotcha fixed here: two character sets lengthened boot past fixed waits, dropping Menu's one-shot Space listener → e2e now polls for Menu-active before pressing Space (pattern for future asset growth).**
 - **v0.8.1 = new hero sprite** (art-only, zero code change): red-cap girl climber, PixelLab char `ca3219eb`, regenerated into the same 16 files. Normalizer `tools/normalize_hero_frames.py` (Pillow): union-bbox per set → ONE uniform LANCZOS downscale (jump apex forced 0.814) so she's the same size in every state → bottom-anchored 48×48 (in-engine footGap=0). Cosmetic tints all stayed distinct (no COSMETICS change). Raw frames in gitignored `tools/hero-raw/`.
 - **e2e determinism:** `.env.test` (blank Supabase creds, committed) + `playwright.config` `--mode test`/`reuseExistingServer:false` — e2e now always exercises the dormant-leaderboards default regardless of a dev's local `.env` (a local `.env` had flipped the disabled-leaderboard spec to enabled).
 - **Backend:** Supabase project `alnvkpzzyahuztyrtjxv` (user's account, free tier) — `scores` table + `submit_score`/`top_scores`/`player_rank` RPCs from `supabase/migrations/0001_leaderboards.sql`. Live-verified: valid submit lands, absurd score silently rejected, direct table write blocked by RLS (42501), in-game death → auto-submit → GameOver `GLOBAL #`. Anon key is public-by-design; `service_role` never used. Local `.env` (gitignored) + the two `VITE_SUPABASE_*` vars in Vercel (GAME project — a separate `landing/` Vercel project also exists on this repo; env vars must go on lava-leap-84pb).
