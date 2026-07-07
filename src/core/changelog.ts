@@ -2,6 +2,9 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.8.1', date: '2026-07-06', notes: [
+    'New hero! Meet your red-capped lava climber — fresh look, same moves.',
+  ]},
   { version: '0.8.0', date: '2026-07-06', notes: [
     'GLOBAL LEADERBOARDS: climb the All-Time board and today’s Daily-seed board.',
     'Auto-submits your best runs; pick a name in Settings → NAME.',
