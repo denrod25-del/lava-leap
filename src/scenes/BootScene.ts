@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { ANIM_FRAME_KEYS, PLAYER_ANIMS } from '../animManifest';
+import { characterAnims } from '../animManifest';
+import { CHARACTERS, FRAME_NAMES, staticKey, frameKey } from '../core/characters';
 import { TUNING } from '../tuning';
 import { VERSION_LABEL } from '../core/buildInfo';
 
@@ -21,14 +22,18 @@ export class BootScene extends Phaser.Scene {
       pct.setText(`loading… ${Math.round(p * 100)}%`);
     });
 
-    this.load.image('player', 'assets/player.png');
     this.load.image('platform', 'assets/platform.png');
     this.load.image('coin', 'assets/coin.png');
     this.load.image('lava', 'assets/lava-tile.png');
     this.load.image('enemy-crawler', 'assets/enemies/crawler.png');
     this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
     this.load.image('boss-titan', 'assets/boss/titan.png');
-    for (const key of ANIM_FRAME_KEYS) this.load.image(key, `assets/anim/${key}.png`);
+    for (const c of CHARACTERS) {
+      this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
+      for (const name of FRAME_NAMES) {
+        this.load.image(frameKey(c.id, name), `assets/characters/${c.id}/${name}.png`);
+      }
+    }
     this.load.audio('sfx-jump', 'assets/sfx/jump.wav');
     this.load.audio('sfx-coin', 'assets/sfx/coin.wav');
     this.load.audio('sfx-death', 'assets/sfx/death.wav');
@@ -40,14 +45,16 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    for (const def of PLAYER_ANIMS) {
-      if (this.anims.exists(def.key)) continue;
-      this.anims.create({
-        key: def.key,
-        frames: def.frames.map((f) => ({ key: f })),
-        frameRate: def.frameRate,
-        repeat: def.repeat,
-      });
+    for (const c of CHARACTERS) {
+      for (const def of characterAnims(c.id)) {
+        if (this.anims.exists(def.key)) continue;
+        this.anims.create({
+          key: def.key,
+          frames: def.frames.map((f) => ({ key: f })),
+          frameRate: def.frameRate,
+          repeat: def.repeat,
+        });
+      }
     }
     this.scene.start('Menu');
   }

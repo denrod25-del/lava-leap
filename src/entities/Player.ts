@@ -4,6 +4,7 @@ import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
 import type { InputState } from '../core/InputState';
+import { animKey, staticKey, isCharacter, DEFAULT_CHARACTER, type PlayerState } from '../core/characters';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -26,6 +27,7 @@ export class Player {
   flowSpeedNudge = 0;
   /** AUTO control scheme: bounce off the ground automatically each landing. */
   autoJump = false;
+  private charId = DEFAULT_CHARACTER;
 
   get wallSliding(): boolean { return this._wallSliding; }
 
@@ -48,7 +50,9 @@ export class Player {
 
   constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents) {
     this.scene = scene;
-    this.sprite = scene.physics.add.sprite(x, y, 'player');
+    const charId = isCharacter(save.get().character) ? save.get().character : DEFAULT_CHARACTER;
+    this.charId = charId;
+    this.sprite = scene.physics.add.sprite(x, y, staticKey(charId));
     this.sprite.setCollideWorldBounds(false);
     // Source art is 48x48; display it a touch larger than the hitbox for presence.
     // The hitbox (playerBody*) is locked every frame in update so gameplay is unchanged.
@@ -236,11 +240,12 @@ export class Player {
   }
 
   private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
-    if (!this.scene.anims.exists('player-run')) return; // no frames generated — static fallback
-    let key: string;
-    if (!onGround) key = vy < 0 ? 'player-jump' : 'player-fall';
-    else if (moving) key = 'player-run';
-    else key = 'player-idle';
+    if (!this.scene.anims.exists(animKey(this.charId, 'run'))) return; // frames not built — static fallback
+    let state: PlayerState;
+    if (!onGround) state = vy < 0 ? 'jump' : 'fall';
+    else if (moving) state = 'run';
+    else state = 'idle';
+    const key = animKey(this.charId, state);
     if (this.scene.anims.exists(key) && this.sprite.anims.getName() !== key) {
       this.sprite.anims.play(key, true);
     }
