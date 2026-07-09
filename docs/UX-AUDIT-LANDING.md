@@ -1,6 +1,6 @@
 # UX Audit — Landing Page (vs docs/UX-PRINCIPLES.md)
 
-Audited 2026-07-09 against the standing charter. The landing page is a
+Audited against the standing charter. The landing page is a
 marketing/static surface, so game-only sections of the charter (achievements,
 learning engine, dashboards) are N/A here.
 

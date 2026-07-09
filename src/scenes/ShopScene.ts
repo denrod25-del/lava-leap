@@ -31,6 +31,11 @@ export class ShopScene extends Phaser.Scene {
     const cx = TUNING.width / 2;
     this.add.text(cx, 60, 'SHOP', { fontFamily: 'monospace', fontSize: '32px', color: '#ffd166' }).setOrigin(0.5);
     this.bankText = this.add.text(cx, 100, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
+    if (save.get().coinBank === 0) {
+      this.add.text(cx, 114, 'Coins you grab mid-run bank automatically — spend them here.', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#7ad9e8',
+      }).setOrigin(0.5);
+    }
 
     this.tabBtn = this.add.text(cx, 128, '', { fontFamily: 'monospace', fontSize: '14px', color: '#16e0e0' })
       .setOrigin(0.5).setInteractive({ useHandCursor: true })

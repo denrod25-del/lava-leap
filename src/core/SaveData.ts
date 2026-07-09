@@ -40,6 +40,15 @@ export interface SaveBlob {
 const KEY = 'lavaleap.save.v2';
 const V1_HIGHSCORE_KEY = 'lavaleap.highscore';
 
+/** Fresh saves inherit the OS motion preference; the explicit Settings toggle
+ *  (persisted in the save blob) always wins afterwards. Guarded so headless
+ *  test environments without matchMedia fall back to the plain default. */
+function osPrefersReducedMotion(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function defaults(): SaveBlob {
   return {
     version: 2,
@@ -49,7 +58,7 @@ function defaults(): SaveBlob {
     ownedCosmetics: ['default'],
     achievements: {},
     dailyBest: {},
-    settings: { ...DEFAULT_SETTINGS },
+    settings: { ...DEFAULT_SETTINGS, reducedMotion: osPrefersReducedMotion() },
     analytics: defaultAnalytics(),
     upgrades: { powerupDuration: 0, startShield: 0, revive: 0 },
     tutorialDone: false,

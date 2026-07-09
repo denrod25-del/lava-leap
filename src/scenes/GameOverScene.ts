@@ -3,6 +3,7 @@ import { TUNING } from '../tuning';
 import { save, leaderboard } from '../main';
 import { track } from '../core/track';
 import { allTimeBoard, dailyBoard } from '../core/leaderboard';
+import { ACHIEVEMENTS } from '../core/achievements';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
@@ -33,6 +34,23 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(cx, 500, 'Press SPACE / tap to retry', { fontFamily: 'monospace', fontSize: '20px', color: '#16e0e0' })
       .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', retry);
     this.input.keyboard!.once('keydown-SPACE', retry);
+
+    // "How close am I?" — surface the nearest locked achievement as the next goal.
+    const nextGoal = ACHIEVEMENTS.find((a) => !save.get().achievements[a.id]);
+    if (nextGoal) {
+      this.add.text(cx, 545, `NEXT GOAL: ☆ ${nextGoal.name} — ${nextGoal.description}`, {
+        fontFamily: 'monospace', fontSize: '13px', color: '#ffb066',
+      }).setOrigin(0.5);
+    }
+
+    const toMenu = () => {
+      this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+      track('gameover-menu', {});
+      this.scene.start('Menu');
+    };
+    this.add.text(cx, 578, 'M / tap here for MENU', { fontFamily: 'monospace', fontSize: '14px', color: '#888888' })
+      .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', toMenu);
+    this.input.keyboard!.once('keydown-M', toMenu);
 
     // Online ranks (async, non-blocking). Absent/offline → nothing shows. Waits for
     // this run's submit to settle first so the shown rank includes THIS run.
