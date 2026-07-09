@@ -32,7 +32,7 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(cx, 60, 'SHOP', { fontFamily: 'monospace', fontSize: '32px', color: '#ffd166' }).setOrigin(0.5);
     this.bankText = this.add.text(cx, 100, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
     if (save.get().coinBank === 0) {
-      this.add.text(cx, 114, 'Coins you grab mid-run bank automatically — spend them here.', {
+      this.add.text(cx, 595, 'Coins you grab mid-run bank automatically — spend them here.', {
         fontFamily: 'monospace', fontSize: '11px', color: '#7ad9e8',
       }).setOrigin(0.5);
     }
