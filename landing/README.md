@@ -44,11 +44,9 @@ env vars and redeploying is a safe kill-switch.
 - Enable **Web Analytics** in the Vercel project (Analytics tab). The HTML
   already ships the snippet; expect `cta_click`, `waitlist_join`, and
   `scroll_depth` custom events.
-- Update the hardcoded URLs once the landing domain is decided: the canonical
-  links (in `index.html`, `privacy.html`, `terms.html`), `og:url`/`og:image`,
-  `twitter:image`, and JSON-LD in `index.html`, plus `robots.txt` and
-  `sitemap.xml`, currently point at `https://lava-leap-two.vercel.app` — a
-  stale placeholder (the game actually lives at `lava-leap-84pb`). The Play
-  links already point at the live game.
+- The canonical links (in `index.html`, `privacy.html`, `terms.html`),
+  `og:url`/`og:image`, `twitter:image`, JSON-LD, `robots.txt`, and
+  `sitemap.xml` all point at `https://lava-leap-landing.vercel.app`. If a
+  custom domain is attached later, sweep those same files for the new host.
 - Full task list, acceptance criteria, and known follow-ups:
   `CLAUDE-CODE-HANDOFF.md` and `DEPLOY.md`.

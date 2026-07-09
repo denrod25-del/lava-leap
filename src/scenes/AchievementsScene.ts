@@ -12,6 +12,11 @@ export class AchievementsScene extends Phaser.Scene {
     const count = Object.keys(unlocked).length;
     this.add.text(cx, 50, 'ACHIEVEMENTS', { fontFamily: 'monospace', fontSize: '26px', color: '#ffb066' }).setOrigin(0.5);
     this.add.text(cx, 84, `${count} / ${ACHIEVEMENTS.length}`, { fontFamily: 'monospace', fontSize: '15px', color: '#888888' }).setOrigin(0.5);
+    if (count === 0) {
+      this.add.text(cx, 104, `Start here: ${ACHIEVEMENTS[0].name} — ${ACHIEVEMENTS[0].description}`, {
+        fontFamily: 'monospace', fontSize: '11px', color: '#7ad9e8',
+      }).setOrigin(0.5);
+    }
     ACHIEVEMENTS.forEach((a, i) => {
       const got = Boolean(unlocked[a.id]);
       this.add.text(40, 120 + i * 40, `${got ? '★' : '☆'} ${a.name}`, {

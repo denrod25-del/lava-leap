@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lava-leap-two.vercel.app/sitemap.xml
+Sitemap: https://lava-leap-landing.vercel.app/sitemap.xml

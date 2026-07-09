@@ -10,15 +10,15 @@
 <meta name="description" content="Climb an endless tower, outrun the rising lava, chain combos, dash, double-jump, bank coins, and battle the Lava Titan. Play free in your browser or download the Android APK.">
 <meta name="author" content="B. Symbolic">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="https://lava-leap-two.vercel.app/">
+<link rel="canonical" href="https://lava-leap-landing.vercel.app/">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lava Leap">
 <meta property="og:title" content="Lava Leap — Arcade Lava Climber">
 <meta property="og:description" content="Climb an endless tower, outrun the rising lava, and battle the Lava Titan. Free in your browser + Android.">
-<meta property="og:url" content="https://lava-leap-two.vercel.app/">
-<meta property="og:image" content="https://lava-leap-two.vercel.app/og-cover.png">
+<meta property="og:url" content="https://lava-leap-landing.vercel.app/">
+<meta property="og:image" content="https://lava-leap-landing.vercel.app/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Lava Leap — pixel-art hero leaping over rising lava">
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Lava Leap — Arcade Lava Climber">
 <meta name="twitter:description" content="Climb an endless tower, outrun the rising lava, and battle the Lava Titan. Free to play.">
-<meta name="twitter:image" content="https://lava-leap-two.vercel.app/og-cover.png">
+<meta name="twitter:image" content="https://lava-leap-landing.vercel.app/og-cover.png">
 
 <!-- Icons / manifest -->
 <link rel="icon" href="/favicon.ico" sizes="any">
@@ -57,8 +57,8 @@
   "@type": "VideoGame",
   "name": "Lava Leap",
   "description": "An endless arcade lava climber. Scale a tower of platforms, outrun rising lava, chain combos, dash and double-jump, bank coins, and battle the Lava Titan boss.",
-  "url": "https://lava-leap-two.vercel.app/",
-  "image": "https://lava-leap-two.vercel.app/og-cover.png",
+  "url": "https://lava-leap-landing.vercel.app/",
+  "image": "https://lava-leap-landing.vercel.app/og-cover.png",
   "genre": ["Arcade", "Platformer", "Endless Runner"],
   "gamePlatform": ["Web Browser", "Android"],
   "applicationCategory": "Game",
@@ -112,6 +112,15 @@
   .btn-play:hover{background:#ffcb3a}
   .btn-wait{background:var(--ash);color:var(--crust);box-shadow:var(--shadow);border:2px solid var(--ember)}
   .btn-wait:hover{background:#3a1d18}
+
+  /* ambient sound toggle */
+  .sound-toggle{position:fixed;right:14px;bottom:14px;z-index:60;
+    font-family:'Press Start 2P';font-size:10px;min-height:48px;
+    padding:12px 14px;border:2px solid var(--ember);background:var(--ash);color:var(--crust);
+    cursor:pointer;box-shadow:var(--shadow)}
+  .sound-toggle:hover{background:#3a1d18}
+  .sound-toggle[aria-pressed="true"]{background:var(--molten);color:#2a1512;border-color:var(--molten)}
+  @media(max-width:760px){.sound-toggle{bottom:92px}} /* clear the sticky play bar */
 
   /* HERO */
   header{position:relative;overflow:hidden;border-bottom:4px solid var(--ash)}
@@ -482,6 +491,10 @@
   </div>
 </footer>
 
+<!-- ambient sound: FLEX wave loop, plays only when the visitor turns it on -->
+<audio id="bgm" src="/flex.mp3" loop preload="none"></audio>
+<button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Toggle ambient sound">♪ SOUND: OFF</button>
+
 <!-- sticky mobile play button -->
 <div class="sticky-play">
   <a href="https://lava-leap-84pb.vercel.app" class="btn btn-play" data-cta="play-sticky" target="_blank" rel="noopener noreferrer">▶ Play Free in Browser</a>
@@ -650,6 +663,41 @@
     }, { passive: true });
 
     go(0);
+  })();
+
+  // ---- ambient sound toggle (FLEX wave) ----
+  (function soundToggle() {
+    var audio = document.getElementById('bgm');
+    var btn = document.getElementById('soundToggle');
+    if (!audio || !btn) return;
+    function setUi(on) {
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.textContent = on ? '♪ SOUND: ON' : '♪ SOUND: OFF';
+    }
+    btn.addEventListener('click', function () {
+      if (audio.paused) {
+        audio.volume = 0.6;
+        var p = audio.play();
+        if (p && typeof p.then === 'function') {
+          p.then(function () {
+            setUi(true);
+            track('sound_toggle', { on: true });
+          }).catch(function () {
+            // playback blocked or file unavailable — stay visibly off;
+            // the error flag separates failures from users pausing
+            setUi(false);
+            track('sound_toggle', { on: false, error: true });
+          });
+        } else {
+          setUi(true);
+          track('sound_toggle', { on: true });
+        }
+      } else {
+        audio.pause();
+        setUi(false);
+        track('sound_toggle', { on: false });
+      }
+    });
   })();
 
   // ---- WAITLIST: real submit to Supabase REST ----
