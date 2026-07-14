@@ -30,6 +30,10 @@ import { track } from '../core/track';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
 import { DevOverlay } from '../entities/DevOverlay';
 import type { InputSource } from '../core/InputState';
+import { RelicManager } from '../entities/RelicManager';
+import { RelicPlanner } from '../core/relics';
+import { StoryProgress } from '../core/StoryProgress';
+import { COLE_PAGE_ID, type StoryPage } from '../core/story';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -62,6 +66,11 @@ export class GameScene extends Phaser.Scene {
   private dateKeyToday = '';
   private runStartMs = 0;
   private devOverlay?: DevOverlay;
+  private story!: StoryProgress;
+  private relicPlanner!: RelicPlanner;
+  private relics!: RelicManager;
+  private journalUnlocks: string[] = [];
+  private nextStoryHeightCheck = 0;
 
   constructor() { super('Game'); }
 
@@ -210,6 +219,24 @@ export class GameScene extends Phaser.Scene {
       this.onCoin();
     });
 
+    this.story = new StoryProgress(save);
+    this.journalUnlocks = [];
+    this.nextStoryHeightCheck = 0;
+    this.relicPlanner = new RelicPlanner(this.story.relicPagesRemaining());
+    this.relics = new RelicManager(this);
+    for (const p of this.stream.active) {
+      if (this.relicPlanner.maybePlace(p, TUNING.groundY - p.y)) this.relics.spawnAt(p);
+    }
+    this.physics.add.overlap(this.player.sprite, this.relics.group, (_pl, relicObj) => {
+      const r = relicObj as Phaser.GameObjects.Image;
+      r.destroy();
+      const pages = this.story.onRelic();
+      this.collectStory(pages);
+      const whisper = pages.find((p) => p.whisper)?.whisper;
+      if (whisper) this.registry.set('toast', whisper);
+      this.sound.play('sfx-ding', { volume: 0.4 * (save.get().settings.sfxVol / 10) });
+    });
+
     this.enemies = new EnemyManager(this, this.gameEvents);
     for (const p of this.stream.active) this.enemies.spawn(p);
 
@@ -239,6 +266,16 @@ export class GameScene extends Phaser.Scene {
     this.gameEvents.on('powerupCollected', () => this.comboAction(COMBO_POINTS.powerup));
     this.gameEvents.on('bossPhase', ({ zoneIndex, phase }) => {
       track(phase === 'start' ? 'boss_start' : 'boss_clear', { index: zoneIndex });
+      if (phase === 'start') {
+        this.collectStory(this.story.onTitanReach());
+      } else if (!this.dead) { // a post-death boss timeout must not count as surviving
+        const pages = this.story.onTitanDefeat();
+        this.collectStory(pages);
+        if (pages.some((p) => p.id === COLE_PAGE_ID)) {
+          this.registry.set('toast', 'The fallen keeper is freed — COLE joins your roster!');
+          track('character_unlock', { id: 'cole' });
+        }
+      }
     });
 
     // Flow chain beats: each aggressive action bumps the meter.
@@ -300,6 +337,10 @@ export class GameScene extends Phaser.Scene {
     for (const p of removed) this.enemies.despawn(p);
     for (const p of added) this.powerups.spawn(p);
     for (const p of removed) this.powerups.despawn(p);
+    for (const p of added) {
+      if (this.relicPlanner.maybePlace(p, TUNING.groundY - p.y)) this.relics.spawnAt(p);
+    }
+    for (const p of removed) this.relics.despawn(p);
 
     this.enemies.update(time, delta);
 
@@ -342,6 +383,10 @@ export class GameScene extends Phaser.Scene {
     this.score.updateHeight(heightClimbed);
     this.registry.set('height', Math.floor(this.score.maxHeight));
     this.registry.set('coins', this.score.coins);
+    if (Math.floor(this.score.maxHeight) >= this.nextStoryHeightCheck) {
+      this.nextStoryHeightCheck = Math.floor(this.score.maxHeight) + 50;
+      this.collectStory(this.story.onHeight(Math.floor(this.score.maxHeight)));
+    }
 
     if (this.combo.update(delta)) {
       this.gameEvents.emit('comboChanged', { multiplier: this.combo.multiplier });
@@ -456,6 +501,8 @@ export class GameScene extends Phaser.Scene {
         earned: [...this.tracker.earnedThisRun],
         playerId,
         submitDone,
+        journalUnlocks: this.journalUnlocks.length,
+        storyStage: this.story.stage(),
       });
     });
   }
@@ -482,6 +529,14 @@ export class GameScene extends Phaser.Scene {
     }
     void finalHeight;
     return { banked, bankTotal: save.get().coinBank };
+  }
+
+  /** Track pages unlocked this run; shown as "Journal updated" on Game Over. */
+  private collectStory(pages: StoryPage[]): void {
+    for (const p of pages) {
+      this.journalUnlocks.push(p.id);
+      track('story_page', { id: p.id });
+    }
   }
 
   private onCoin(): void {

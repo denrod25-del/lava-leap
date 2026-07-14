@@ -3,10 +3,11 @@ import { TUNING } from '../tuning';
 import { save, leaderboard } from '../main';
 import { track } from '../core/track';
 import { allTimeBoard, dailyBoard } from '../core/leaderboard';
+import { BEATS, type StoryStage } from '../core/story';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
-  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown> }): void {
+  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown>; storyStage?: StoryStage; journalUnlocks?: number }): void {
     this.sound.stopAll();
     const cx = TUNING.width / 2;
     this.add.text(cx, 200, 'YOU MELTED', { fontFamily: 'monospace', fontSize: '40px', color: '#ff2d6b' }).setOrigin(0.5);
@@ -25,6 +26,17 @@ export class GameOverScene extends Phaser.Scene {
         fontFamily: 'monospace', fontSize: '14px', color: '#ffb066',
       }).setOrigin(0.5);
     });
+    // Story beat: one deterministic line per stage, quiet color, below the ranks.
+    const beat = BEATS[data.storyStage ?? 'newKeeper'];
+    this.add.text(cx, 540, `“${beat}”`, {
+      fontFamily: 'monospace', fontSize: '13px', color: '#b8865a', align: 'center',
+      wordWrap: { width: 520 },
+    }).setOrigin(0.5);
+    if ((data.journalUnlocks ?? 0) > 0) {
+      this.add.text(cx, 564, `Journal updated — ${data.journalUnlocks} new page${data.journalUnlocks === 1 ? '' : 's'}`, {
+        fontFamily: 'monospace', fontSize: '13px', color: '#ffb066',
+      }).setOrigin(0.5);
+    }
     const retry = () => {
       this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
       track('restart', { from: 'gameover' });
