@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { STORY_PAGES, RELIC_PAGE_IDS, BEATS, VIGNETTE, RELIC, COLE_PAGE_ID } from '../src/core/story';
+import { STORY_PAGES, RELIC_PAGE_IDS, BEATS, RELIC, COLE_PAGE_ID } from '../src/core/story';
 
 describe('story content validation', () => {
   it('has 14 pages with unique non-empty ids/titles/text/hints', () => {
@@ -36,7 +36,6 @@ describe('story content validation', () => {
     for (const k of ['newKeeper', 'climbing', 'titanSeen', 'freed', 'complete'] as const) {
       expect(BEATS[k].length).toBeGreaterThan(0);
     }
-    expect(VIGNETTE.length).toBe(3);
     expect(RELIC.firstAtHeight).toBeGreaterThan(0);
     expect(RELIC.everyPx).toBeGreaterThan(0);
     expect(STORY_PAGES.some((p) => p.id === COLE_PAGE_ID && p.unlock.type === 'titanDefeat')).toBe(true);

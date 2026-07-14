@@ -89,7 +89,8 @@ export const BEATS: Record<StoryStage, string> = {
   complete: 'The book is full. The summit waits.',
 };
 
-/** Opening vignette beats (VignetteScene shows these one at a time). */
+/** Opening vignette beats (VignetteScene shows these one at a time).
+ *  @deprecated dead once VignetteScene.ts is deleted — remove together with it. */
 export const VIGNETTE: { text: string }[] = [
   { text: 'At the foot of the burning mountain,\na village keeps an old promise.' },
   { text: 'Once a generation, a keeper carries the living spark\nto the summit — to calm the heart\nbefore it burns the sky.' },
