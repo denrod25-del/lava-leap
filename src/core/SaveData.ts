@@ -41,7 +41,15 @@ export interface SaveBlob {
   /** Owned character ids — the free roster is always granted. */
   ownedCharacters: string[];
   /** "The Last Ember" story progress. */
-  story: { unlockedPages: string[]; vignetteSeen: boolean; titanDefeats: number };
+  story: {
+    unlockedPages: string[]; vignetteSeen: boolean; titanDefeats: number;
+    /** Cutscene ids queued to auto-play at the next run end. */
+    pendingCutscenes: string[];
+    /** Cutscene ids watched (played to completion or skipped) at least once. */
+    watchedCutscenes: string[];
+    /** True once the first-ever Titan encounter's mid-run sting has fired. */
+    stingSeen: boolean;
+  };
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -65,7 +73,7 @@ function defaults(): SaveBlob {
     leaderboardPrompted: false,
     character: DEFAULT_CHARACTER,
     ownedCharacters: ['ember', 'classic'],
-    story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0 },
+    story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0, pendingCutscenes: [], watchedCutscenes: [], stingSeen: false },
   };
 }
 
@@ -132,6 +140,8 @@ export class SaveData {
           const ownedRaw = Array.isArray(parsed.ownedCharacters) ? parsed.ownedCharacters : [];
           merged.ownedCharacters = [...new Set([...defaults().ownedCharacters, ...ownedRaw])];
           if (!Array.isArray(merged.story.unlockedPages)) merged.story.unlockedPages = [];
+          if (!Array.isArray(merged.story.pendingCutscenes)) merged.story.pendingCutscenes = [];
+          if (!Array.isArray(merged.story.watchedCutscenes)) merged.story.watchedCutscenes = [];
           return merged;
         }
       }

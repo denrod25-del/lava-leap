@@ -244,7 +244,10 @@ describe('SaveData', () => {
 describe('story save field (v0.9.0)', () => {
   it('fresh saves get story defaults', () => {
     const s = new SaveData(fakeStore());
-    expect(s.get().story).toEqual({ unlockedPages: [], vignetteSeen: false, titanDefeats: 0 });
+    expect(s.get().story).toEqual({
+      unlockedPages: [], vignetteSeen: false, titanDefeats: 0,
+      pendingCutscenes: [], watchedCutscenes: [], stingSeen: false,
+    });
   });
   it('legacy v0.8.2 blobs load with story defaults backfilled', () => {
     const s = new SaveData(fakeStore({
@@ -271,5 +274,35 @@ describe('story save field (v0.9.0)', () => {
       }),
     }));
     expect(s.get().story.unlockedPages).toEqual([]);
+  });
+});
+
+describe('cutscene queue save fields (v0.10.0)', () => {
+  it('fresh saves get empty queue fields', () => {
+    const s = new SaveData(fakeStore());
+    expect(s.get().story.pendingCutscenes).toEqual([]);
+    expect(s.get().story.watchedCutscenes).toEqual([]);
+    expect(s.get().story.stingSeen).toBe(false);
+  });
+  it('legacy v0.9.0 blobs (no queue fields) load with them backfilled', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({
+        version: 2, story: { unlockedPages: ['oath'], vignetteSeen: true, titanDefeats: 0 },
+      }),
+    }));
+    expect(s.get().story.unlockedPages).toEqual(['oath']); // untouched
+    expect(s.get().story.pendingCutscenes).toEqual([]);
+    expect(s.get().story.watchedCutscenes).toEqual([]);
+    expect(s.get().story.stingSeen).toBe(false);
+  });
+  it('non-array queue fields in a corrupt blob are coerced to []', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({
+        version: 2,
+        story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0, pendingCutscenes: 'oops', watchedCutscenes: 42 },
+      }),
+    }));
+    expect(s.get().story.pendingCutscenes).toEqual([]);
+    expect(s.get().story.watchedCutscenes).toEqual([]);
   });
 });
