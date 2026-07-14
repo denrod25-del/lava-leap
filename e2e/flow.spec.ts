@@ -15,8 +15,12 @@ test('dash → jump-cancel chains raise Flow and expose HUD state', async ({ pag
   // Fresh profile boots to the vignette; skip it, close the auto-shown What's New,
   // then poll for the Menu before Space (fixed waits break as assets grow).
   await waitForScene(page, 'Vignette');
+  // Vignette debounces input (600ms boot guard + 400ms between advances).
+  await page.waitForTimeout(700);
   await page.keyboard.press('Escape'); // skip vignette (any key advances; 3 beats)
+  await page.waitForTimeout(500);
   await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
   await page.keyboard.press('Escape');
   await waitForScene(page, 'Changelog');
   await page.keyboard.press('Escape'); // dismiss auto-shown What's New (fresh profile)

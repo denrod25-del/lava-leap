@@ -13,8 +13,13 @@ test('fresh profile: vignette shows, skip lands on Menu, Journal has the oath pa
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
   await waitForScene(page, 'Vignette');
+  // The vignette debounces input (600ms boot guard + 400ms between advances) so
+  // key-repeat/double-taps can't skip beats — space the clicks accordingly.
+  await page.waitForTimeout(700);
   await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // beat 2
+  await page.waitForTimeout(500);
   await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // beat 3
+  await page.waitForTimeout(500);
   await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // finish
   // A fresh profile's first Menu boot auto-opens What's New (version change) —
   // close it before looking for the Menu.

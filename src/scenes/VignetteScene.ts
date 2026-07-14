@@ -14,6 +14,8 @@ export class VignetteScene extends Phaser.Scene {
   private beatText!: Phaser.GameObjects.Text;
   private from: 'Boot' | 'Journal' = 'Boot';
   private finished = false;
+  private createdAt = 0;
+  private lastAdvanceAt = 0;
 
   constructor() { super('Vignette'); }
 
@@ -24,6 +26,8 @@ export class VignetteScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.createdAt = this.time.now;
+    this.lastAdvanceAt = 0;
     const cx = TUNING.width / 2;
     this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x140a05).setOrigin(0, 0);
     // Ember stands at the mountain's foot; slow rising embers set the scene.
@@ -58,6 +62,13 @@ export class VignetteScene extends Phaser.Scene {
 
   private advance(): void {
     if (this.finished) return;
+    // Input debounce: ignore carry-over input from boot (first 600ms) and bursts
+    // (key-repeat, double-taps) — each beat needs a distinct, spaced input.
+    // The 4.5s auto-advance timer clears both gates by construction.
+    const now = this.time.now;
+    if (now - this.createdAt < 600) return;
+    if (now - this.lastAdvanceAt < 400) return;
+    this.lastAdvanceAt = now;
     this.beatIdx += 1;
     if (this.beatIdx >= VIGNETTE.length) { this.finish(false); return; }
     const t = this.beatText;
