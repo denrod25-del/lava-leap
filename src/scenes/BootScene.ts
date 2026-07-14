@@ -3,6 +3,7 @@ import { characterAnims } from '../animManifest';
 import { CHARACTERS, FRAME_NAMES, staticKey, frameKey } from '../core/characters';
 import { TUNING } from '../tuning';
 import { VERSION_LABEL } from '../core/buildInfo';
+import { save } from '../main';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -56,6 +57,10 @@ export class BootScene extends Phaser.Scene {
         });
       }
     }
-    this.scene.start('Menu');
+    // First-ever boot (no runs yet, vignette never seen) opens on the story
+    // vignette; everyone else goes straight to the Menu (replay lives in the Journal).
+    const b = save.get();
+    const freshPlayer = b.analytics.runs === 0 && !b.tutorialDone;
+    this.scene.start(!b.story.vignetteSeen && freshPlayer ? 'Vignette' : 'Menu');
   }
 }
