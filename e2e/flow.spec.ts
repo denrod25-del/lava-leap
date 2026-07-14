@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { waitForScene } from './helpers';
 
 function collectErrors(page: import('@playwright/test').Page): string[] {
   const errors: string[] = [];
@@ -11,10 +12,17 @@ test('dash → jump-cancel chains raise Flow and expose HUD state', async ({ pag
   const errors = collectErrors(page);
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
-  await page.waitForTimeout(1500);
+  // Fresh profile boots to the vignette; skip it, close the auto-shown What's New,
+  // then poll for the Menu before Space (fixed waits break as assets grow).
+  await waitForScene(page, 'Vignette');
+  await page.keyboard.press('Escape'); // skip vignette (any key advances; 3 beats)
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await waitForScene(page, 'Changelog');
   await page.keyboard.press('Escape'); // dismiss auto-shown What's New (fresh profile)
-  await page.waitForTimeout(400);
+  await waitForScene(page, 'Menu');
   await page.keyboard.press('Space');  // start run
+  await waitForScene(page, 'Game');
   await page.waitForTimeout(800);
 
   // Repeated jump → air-dash → jump-cancel chains (Space, Shift, Space).
@@ -50,13 +58,14 @@ test('dash-jump cancel keeps momentum; i-frames only while dashing', async ({ pa
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.8.2',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.9.0',
     }));
   });
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForScene(page, 'Menu'); // poll: boot time grows with each character's assets
   await page.keyboard.press('Space'); // start run
+  await waitForScene(page, 'Game');
   await page.waitForTimeout(800);
 
   // Deterministic frame-level probe: force an active dash, dispatch a real Space
@@ -101,13 +110,14 @@ test('reduced motion: flow visuals stay quiet and the game runs clean', async ({
       version: 2,
       settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: true },
       tutorialDone: true,
-      lastSeenVersion: '0.8.2',
+      lastSeenVersion: '0.9.0',
     }));
   });
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
-  await page.waitForTimeout(1500);
+  await waitForScene(page, 'Menu'); // poll: boot time grows with each character's assets
   await page.keyboard.press('Space'); // start run (no popups: seeded save)
+  await waitForScene(page, 'Game');
   await page.waitForTimeout(800);
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press('Space', { delay: 40 });

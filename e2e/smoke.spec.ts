@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+// v0.9.0: a truly fresh profile boots to the story Vignette, not the Menu.
+// These smoke tests exercise menu→gameplay input, so they seed a veteran save
+// (runs>0, current lastSeenVersion) to keep booting straight to the Menu.
+// The What's-New test overrides the seed to keep testing the auto-show.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2, tutorialDone: true, lastSeenVersion: '0.9.0', analytics: { runs: 1 },
+    }));
+  });
+});
+
 test('boots to menu and starts a run without errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -66,6 +78,13 @@ test("What's New opens and closes without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(String(e)));
+  // Re-seed WITHOUT lastSeenVersion: the version mismatch auto-shows What's New,
+  // while runs>0 keeps the boot on Menu (not the vignette). Runs after beforeEach.
+  await page.addInitScript(() => {
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2, tutorialDone: true, analytics: { runs: 1 },
+    }));
+  });
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
   await page.waitForTimeout(1500);

@@ -9,6 +9,13 @@ test('audio decodes, unlocks on gesture, and plays in menu + run', async ({ page
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(String(e)));
 
+  // v0.9.0: fresh profiles boot to the story Vignette; seed a veteran save so
+  // this test lands on the Menu (where menu music plays) as it always did.
+  await page.addInitScript(() => {
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2, tutorialDone: true, lastSeenVersion: '0.9.0', analytics: { runs: 1 },
+    }));
+  });
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
   await page.waitForTimeout(3000); // boot + audio decode (the slow part of the loader)

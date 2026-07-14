@@ -2,6 +2,12 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.9.0', date: '2026-07-14', notes: [
+    "THE LAST EMBER — Lava Leap has a story. Open the Keeper's Journal (J) from the menu.",
+    'Find glowing relics while you climb to unlock the mountain\'s history.',
+    'Survive the Lava Titan to FREE THE FALLEN KEEPER — Cole, a new playable character.',
+    'New players get a 15-second opening. Veterans: replay it from the Journal.',
+  ]},
   { version: '0.8.2', date: '2026-07-07', notes: [
     'Character select! Choose Ember or Classic in the Shop → Characters tab.',
     'Cosmetic tints still stack over whichever hero you pick.',
