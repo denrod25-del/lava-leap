@@ -58,9 +58,14 @@ export class BootScene extends Phaser.Scene {
       }
     }
     // First-ever boot (no runs yet, vignette never seen) opens on the story
-    // vignette; everyone else goes straight to the Menu (replay lives in the Journal).
+    // opening cutscene; everyone else goes straight to the Menu (replay lives
+    // in the Journal).
     const b = save.get();
     const freshPlayer = b.analytics.runs === 0 && !b.tutorialDone;
-    this.scene.start(!b.story.vignetteSeen && freshPlayer ? 'Vignette' : 'Menu');
+    if (!b.story.vignetteSeen && freshPlayer) {
+      this.scene.start('Cutscene', { ids: ['opening'], then: { scene: 'Menu' } });
+    } else {
+      this.scene.start('Menu');
+    }
   }
 }

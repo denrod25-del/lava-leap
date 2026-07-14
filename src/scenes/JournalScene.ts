@@ -3,6 +3,8 @@ import { TUNING } from '../tuning';
 import { save } from '../main';
 import { STORY_PAGES } from '../core/story';
 import { StoryProgress } from '../core/StoryProgress';
+import { CutsceneDirector } from '../core/CutsceneDirector';
+import { cutsceneForPage } from '../core/cutscenes';
 import { track } from '../core/track';
 
 /** The Keeper's Journal: list of story pages (unlocked = readable, locked =
@@ -12,6 +14,7 @@ export class JournalScene extends Phaser.Scene {
   private rows: Phaser.GameObjects.Text[] = [];
   private detail?: Phaser.GameObjects.Container;
   private story!: StoryProgress;
+  private cutscenes!: CutsceneDirector;
 
   constructor() { super('Journal'); }
 
@@ -20,6 +23,7 @@ export class JournalScene extends Phaser.Scene {
 
   create(): void {
     this.story = new StoryProgress(save);
+    this.cutscenes = new CutsceneDirector(save);
     this.idx = 0;
     this.detail = undefined;
     const cx = TUNING.width / 2;
@@ -50,7 +54,7 @@ export class JournalScene extends Phaser.Scene {
 
   private open(): void {
     if (this.idx === STORY_PAGES.length) { // replay row
-      this.scene.start('Vignette', { from: 'Journal' });
+      this.scene.start('Cutscene', { ids: ['opening'], then: { scene: 'Journal' } });
       return;
     }
     const page = STORY_PAGES[this.idx];
@@ -64,7 +68,15 @@ export class JournalScene extends Phaser.Scene {
       wordWrap: { width: 500 }, align: 'center',
     }).setOrigin(0.5);
     const hintFoot = this.add.text(cx, 600, 'ENTER / ESC / tap — back', { fontFamily: 'monospace', fontSize: '12px', color: '#888888' }).setOrigin(0.5);
-    this.detail = this.add.container(0, 0, [bg, title, body, hintFoot]).setDepth(50);
+    const linked = cutsceneForPage(page.id);
+    let watchRow: Phaser.GameObjects.Text | null = null;
+    if (linked) {
+      const label = this.cutscenes.isWatched(linked.id) ? '▶ Replay' : '▶ Watch (new)';
+      watchRow = this.add.text(cx, 560, label, { fontFamily: 'monospace', fontSize: '15px', color: '#16e0e0' })
+        .setOrigin(0.5).setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.scene.start('Cutscene', { ids: [linked.id], then: { scene: 'Journal' } }));
+    }
+    this.detail = this.add.container(0, 0, [bg, title, body, hintFoot, ...(watchRow ? [watchRow] : [])]).setDepth(50);
     track('journal_read', { id: page.id });
   }
 
@@ -77,7 +89,9 @@ export class JournalScene extends Phaser.Scene {
     STORY_PAGES.forEach((p, i) => {
       const cursor = i === this.idx ? '> ' : '  ';
       if (this.story.isUnlocked(p.id)) {
-        this.rows[i].setText(`${cursor}${p.title}`).setColor('#e8e2d8').setAlpha(1);
+        const linked = cutsceneForPage(p.id);
+        const badge = linked && !this.cutscenes.isWatched(linked.id) ? ' ●' : '';
+        this.rows[i].setText(`${cursor}${p.title}${badge}`).setColor('#e8e2d8').setAlpha(1);
       } else {
         this.rows[i].setText(`${cursor}??? — ${p.hint}`).setColor('#6a7280').setAlpha(0.8);
       }
