@@ -40,6 +40,8 @@ export interface SaveBlob {
   character: string;
   /** Owned character ids — the free roster is always granted. */
   ownedCharacters: string[];
+  /** "The Last Ember" story progress. */
+  story: { unlockedPages: string[]; vignetteSeen: boolean; titanDefeats: number };
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -63,6 +65,7 @@ function defaults(): SaveBlob {
     leaderboardPrompted: false,
     character: DEFAULT_CHARACTER,
     ownedCharacters: ['ember', 'classic'],
+    story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0 },
   };
 }
 
@@ -123,10 +126,12 @@ export class SaveData {
             analytics: { ...defaultAnalytics(), ...parsed.analytics },
             upgrades: { ...defaults().upgrades, ...parsed.upgrades },
             identity: { ...defaults().identity, ...parsed.identity },
+            story: { ...defaults().story, ...parsed.story },
           };
           if (!isCharacter(merged.character)) merged.character = DEFAULT_CHARACTER;
           const ownedRaw = Array.isArray(parsed.ownedCharacters) ? parsed.ownedCharacters : [];
           merged.ownedCharacters = [...new Set([...defaults().ownedCharacters, ...ownedRaw])];
+          if (!Array.isArray(merged.story.unlockedPages)) merged.story.unlockedPages = [];
           return merged;
         }
       }

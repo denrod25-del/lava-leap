@@ -240,3 +240,36 @@ describe('SaveData', () => {
     expect(s.get().ownedCharacters).toEqual(['ember', 'classic']);
   });
 });
+
+describe('story save field (v0.9.0)', () => {
+  it('fresh saves get story defaults', () => {
+    const s = new SaveData(fakeStore());
+    expect(s.get().story).toEqual({ unlockedPages: [], vignetteSeen: false, titanDefeats: 0 });
+  });
+  it('legacy v0.8.2 blobs load with story defaults backfilled', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({
+        version: 2, highScore: 500, tutorialDone: true, character: 'classic',
+      }),
+    }));
+    expect(s.get().story.unlockedPages).toEqual([]);
+    expect(s.get().story.vignetteSeen).toBe(false);
+    expect(s.get().highScore).toBe(500); // untouched
+  });
+  it('story sub-fields deep-merge (a save with only vignetteSeen keeps defaults for the rest)', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({ version: 2, story: { vignetteSeen: true } }),
+    }));
+    expect(s.get().story.vignetteSeen).toBe(true);
+    expect(s.get().story.unlockedPages).toEqual([]);
+    expect(s.get().story.titanDefeats).toBe(0);
+  });
+  it('non-array unlockedPages in a corrupt blob is coerced to []', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({
+        version: 2, story: { unlockedPages: 'oops', vignetteSeen: false, titanDefeats: 0 },
+      }),
+    }));
+    expect(s.get().story.unlockedPages).toEqual([]);
+  });
+});
