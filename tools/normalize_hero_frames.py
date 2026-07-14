@@ -13,15 +13,22 @@ from pathlib import Path
 from PIL import Image
 
 CANVAS = 48
-RAW = Path("tools/hero-raw")
-OUT = Path("public/assets/anim")
-STATIC_OUT = Path("public/assets/player.png")
+# Optional args: raw-dir out-dir (default: the original v8.1 hero paths).
+# v8.2+ characters live at public/assets/characters/<id>/ with player.png inside:
+#   python tools/normalize_hero_frames.py tools/hero-raw/cole public/assets/characters/cole
+_raw = sys.argv[1] if len(sys.argv) > 1 else "tools/hero-raw"
+_out = sys.argv[2] if len(sys.argv) > 2 else "public/assets/anim"
+RAW = Path(_raw)
+OUT = Path(_out)
+STATIC_OUT = (OUT / "player.png") if len(sys.argv) > 2 else Path("public/assets/player.png")
 
 # (raw subdir, [(raw_source_index, output_name), ...], y_off)
-# jump: pick raw frames 1,2,3,4,6 → crouch, launch, rise, apex, descend.
+# jump: pick 5 raw frames → crouch, launch, rise, apex, descend. Default 1,2,3,4,6
+# (the v8.1 7-frame template); override per-source with a 3rd arg, e.g. "2,3,4,5,6".
+_jump_picks = [int(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 else [1, 2, 3, 4, 6]
 SETS = [
     ("run",  [(i, f"run-{i}") for i in range(6)], 0),
-    ("jump", [(1, "jump-1"), (2, "jump-2"), (3, "jump-3"), (4, "jump-4"), (6, "jump-5")], 0),
+    ("jump", [(src, f"jump-{n + 1}") for n, src in enumerate(_jump_picks)], 0),
     ("idle", [(i, f"idle-{i}") for i in range(4)], 0),
 ]
 

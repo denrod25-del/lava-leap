@@ -6,9 +6,9 @@ import {
 import { characterAnims } from '../src/animManifest';
 
 describe('characters roster', () => {
-  it('has ember (default) and classic, both free', () => {
+  it('has ember (default), classic, and cole — all price 0', () => {
     expect(DEFAULT_CHARACTER).toBe('ember');
-    expect(CHARACTERS.map((c) => c.id)).toEqual(['ember', 'classic']);
+    expect(CHARACTERS.map((c) => c.id)).toEqual(['ember', 'classic', 'cole']);
     expect(CHARACTERS.every((c) => c.price === 0)).toBe(true);
   });
   it('isCharacter recognizes roster ids only', () => {
@@ -49,5 +49,19 @@ describe('animManifest ↔ FRAME_NAMES consistency', () => {
         expect(FRAME_NAMES).toContain(f.slice('ember-'.length));
       }
     }
+  });
+});
+
+describe('cole (v0.9.0)', () => {
+  it('is in the roster, free, and gated behind titanDefeat', () => {
+    const cole = CHARACTERS.find((c) => c.id === 'cole')!;
+    expect(cole).toBeTruthy();
+    expect(cole.price).toBe(0);
+    expect(cole.unlock).toBe('titanDefeat');
+    expect(isCharacter('cole')).toBe(true);
+  });
+  it('ember and classic remain un-gated', () => {
+    expect(CHARACTERS.find((c) => c.id === 'ember')!.unlock).toBeUndefined();
+    expect(CHARACTERS.find((c) => c.id === 'classic')!.unlock).toBeUndefined();
   });
 });

@@ -21,6 +21,7 @@ export class ShopScene extends Phaser.Scene {
   private rows: Phaser.GameObjects.Text[] = [];
   private bankText!: Phaser.GameObjects.Text;
   private tabBtn!: Phaser.GameObjects.Text;
+  private hintText!: Phaser.GameObjects.Text;
   private preview?: Phaser.GameObjects.Image;
 
   constructor() { super('Shop'); }
@@ -42,6 +43,7 @@ export class ShopScene extends Phaser.Scene {
         this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
         this.switchTab();
       });
+    this.hintText = this.add.text(cx, 150, '', { fontFamily: 'monospace', fontSize: '12px', color: '#b8865a' }).setOrigin(0.5);
 
     this.rows = COSMETICS.map((_c, i) =>
       this.add.text(cx, 170 + i * 36, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
@@ -99,6 +101,8 @@ export class ShopScene extends Phaser.Scene {
         save.update((b) => { b.character = ch.id; });
         track('character_equip', { id: ch.id });
         this.sound.play('sfx-ui-select', { volume: 0.4 * sfxMult });
+      } else if (ch.unlock) {
+        // Story-gated: not buyable — the hint row says how to earn it.
       } else if (blob.coinBank >= ch.price) { // scaffold for future paid characters
         save.update((b) => { b.coinBank -= ch.price; b.ownedCharacters.push(ch.id); b.character = ch.id; });
         track('character_equip', { id: ch.id });
@@ -145,14 +149,19 @@ export class ShopScene extends Phaser.Scene {
       CHARACTERS.forEach((ch, i) => {
         const equipped = blob.character === ch.id;
         const owned = blob.ownedCharacters.includes(ch.id);
-        const status = equipped ? '[EQUIPPED]' : owned ? '[owned]' : `${ch.price}c`;
+        const status = equipped ? '[EQUIPPED]' : owned ? '[owned]' : ch.unlock ? '[LOCKED]' : `${ch.price}c`;
         const cursor = i === this.idx ? '> ' : '  ';
-        this.rows[i].setText(`${cursor}${ch.name.padEnd(8)} ${status}`).setTint(0xffffff).setAlpha(1);
+        this.rows[i].setText(`${cursor}${ch.name.padEnd(8)} ${status}`).setTint(0xffffff)
+          .setAlpha(owned ? 1 : 0.5);
       });
       for (let i = CHARACTERS.length; i < this.rows.length; i++) this.rows[i].setText('');
+      const sel = CHARACTERS[this.idx];
+      const selOwned = blob.ownedCharacters.includes(sel.id);
+      this.hintText.setText(sel.unlock && !selOwned
+        ? "Free the fallen keeper — survive the Lava Titan's assault." : '');
       if (this.preview) {
-        this.preview.setTexture(frameKey(CHARACTERS[this.idx].id, 'idle-0'));
-        this.preview.setTint(equippedTint);
+        this.preview.setTexture(frameKey(sel.id, 'idle-0'));
+        this.preview.setTint(selOwned ? equippedTint : 0x222230); // silhouette when locked
         this.preview.setVisible(true);
       }
       return;
@@ -161,6 +170,7 @@ export class ShopScene extends Phaser.Scene {
 
     if (this.tab === 'upgrades') {
       this.tabBtn.setText('[ Characters | Cosmetics | UPGRADES ]');
+      this.hintText.setText('');
       this.rows.forEach((row, i) => {
         if (i >= UPGRADES.length) { row.setText('').setTint(0xffffff).setAlpha(1); return; }
         const u = UPGRADES[i];
@@ -176,6 +186,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     this.tabBtn.setText('[ Characters | COSMETICS | Upgrades ]');
+    this.hintText.setText('');
     COSMETICS.forEach((c, i) => {
       const owned = blob.ownedCosmetics.includes(c.id);
       const equipped = blob.equippedCosmetic === c.id;

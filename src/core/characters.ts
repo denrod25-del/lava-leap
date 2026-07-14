@@ -1,10 +1,15 @@
 /** Playable characters. Purely cosmetic — identical hitbox/physics/moves.
  *  Framework-free; the single source of truth for the roster + texture/anim keys. */
-export interface CharacterDef { id: string; name: string; price: number }
+export interface CharacterDef {
+  id: string; name: string; price: number;
+  /** Story-gated characters: how they're earned (not coin-buyable). */
+  unlock?: 'titanDefeat';
+}
 
 export const CHARACTERS: CharacterDef[] = [
   { id: 'ember',   name: 'Ember',   price: 0 },
   { id: 'classic', name: 'Classic', price: 0 },
+  { id: 'cole',    name: 'Cole',    price: 0, unlock: 'titanDefeat' },
 ];
 
 export const DEFAULT_CHARACTER = 'ember';
