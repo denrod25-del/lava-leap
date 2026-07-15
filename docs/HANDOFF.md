@@ -2,14 +2,23 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-14 (v0.9.0)._
+_Last updated: 2026-07-14 (v0.10.0)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.9.0 "The Last Ember" (story + Cole)
+## Current state — v0.10.0 "Animated Cutscenes"
+- **v0.10.0 = the cutscene update.** In-engine, data-driven pipeline: `src/core/cutscenes.ts` defines 4 `CutsceneDef`s (`opening`, `keeper-rises`, `freed`, `summit`) as shot lists (bg/bgZone, actors, particle bursts, text, shake, sfx, holdMs) — zero new art/video, reuses existing Ember/Cole/Titan/`px4` textures + loaded SFX. `src/core/CutsceneDirector.ts` is the pure queue engine (mirrors `StoryProgress`'s class shape exactly: `constructor(save)`, `enqueueFor(pages)`/`markWatched(id)`/`isWatched(id)`/`pending()`), dedupes against BOTH pending and watched. SaveData `story` gained `pendingCutscenes`, `watchedCutscenes`, `stingSeen` (deep-merged, array-guarded, migration-tested).
+- **`VignetteScene` is RETIRED** — `src/scenes/CutsceneScene.ts` (`'Cutscene'` scene key) is the one player for both the opening and everything else, reusing the exact vignette input contract (600ms boot-guard + 400ms debounce between advances; SKIP ends the WHOLE queued run via `skipAll()`, a method e2e calls directly — `window.__game.scene.keys.Cutscene.skipAll()` — rather than fighting canvas-click coordinate scaling). Boot/Journal both route to `{scene:'Cutscene', ids:['opening'], then:{scene:...}}`.
+- **Mid-run sting:** `StingController` (+ shared `Letterbox` bars entity, also used by CutsceneScene) fires on the FIRST-ever `bossPhase 'start'` — letterbox in, 800ms `physics.world.timeScale=3` slow-mo + eye flash, letterbox out, ≤~1.2s real wall-clock, **gameplay never pauses**. `story.stingSeen` gates it to once-ever. Full `keeper-rises`/`freed`/`summit` scenes queue via `collectStory()`→`enqueueFor()` and auto-play (via a `Cutscene` scene hop) between death-bookkeeping and `GameOverScene` — see `GameScene.triggerDeath`'s delayed callback.
+- **Journal:** unlocked pages with a linked, unwatched cutscene show a `●` badge in the list and a "▶ Watch (new)" / "▶ Replay" row in detail (`cutsceneForPage(pageId)` from `cutscenes.ts`).
+- **Gotcha for the next feature (real, hit twice this session):** editing SaveData/story defaults or bumping `package.json`'s version SPLITS from any e2e fixture still seeding the OLD `lastSeenVersion` — the mismatch auto-pops What's New and blocks whatever scene the test expects next. **Whenever the version bumps, immediately grep+sweep every `lastSeenVersion: '<old>'` across `e2e/*.spec.ts` in the SAME commit** — don't defer it, the tests will silently rot otherwise.
+- **Preview-pane testing gotcha (reconfirmed):** the Browser-pane's background-tab RAF throttling can fast-forward `Phaser.Time.Clock` `delayedCall`s across many real seconds in one catch-up frame when the pane regains focus — cutscenes/stings that should take 10+ seconds can appear to complete in under a second during manual pane-based verification. This is a pane artifact, not a bug; trust Playwright e2e (real browser, real RAF) for timing-sensitive assertions, not manual pane pokes.
+- **Tests:** 201 unit + 21 e2e green; typecheck + build clean.
+
+## Previous state — v0.9.0 "The Last Ember" (story + Cole)
 - **v0.9.0 = the story update.** All narrative content lives in `src/core/story.ts` (14 journal pages w/ unlock rules + game-over BEATS + vignette script + relic cadence); `src/core/StoryProgress.ts` is the pure unlock engine over SaveData (idempotent; `allPages` finale cascades; `freed` grants Cole). SaveData gained `story: { unlockedPages, vignetteSeen, titanDefeats }` (deep-merged; unlockedPages array-guarded).
 - **Keeper's Journal:** Menu `J` (coexists with the F9-debug-panel J handler via mutual guards) → `JournalScene` (list ↔ detail, locked rows = `??? — hint`, trailing "Replay the opening" row). **Vignette:** `VignetteScene`, 3 beats, any key/tap advances, SKIP; Boot routes there ONLY for truly fresh players (`analytics.runs === 0 && !tutorialDone && !vignetteSeen`) — veterans go to Menu and can replay from the Journal (watching unlocks the `oath` page either way).
 - **Relics:** `RelicPlanner` (core, cadence: first at 200, then per 500px, plain static platforms only, capped by locked relic pages) + `RelicManager` (in-engine drawn shard, coin-style group). Grab → next relic page in fixed order + whisper toast; other unlocks are silent until the Game Over "Journal updated — N new pages" line. GameOver also shows one `BEATS[stage]` line.
