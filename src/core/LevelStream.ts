@@ -8,8 +8,8 @@ export class LevelStream {
   private gen: LevelGenerator;
   private topY: number; // y of the highest generated platform
 
-  constructor(seed: number) {
-    this.gen = new LevelGenerator(seed);
+  constructor(seed: number, startHeightOffset = 0) {
+    this.gen = new LevelGenerator(seed, startHeightOffset);
     const first = this.gen.first();
     this.active.push(first);
     this.topY = first.y;

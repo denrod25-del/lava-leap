@@ -12,7 +12,7 @@ export class LevelGenerator {
   private pendingChunk: PlatformDescriptor[] = [];
   private untilChunk: number;
 
-  constructor(seed: number) {
+  constructor(seed: number, private startHeightOffset = 0) {
     this.rng = makeRng(seed);
     this.untilChunk = this.chunkInterval();
   }
@@ -24,7 +24,7 @@ export class LevelGenerator {
     const p: PlatformDescriptor = {
       id: this.nextId++,
       x,
-      y: TUNING.groundY,
+      y: TUNING.groundY - this.startHeightOffset,
       width,
       type: 'static',
       hasCoin: false,

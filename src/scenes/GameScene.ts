@@ -12,7 +12,7 @@ import { save, leaderboard } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
 import { AudioDirector } from '../entities/AudioDirector';
-import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
+import { zoneForHeight, type ZoneDef } from '../core/zones';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
@@ -36,6 +36,7 @@ import { StoryProgress } from '../core/StoryProgress';
 import { COLE_PAGE_ID, type StoryPage } from '../core/story';
 import { CutsceneDirector } from '../core/CutsceneDirector';
 import { StingController } from '../entities/StingController';
+import { LEVELS, type LevelDef } from '../core/levels';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -74,11 +75,13 @@ export class GameScene extends Phaser.Scene {
   private journalUnlocks: string[] = [];
   private nextStoryHeightCheck = 0;
   private cutsceneDirector!: CutsceneDirector;
+  private levelDef?: LevelDef;
 
   constructor() { super('Game'); }
 
-  init(data: { daily?: boolean }): void {
+  init(data: { daily?: boolean; levelId?: string }): void {
     this.daily = data?.daily === true;
+    this.levelDef = data?.levelId ? LEVELS.find((l) => l.id === data.levelId) : undefined;
   }
 
   private bgKeys(zone: ZoneDef): { far: string; near: string } {
@@ -150,8 +153,10 @@ export class GameScene extends Phaser.Scene {
     this.dead = false;
     this.booked = false;
     this.revivedThisRun = false;
-    this.zoneIndex = 0;
-    this.prevHeight = 0;
+    const startHeightOffset = this.levelDef?.startHeight ?? 0;
+    const startZone = zoneForHeight(startHeightOffset);
+    this.zoneIndex = startZone.index;
+    this.prevHeight = startHeightOffset;
     // Reset HUD-facing values so a retry can't flash the previous run's score.
     this.registry.set('height', 0);
     this.registry.set('coins', 0);
@@ -169,22 +174,22 @@ export class GameScene extends Phaser.Scene {
       this.sound.play('sfx-ding', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
     });
 
-    this.buildBackground(ZONES[0]);
-    const zone0Keys = this.bgKeys(ZONES[0]);
-    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.far)
+    this.buildBackground(startZone);
+    const startZoneKeys = this.bgKeys(startZone);
+    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.far)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
-    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, zone0Keys.near)
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
     this.runSeed = seed;
-    this.stream = new LevelStream(seed);
+    this.stream = new LevelStream(seed, startHeightOffset);
     this.platforms = new PlatformManager(this, this.gameEvents);
 
     // Spawn the initial platform(s).
     for (const p of this.stream.active) this.platforms.spawn(p);
 
-    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - 40, this.gameEvents);
+    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - startHeightOffset - 40, this.gameEvents);
     // Input source by device + chosen scheme. AUTO (touch default): hold-to-steer +
     // tap-to-dash with automatic jumping. MANUAL: the two-thumb scheme. Keyboard
     // unchanged. Changing the Settings row takes effect here, on the next run.
@@ -283,6 +288,7 @@ export class GameScene extends Phaser.Scene {
           this.registry.set('toast', 'The fallen keeper is freed — COLE joins your roster!');
           track('character_unlock', { id: 'cole' });
         }
+        if (this.levelDef) this.completeLevel();
       }
     });
 
@@ -418,10 +424,20 @@ export class GameScene extends Phaser.Scene {
 
     // Lava Titan boss: trigger once per boundary crossing, then run each frame.
     if (!this.boss.isActive) {
-      const idx = bossBoundaryCrossed(this.prevHeight, heightClimbed);
-      if (idx >= 0) {
-        this.stream.injectChunk(BOSS_TEMPLATES[idx]);
-        this.boss.start(idx, this.runSeed, this.lava.surfaceY);
+      if (this.levelDef) {
+        const trigger = this.levelDef.bossTriggerHeight;
+        if (this.prevHeight < trigger && heightClimbed >= trigger) {
+          const bossIdx = LEVELS.findIndex((l) => l.id === this.levelDef!.id);
+          const tpl = BOSS_TEMPLATES.find((t) => t.id === this.levelDef!.bossTemplateId)!;
+          this.stream.injectChunk(tpl);
+          this.boss.start(bossIdx, this.runSeed, this.lava.surfaceY);
+        }
+      } else {
+        const idx = bossBoundaryCrossed(this.prevHeight, heightClimbed);
+        if (idx >= 0) {
+          this.stream.injectChunk(BOSS_TEMPLATES[idx]);
+          this.boss.start(idx, this.runSeed, this.lava.surfaceY);
+        }
       }
     }
     this.boss.update(delta, this.lava.surfaceY);
@@ -473,7 +489,7 @@ export class GameScene extends Phaser.Scene {
     // name nudge after the backend is activated).
     const playerId = save.get().identity.playerId;
     let submitDone: Promise<unknown> = Promise.resolve();
-    if (leaderboard.enabled) {
+    if (leaderboard.enabled && !this.levelDef) {
       const durationMs = Math.max(1000, Math.round(this.time.now - this.runStartMs));
       let lbName = save.get().identity.name;
       if (!lbName) {
@@ -511,6 +527,8 @@ export class GameScene extends Phaser.Scene {
         submitDone,
         journalUnlocks: this.journalUnlocks.length,
         storyStage: this.story.stage(),
+        result: 'died' as const,
+        levelId: this.levelDef?.id,
       };
       const pendingCutscenes = this.cutsceneDirector.pending();
       if (pendingCutscenes.length > 0) {
@@ -543,6 +561,40 @@ export class GameScene extends Phaser.Scene {
     }
     void finalHeight;
     return { banked, bankTotal: save.get().coinBank };
+  }
+
+  /** A level's boss was survived: bank coins, mark it cleared, hand off to
+   *  GameOver (no leaderboard submission — levels never touch that board). */
+  private completeLevel(): void {
+    if (this.dead || !this.levelDef) return;
+    this.dead = true; // freezes the same lava-catch/enemy-contact checks death does
+    const levelDef = this.levelDef;
+    const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
+    const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
+    save.update((b) => {
+      if (!b.levels.cleared.includes(levelDef.id)) b.levels.cleared.push(levelDef.id);
+    });
+    track('level_clear', { id: levelDef.id });
+    const idx = LEVELS.findIndex((l) => l.id === levelDef.id);
+    const nextLevelId = idx >= 0 && idx + 1 < LEVELS.length ? LEVELS[idx + 1].id : undefined;
+    this.scene.stop('Hud');
+    const gameOverData = {
+      score: this.score.score,
+      banked, bankTotal,
+      daily: false,
+      earned: [...this.tracker.earnedThisRun],
+      journalUnlocks: this.journalUnlocks.length,
+      storyStage: this.story.stage(),
+      result: 'cleared' as const,
+      levelId: levelDef.id,
+      nextLevelId,
+    };
+    const pendingCutscenes = this.cutsceneDirector.pending();
+    if (pendingCutscenes.length > 0) {
+      this.scene.start('Cutscene', { ids: pendingCutscenes, then: { scene: 'GameOver', data: gameOverData } });
+    } else {
+      this.scene.start('GameOver', gameOverData);
+    }
   }
 
   /** Track pages unlocked this run; shown as "Journal updated" on Game Over. */
