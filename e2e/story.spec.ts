@@ -8,19 +8,16 @@ function collectErrors(page: import('@playwright/test').Page): string[] {
   return errors;
 }
 
-test('fresh profile: vignette shows, skip lands on Menu, Journal has the oath page', async ({ page }) => {
+test('fresh profile: opening cutscene plays, skip lands on Menu, Journal has the oath page', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
-  await waitForScene(page, 'Vignette');
-  // The vignette debounces input (600ms boot guard + 400ms between advances) so
-  // key-repeat/double-taps can't skip beats — space the clicks accordingly.
-  await page.waitForTimeout(700);
-  await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // beat 2
-  await page.waitForTimeout(500);
-  await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // beat 3
-  await page.waitForTimeout(500);
-  await page.locator('canvas').click({ position: { x: 300, y: 360 } }); // finish
+  await waitForScene(page, 'Cutscene');
+  await page.waitForTimeout(700); // clear the cutscene's 600ms boot-debounce guard
+  await page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (window as any).__game.scene.keys.Cutscene.skipAll();
+  });
   // A fresh profile's first Menu boot auto-opens What's New (version change) —
   // close it before looking for the Menu.
   await waitForScene(page, 'Changelog');
@@ -31,6 +28,9 @@ test('fresh profile: vignette shows, skip lands on Menu, Journal has the oath pa
   const unlocked = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('lavaleap.save.v2')!).story.unlockedPages as string[]);
   expect(unlocked).toContain('oath');
+  const watched = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('lavaleap.save.v2')!).story.watchedCutscenes as string[]);
+  expect(watched).toContain('opening');
   expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
 });
 
@@ -38,7 +38,7 @@ test('veteran save: no vignette, Journal accessible, Cole locked in Shop', async
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.9.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.10.0',
       analytics: { runs: 5 },
     }));
   });

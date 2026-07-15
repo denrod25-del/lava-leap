@@ -2,6 +2,12 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.10.0', date: '2026-07-14', notes: [
+    'ANIMATED CUTSCENES: the opening is a real scene now — spark, mountain, and all.',
+    'Meet the Lava Titan with a proper cinematic beat, mid-climb, without ever stopping your run.',
+    'Freeing Cole finally gets the moment it deserves.',
+    'Every story cutscene is replayable forever from the Keeper\'s Journal.',
+  ]},
   { version: '0.9.0', date: '2026-07-14', notes: [
     "THE LAST EMBER — Lava Leap has a story. Open the Keeper's Journal (J) from the menu.",
     'Find glowing relics while you climb to unlock the mountain\'s history.',

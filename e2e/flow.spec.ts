@@ -14,14 +14,12 @@ test('dash → jump-cancel chains raise Flow and expose HUD state', async ({ pag
   await expect(page.locator('canvas')).toBeVisible();
   // Fresh profile boots to the vignette; skip it, close the auto-shown What's New,
   // then poll for the Menu before Space (fixed waits break as assets grow).
-  await waitForScene(page, 'Vignette');
-  // Vignette debounces input (600ms boot guard + 400ms between advances).
-  await page.waitForTimeout(700);
-  await page.keyboard.press('Escape'); // skip vignette (any key advances; 3 beats)
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Escape');
+  await waitForScene(page, 'Cutscene');
+  await page.waitForTimeout(700); // clear the cutscene's 600ms boot-debounce guard
+  await page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (window as any).__game.scene.keys.Cutscene.skipAll();
+  });
   await waitForScene(page, 'Changelog');
   await page.keyboard.press('Escape'); // dismiss auto-shown What's New (fresh profile)
   await waitForScene(page, 'Menu');
@@ -62,7 +60,7 @@ test('dash-jump cancel keeps momentum; i-frames only while dashing', async ({ pa
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.9.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.10.0',
     }));
   });
   await page.goto('/');
@@ -114,7 +112,7 @@ test('reduced motion: flow visuals stay quiet and the game runs clean', async ({
       version: 2,
       settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: true },
       tutorialDone: true,
-      lastSeenVersion: '0.9.0',
+      lastSeenVersion: '0.10.0',
     }));
   });
   await page.goto('/');
