@@ -306,3 +306,30 @@ describe('cutscene queue save fields (v0.10.0)', () => {
     expect(s.get().story.watchedCutscenes).toEqual([]);
   });
 });
+
+describe('levels save field (v0.11.0)', () => {
+  it('fresh saves get an empty cleared list', () => {
+    const s = new SaveData(fakeStore());
+    expect(s.get().levels.cleared).toEqual([]);
+  });
+  it('legacy v0.10.0 blobs (no levels field) load with it backfilled', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({ version: 2, highScore: 500 }),
+    }));
+    expect(s.get().levels.cleared).toEqual([]);
+    expect(s.get().highScore).toBe(500); // untouched
+  });
+  it('a non-array cleared field in a corrupt blob is coerced to []', () => {
+    const s = new SaveData(fakeStore({
+      'lavaleap.save.v2': JSON.stringify({ version: 2, levels: { cleared: 'oops' } }),
+    }));
+    expect(s.get().levels.cleared).toEqual([]);
+  });
+  it('cleared levels persist across reloads', () => {
+    const store = fakeStore();
+    const a = new SaveData(store);
+    a.update((b) => { b.levels.cleared.push('level-1'); });
+    const reloaded = new SaveData(store);
+    expect(reloaded.get().levels.cleared).toEqual(['level-1']);
+  });
+});

@@ -50,6 +50,8 @@ export interface SaveBlob {
     /** True once the first-ever Titan encounter's mid-run sting has fired. */
     stingSeen: boolean;
   };
+  /** Levels mode progress. */
+  levels: { cleared: string[] };
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -74,6 +76,7 @@ function defaults(): SaveBlob {
     character: DEFAULT_CHARACTER,
     ownedCharacters: ['ember', 'classic'],
     story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0, pendingCutscenes: [], watchedCutscenes: [], stingSeen: false },
+    levels: { cleared: [] },
   };
 }
 
@@ -135,6 +138,7 @@ export class SaveData {
             upgrades: { ...defaults().upgrades, ...parsed.upgrades },
             identity: { ...defaults().identity, ...parsed.identity },
             story: { ...defaults().story, ...parsed.story },
+            levels: { ...defaults().levels, ...parsed.levels },
           };
           if (!isCharacter(merged.character)) merged.character = DEFAULT_CHARACTER;
           const ownedRaw = Array.isArray(parsed.ownedCharacters) ? parsed.ownedCharacters : [];
@@ -142,6 +146,7 @@ export class SaveData {
           if (!Array.isArray(merged.story.unlockedPages)) merged.story.unlockedPages = [];
           if (!Array.isArray(merged.story.pendingCutscenes)) merged.story.pendingCutscenes = [];
           if (!Array.isArray(merged.story.watchedCutscenes)) merged.story.watchedCutscenes = [];
+          if (!Array.isArray(merged.levels.cleared)) merged.levels.cleared = [];
           return merged;
         }
       }
