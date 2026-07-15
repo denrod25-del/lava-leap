@@ -2,6 +2,12 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.11.0', date: '2026-07-14', notes: [
+    'LEVELS MODE: a real 4-level campaign — The Magma Vault, The Forge, Ashfall, Obsidian Crown.',
+    'Each level ends in a real boss fight; clear one to unlock the next.',
+    "Levels bank coins like any run, but don't touch the endless leaderboard — that stays yours to chase separately.",
+    'Find it from the Menu (K).',
+  ]},
   { version: '0.10.0', date: '2026-07-14', notes: [
     'ANIMATED CUTSCENES: the opening is a real scene now — spark, mountain, and all.',
     'Meet the Lava Titan with a proper cinematic beat, mid-climb, without ever stopping your run.',

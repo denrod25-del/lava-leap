@@ -13,7 +13,7 @@ describe('changelog', () => {
     }
   });
   it('is ordered newest-first (semver-descending on the leading entry)', () => {
-    expect(CHANGELOG[0].version).toBe('0.10.0');
+    expect(CHANGELOG[0].version).toBe('0.11.0');
   });
   it("leading entry matches package.json version (What's New auto-pop keys off it)", () => {
     const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };

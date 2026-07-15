@@ -10,7 +10,7 @@ function collectErrors(page: import('@playwright/test').Page): string[] {
 test('disabled leaderboards: game boots, plays, and dies clean with no online UI', async ({ page }) => {
   const errors = collectErrors(page);
   await page.addInitScript(() => {
-    localStorage.setItem('lavaleap.save.v2', JSON.stringify({ version: 2, tutorialDone: true, lastSeenVersion: '0.10.0' }));
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({ version: 2, tutorialDone: true, lastSeenVersion: '0.11.0' }));
   });
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
