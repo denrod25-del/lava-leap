@@ -34,6 +34,8 @@ import { RelicManager } from '../entities/RelicManager';
 import { RelicPlanner } from '../core/relics';
 import { StoryProgress } from '../core/StoryProgress';
 import { COLE_PAGE_ID, type StoryPage } from '../core/story';
+import { CutsceneDirector } from '../core/CutsceneDirector';
+import { StingController } from '../entities/StingController';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -71,6 +73,7 @@ export class GameScene extends Phaser.Scene {
   private relics!: RelicManager;
   private journalUnlocks: string[] = [];
   private nextStoryHeightCheck = 0;
+  private cutsceneDirector!: CutsceneDirector;
 
   constructor() { super('Game'); }
 
@@ -220,6 +223,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.story = new StoryProgress(save);
+    this.cutsceneDirector = new CutsceneDirector(save);
     this.journalUnlocks = [];
     this.nextStoryHeightCheck = 0;
     this.relicPlanner = new RelicPlanner(this.story.relicPagesRemaining());
@@ -268,6 +272,10 @@ export class GameScene extends Phaser.Scene {
       track(phase === 'start' ? 'boss_start' : 'boss_clear', { index: zoneIndex });
       if (phase === 'start') {
         this.collectStory(this.story.onTitanReach());
+        if (!save.get().story.stingSeen) {
+          save.update((b) => { b.story.stingSeen = true; });
+          new StingController(this, save).play(TUNING.width / 2, this.lava.surfaceY);
+        }
       } else if (!this.dead) { // a post-death boss timeout must not count as surviving
         const pages = this.story.onTitanDefeat();
         this.collectStory(pages);
@@ -493,7 +501,7 @@ export class GameScene extends Phaser.Scene {
       const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
       save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex, source));
       this.scene.stop('Hud');
-      this.scene.start('GameOver', {
+      const gameOverData = {
         score: finalScore,
         banked, bankTotal,
         daily: this.daily,
@@ -503,7 +511,13 @@ export class GameScene extends Phaser.Scene {
         submitDone,
         journalUnlocks: this.journalUnlocks.length,
         storyStage: this.story.stage(),
-      });
+      };
+      const pendingCutscenes = this.cutsceneDirector.pending();
+      if (pendingCutscenes.length > 0) {
+        this.scene.start('Cutscene', { ids: pendingCutscenes, then: { scene: 'GameOver', data: gameOverData } });
+      } else {
+        this.scene.start('GameOver', gameOverData);
+      }
     });
   }
 
@@ -537,6 +551,7 @@ export class GameScene extends Phaser.Scene {
       this.journalUnlocks.push(p.id);
       track('story_page', { id: p.id });
     }
+    this.cutsceneDirector.enqueueFor(pages);
   }
 
   private onCoin(): void {
