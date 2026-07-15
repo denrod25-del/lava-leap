@@ -37,4 +37,12 @@ export const BOSS_TEMPLATES: SetPiece[] = [
     { x: 140, width: 80, type: 'static', hasCoin: false, dyToNext: 125 },
     entry(0),
   ]},
+  { id: 'titan-4', platforms: [
+    entry(135),
+    { x: 130, width: 70, type: 'static', hasCoin: false, dyToNext: 135 },
+    { x: 350, width: 70, type: 'static', hasCoin: false, dyToNext: 135 },
+    { x: 190, width: 70, type: 'static', hasCoin: false, dyToNext: 135 },
+    { x: 370, width: 70, type: 'static', hasCoin: false, dyToNext: 135 },
+    entry(0),
+  ]},
 ];

@@ -4,7 +4,7 @@ import { validateChunk } from '../src/core/setpieces';
 
 describe('boss gauntlet templates', () => {
   it('one template per boundary, all reach-valid', () => {
-    expect(BOSS_TEMPLATES).toHaveLength(3);
+    expect(BOSS_TEMPLATES).toHaveLength(4);
     for (const t of BOSS_TEMPLATES) expect(validateChunk(t), t.id).toEqual([]);
   });
 });
