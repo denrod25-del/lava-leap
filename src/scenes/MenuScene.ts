@@ -53,6 +53,7 @@ export class MenuScene extends Phaser.Scene {
       { line: 'D      Daily challenge', tap: () => this.scene.start('Game', { daily: true }) },
       { line: 'C      Shop', tap: () => this.scene.start('Shop') },
       { line: 'J      Journal', tap: () => this.scene.start('Journal') },
+      { line: 'K      Levels', tap: () => this.scene.start('LevelSelect') },
       { line: 'A      Achievements', tap: () => this.scene.start('Achievements') },
       { line: 'H      How to play', tap: () => this.scene.start('HowTo') },
       { line: "N      What's New", tap: () => this.scene.start('Changelog') },
@@ -84,6 +85,7 @@ export class MenuScene extends Phaser.Scene {
     kb.once('keydown-SPACE', () => this.scene.start('Game', { daily: false }));
     kb.once('keydown-D', () => this.scene.start('Game', { daily: true }));
     kb.once('keydown-C', () => this.scene.start('Shop'));
+    kb.once('keydown-K', () => this.scene.start('LevelSelect'));
     // NOT `once`: coexists with the debug-panel J handler below (copy JSON),
     // which no-ops when the panel is closed; this one no-ops while it's open.
     kb.on('keydown-J', () => {
