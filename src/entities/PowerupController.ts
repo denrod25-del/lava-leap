@@ -84,17 +84,32 @@ export class PowerupController {
     const body = container.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
     body.setCircle(POWERUP.pickupSize / 2, -POWERUP.pickupSize / 2, -POWERUP.pickupSize / 2);
+    // Pulse the children, not the container: Arcade reads the container's
+    // scale into the body every preUpdate, so tweening the container would
+    // make the collision circle oscillate. Scaling the children is purely
+    // visual — the body footprint stays constant.
     this.scene.tweens.add({
-      targets: container, scale: 1.15, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      targets: [circle, icon], scale: 1.15, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
     this.group.add(container);
     this.byId.set(desc.id, container);
     this.kindById.set(desc.id, kind);
   }
 
+  /** Single teardown path: kill the pulse tween on the pickup's children
+   *  (the tween targets them, not the container), destroy the container, and
+   *  drop it from tracking. Used by despawn, collect, and destroy. */
+  private removePickup(id: number): void {
+    const c = this.byId.get(id);
+    if (!c) return;
+    this.scene.tweens.killTweensOf(c.list);
+    c.destroy();
+    this.byId.delete(id);
+    this.kindById.delete(id);
+  }
+
   despawn(desc: PlatformDescriptor): void {
-    const c = this.byId.get(desc.id);
-    if (c) { this.scene.tweens.killTweensOf(c); c.destroy(); this.byId.delete(desc.id); this.kindById.delete(desc.id); }
+    this.removePickup(desc.id);
   }
 
   registerPlayerOverlap(player: Phaser.Physics.Arcade.Sprite): void {
@@ -103,10 +118,7 @@ export class PowerupController {
       for (const [id, c] of this.byId) {
         if (c === container) {
           this.collect(this.kindById.get(id)!);
-          this.scene.tweens.killTweensOf(c);
-          c.destroy();
-          this.byId.delete(id);
-          this.kindById.delete(id);
+          this.removePickup(id);
           return;
         }
       }
@@ -145,8 +157,6 @@ export class PowerupController {
   }
 
   destroy(): void {
-    for (const c of this.byId.values()) { this.scene.tweens.killTweensOf(c); c.destroy(); }
-    this.byId.clear();
-    this.kindById.clear();
+    for (const id of [...this.byId.keys()]) this.removePickup(id);
   }
 }
