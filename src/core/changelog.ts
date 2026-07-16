@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.12.0', date: '2026-07-16', notes: [
+    'The orange boost coin now unlocks once you climb past height 4000 in an endless or daily run — a late-game reward for going deep.',
+    'All four power-up types (shield, boost, magnet, slow-lava) now spawn about twice as often.',
+    'Power-up pickups got a visual upgrade: distinct icons for each type, plus a pulse so they stand out.',
+  ]},
   { version: '0.11.0', date: '2026-07-14', notes: [
     'LEVELS MODE: a real 4-level campaign — The Magma Vault, The Forge, Ashfall, Obsidian Crown.',
     'Each level ends in a real boss fight; clear one to unlock the next.',

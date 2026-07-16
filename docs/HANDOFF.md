@@ -2,14 +2,22 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-14 (v0.11.0)._
+_Last updated: 2026-07-16 (v0.12.0)._
 
 ---
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.
 
-## Current state — v0.11.0 "Levels Mode"
+## Current state — v0.12.0 "Boost Unlock + Power-up Pass"
+- **v0.12.0 = a power-up economy pass**, three coordinated changes: a late-game unlock gate on the rocket (orange boost coin), doubled spawn rates for all four power-up kinds, and a full visual redesign of the pickups.
+- **Rocket unlock-height gate:** `HAZARD.rocketUnlockHeight = 4000` (`src/tuning.ts`). Per-run and **endless/daily only** — no SaveData field, nothing persists. Threaded as an optional 3rd constructor param through `LevelStream` → `LevelGenerator`, defaulting to `Infinity` (never gated); `GameScene` passes `Infinity` for Levels Mode so level runs are unaffected. Below the gate a rocket pick is **DISCARDED, not re-rolled** — the "always 2 RNG draws per powerup roll" determinism invariant is intact (same daily seed = same world, gate or no gate).
+- **Real bug caught during implementation:** the plan's literal `height < rocketUnlockHeight` check was inverted for the `Infinity` default — `height < Infinity` is always true, which would have gated EVERY rocket in every mode. Fixed with a `Number.isFinite` guard (only a finite threshold gates), documented inline in `LevelGenerator`.
+- **Spawn-rate doubling:** `HAZARD.powerupChance` 0.03 → 0.06, uniform across all four kinds (shield, boost, magnet, slow-lava). No per-kind weighting changes.
+- **Pickup visual redesign (`PowerupController`):** each pickup is now a Container holding a circle plus a hand-drawn Graphics icon per kind, with a pulse tween — **zero new PixelLab art** (trial still has 1 generation banked). Two real bugs caught and fixed during review: (1) the infinite-repeat pulse tween was never killed on container destruction — leaked a live tween + retained object per pickup; (2) tweening the CONTAINER's scale made the Arcade body oscillate ~8→9px (`Body.updateBounds` reads container scale each preUpdate) — fixed by tweening the **children** instead, so the collision footprint is constant by construction. Teardown consolidated into a single `removePickup(id)` helper (despawn, collect, and shutdown all route through it).
+- **Tests:** 217 unit + 23 e2e green; typecheck + build clean; `0.12.0` confirmed in the production bundle.
+
+## Previous state — v0.11.0 "Levels Mode"
 - **v0.11.0 = a real 4-level campaign**, layered on top of endless with almost no new machinery. `src/core/levels.ts` defines `LEVELS: LevelDef[]` (`id`, `title`, `zoneIndex`, `startHeight`, `bossTriggerHeight`, `bossTemplateId`) — 4 entries, each spanning exactly 1000px (`level-1` 0→1000, `level-2` 1000→2000, `level-3` 2000→3000, `level-4` 3000→4000) and a pure `isLevelUnlocked(levelId, clearedIds)` (sequential: level N unlocked iff level N-1 is in `clearedIds`). SaveData gained `levels: { cleared: string[] }` (deep-merge + array-guarded like every other nested field).
 - **The spawn-offset trick is why this was cheap:** every height-driven system in the game (`zoneForHeight`, the generator's difficulty ramp, `StoryProgress.onHeight`, `RelicPlanner`) already computes purely from `TUNING.groundY - player.y`. `LevelGenerator`/`LevelStream` gained one optional constructor param (`startHeightOffset`, default 0 — endless/daily are byte-identical) that shifts the FIRST platform's `y` and therefore the player's spawn height. Every other system just sees a bigger `heightClimbed` on frame one and behaves correctly with zero level-awareness of its own.
 - **`GameScene` reused almost entirely:** `init(data)` now accepts an optional `levelId`, resolved to a `LevelDef` (`this.levelDef`). When set: background/zone/spawn/`LevelStream` all key off `startHeightOffset` instead of hardcoded zone-0/height-0; the boss trigger in `update()` branches on `this.levelDef` — level runs check their OWN `bossTriggerHeight`/`bossTemplateId` (never calling `bossBoundaryCrossed`), so `BOSS_BOUNDARIES`/`boss.ts` are **completely untouched** by this feature (`tests/boss.test.ts` still locks the endless array to `[1000,2000,3000]`, proving it). A 4th boss template (`titan-4`, hand-authored + `validateChunk`-checked) exists ONLY as a level-mode finale — endless mode still has just 3 boss encounters.
