@@ -69,7 +69,7 @@ export const HAZARD = {
   enemyBaseChance: 0.05,
   enemyChancePerT: 0.20,
   drifterShare: 0.4,       // of enemies, fraction that are drifters
-  powerupChance: 0.06,     // per eligible platform (was 0.03 — ~2x across all 4 kinds)
+  powerupChance: 0.20,     // per eligible platform (~1 power-up per 1000-1500px climbed; was 0.03 pre-v0.12.0)
   rocketUnlockHeight: 4000, // endless/daily only — Levels Mode passes Infinity (never gated)
 } as const;
 

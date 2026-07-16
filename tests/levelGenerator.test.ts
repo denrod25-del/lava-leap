@@ -344,4 +344,32 @@ describe('rocket unlock height gate', () => {
     }
     expect(sawRocket).toBe(true);
   });
+
+  it('converts gated rockets to shields — the gate never changes WHICH platforms get a power-up', () => {
+    const collect = (rocketUnlockHeight: number) => {
+      const gen = new LevelGenerator(8, 0, rocketUnlockHeight);
+      gen.first();
+      const byId = new Map<number, { kind: string; height: number }>();
+      for (let i = 0; i < 5000; i++) {
+        const p = gen.next();
+        if (p.powerup) byId.set(p.id, { kind: p.powerup.kind, height: TUNING.groundY - p.y });
+      }
+      return byId;
+    };
+    const gated = collect(4000);
+    const ungated = collect(Infinity);
+    // Identical power-up placement: same platform ids, same count.
+    expect([...gated.keys()]).toEqual([...ungated.keys()]);
+    let conversions = 0;
+    for (const [id, u] of ungated) {
+      const g = gated.get(id)!;
+      if (u.height < 4000 && u.kind === 'rocket') {
+        expect(g.kind).toBe('shield'); // converted, not discarded
+        conversions++;
+      } else {
+        expect(g.kind).toBe(u.kind); // everything else identical
+      }
+    }
+    expect(conversions).toBeGreaterThan(0); // the conversion path was actually exercised
+  });
 });
