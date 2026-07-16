@@ -308,3 +308,40 @@ describe('enemy attachment', () => {
     expect(run(42)).not.toBe(run(43));
   });
 });
+
+describe('rocket unlock height gate', () => {
+  it('never attaches rocket below the unlock height', () => {
+    const gen = new LevelGenerator(8, 0, 4000);
+    gen.first();
+    for (let i = 0; i < 5000; i++) {
+      const p = gen.next();
+      if (TUNING.groundY - p.y < 4000 && p.powerup) {
+        expect(p.powerup.kind).not.toBe('rocket');
+      }
+    }
+  });
+
+  it('can attach rocket above the unlock height', () => {
+    const gen = new LevelGenerator(8, 0, 4000);
+    gen.first();
+    let p = gen.next();
+    while (TUNING.groundY - p.y < 4000) p = gen.next();
+    let sawRocket = false;
+    for (let i = 0; i < 5000; i++) {
+      p = gen.next();
+      if (p.powerup?.kind === 'rocket') sawRocket = true;
+    }
+    expect(sawRocket).toBe(true);
+  });
+
+  it('defaults to never-gated (Infinity) when the param is omitted, matching pre-v0.12.0 behavior', () => {
+    const gen = new LevelGenerator(8);
+    gen.first();
+    let sawRocket = false;
+    for (let i = 0; i < 5000; i++) {
+      const p = gen.next();
+      if (p.powerup?.kind === 'rocket') sawRocket = true;
+    }
+    expect(sawRocket).toBe(true);
+  });
+});

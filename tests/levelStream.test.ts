@@ -30,4 +30,18 @@ describe('LevelStream', () => {
     for (const p of s.active) expect(p.y).toBeLessThan(TUNING.groundY - 600);
     expect(s.active.length).toBeLessThanOrEqual(before + removed.added.length);
   });
+
+  it('threads rocketUnlockHeight through to the generator', () => {
+    const s = new LevelStream(8, 0, 4000);
+    let cameraTop = TUNING.groundY;
+    let sawBelowRocket = false;
+    for (let i = 0; i < 60; i++) {
+      cameraTop -= 100;
+      const { added } = s.update(cameraTop, TUNING.groundY + 80);
+      for (const p of added) {
+        if (TUNING.groundY - p.y < 4000 && p.powerup?.kind === 'rocket') sawBelowRocket = true;
+      }
+    }
+    expect(sawBelowRocket).toBe(false);
+  });
 });
