@@ -94,7 +94,7 @@ export class PowerupController {
 
   despawn(desc: PlatformDescriptor): void {
     const c = this.byId.get(desc.id);
-    if (c) { c.destroy(); this.byId.delete(desc.id); this.kindById.delete(desc.id); }
+    if (c) { this.scene.tweens.killTweensOf(c); c.destroy(); this.byId.delete(desc.id); this.kindById.delete(desc.id); }
   }
 
   registerPlayerOverlap(player: Phaser.Physics.Arcade.Sprite): void {
@@ -103,6 +103,7 @@ export class PowerupController {
       for (const [id, c] of this.byId) {
         if (c === container) {
           this.collect(this.kindById.get(id)!);
+          this.scene.tweens.killTweensOf(c);
           c.destroy();
           this.byId.delete(id);
           this.kindById.delete(id);
@@ -144,7 +145,7 @@ export class PowerupController {
   }
 
   destroy(): void {
-    for (const c of this.byId.values()) c.destroy();
+    for (const c of this.byId.values()) { this.scene.tweens.killTweensOf(c); c.destroy(); }
     this.byId.clear();
     this.kindById.clear();
   }
