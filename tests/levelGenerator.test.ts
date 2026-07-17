@@ -309,67 +309,24 @@ describe('enemy attachment', () => {
   });
 });
 
-describe('rocket unlock height gate', () => {
-  it('never attaches rocket below the unlock height', () => {
-    const gen = new LevelGenerator(8, 0, 4000);
-    gen.first();
-    for (let i = 0; i < 5000; i++) {
-      const p = gen.next();
-      if (TUNING.groundY - p.y < 4000 && p.powerup) {
-        expect(p.powerup.kind).not.toBe('rocket');
-      }
-    }
-  });
-
-  it('can attach rocket above the unlock height', () => {
-    const gen = new LevelGenerator(8, 0, 4000);
-    gen.first();
-    let p = gen.next();
-    while (TUNING.groundY - p.y < 4000) p = gen.next();
-    let sawRocket = false;
-    for (let i = 0; i < 5000; i++) {
-      p = gen.next();
-      if (p.powerup?.kind === 'rocket') sawRocket = true;
-    }
-    expect(sawRocket).toBe(true);
-  });
-
-  it('defaults to never-gated (Infinity) when the param is omitted, matching pre-v0.12.0 behavior', () => {
-    const gen = new LevelGenerator(8);
-    gen.first();
-    let sawRocket = false;
-    for (let i = 0; i < 5000; i++) {
-      const p = gen.next();
-      if (p.powerup?.kind === 'rocket') sawRocket = true;
-    }
-    expect(sawRocket).toBe(true);
-  });
-
-  it('converts gated rockets to shields — the gate never changes WHICH platforms get a power-up', () => {
-    const collect = (rocketUnlockHeight: number) => {
-      const gen = new LevelGenerator(8, 0, rocketUnlockHeight);
+describe('powerup kind mix', () => {
+  it('rocket (orange boost) is the most common kind, appearing from low heights', () => {
+    const counts: Record<string, number> = { shield: 0, rocket: 0, magnet: 0, slowlava: 0 };
+    let sawRocketBelow1000 = false;
+    for (const seed of [8, 42, 99, 314, 777]) {
+      const gen = new LevelGenerator(seed);
       gen.first();
-      const byId = new Map<number, { kind: string; height: number }>();
       for (let i = 0; i < 5000; i++) {
         const p = gen.next();
-        if (p.powerup) byId.set(p.id, { kind: p.powerup.kind, height: TUNING.groundY - p.y });
-      }
-      return byId;
-    };
-    const gated = collect(4000);
-    const ungated = collect(Infinity);
-    // Identical power-up placement: same platform ids, same count.
-    expect([...gated.keys()]).toEqual([...ungated.keys()]);
-    let conversions = 0;
-    for (const [id, u] of ungated) {
-      const g = gated.get(id)!;
-      if (u.height < 4000 && u.kind === 'rocket') {
-        expect(g.kind).toBe('shield'); // converted, not discarded
-        conversions++;
-      } else {
-        expect(g.kind).toBe(u.kind); // everything else identical
+        if (p.powerup) {
+          counts[p.powerup.kind]++;
+          if (TUNING.groundY - p.y < 1000 && p.powerup.kind === 'rocket') sawRocketBelow1000 = true;
+        }
       }
     }
-    expect(conversions).toBeGreaterThan(0); // the conversion path was actually exercised
+    expect(sawRocketBelow1000).toBe(true); // no height gate — boosts appear in normal play
+    expect(counts.rocket).toBeGreaterThan(counts.shield);
+    expect(counts.rocket).toBeGreaterThan(counts.magnet);
+    expect(counts.rocket).toBeGreaterThan(counts.slowlava);
   });
 });

@@ -2,7 +2,11 @@ import { HAZARD } from '../tuning';
 import type { EnemyKind, PowerupKind } from './types';
 import type { Rng } from './rng';
 
-const POWERUPS: PowerupKind[] = ['shield', 'rocket', 'magnet', 'slowlava'];
+// Weighted kind mix — the rocket (orange boost) is deliberately the most common:
+// play-testing found the boost is the "fun one," so it leads the distribution.
+const POWERUP_WEIGHTS: ReadonlyArray<readonly [PowerupKind, number]> = [
+  ['rocket', 0.4], ['shield', 0.2], ['magnet', 0.2], ['slowlava', 0.2],
+];
 
 /** Decide whether a platform is a bounce pad. Consumes exactly 1 rng draw. */
 export function rollHazard(rng: Rng, _t: number, height: number): { bounce: boolean } {
@@ -23,6 +27,12 @@ export function rollEnemy(rng: Rng, t: number, height: number): EnemyKind | null
 /** Decide a power-up kind (or null). Consumes 2 rng draws. */
 export function rollPowerup(rng: Rng): PowerupKind | null {
   const has = rng() < HAZARD.powerupChance;
-  const pick = POWERUPS[Math.floor(rng() * POWERUPS.length)];
+  const r = rng();
+  let acc = 0;
+  let pick: PowerupKind = POWERUP_WEIGHTS[POWERUP_WEIGHTS.length - 1][0];
+  for (const [kind, weight] of POWERUP_WEIGHTS) {
+    acc += weight;
+    if (r < acc) { pick = kind; break; }
+  }
   return has ? pick : null;
 }

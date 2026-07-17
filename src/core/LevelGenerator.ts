@@ -12,7 +12,7 @@ export class LevelGenerator {
   private pendingChunk: PlatformDescriptor[] = [];
   private untilChunk: number;
 
-  constructor(seed: number, private startHeightOffset = 0, private rocketUnlockHeight = Infinity) {
+  constructor(seed: number, private startHeightOffset = 0) {
     this.rng = makeRng(seed);
     this.untilChunk = this.chunkInterval();
   }
@@ -188,18 +188,10 @@ export class LevelGenerator {
       const ek = rollEnemy(this.rng, t, height);
       if (ek && !p.bounce) p.enemy = { kind: ek };
       // Power-up: only on platforms with no bounce pad and no enemy, above grace.
-      // Always roll (consumes 2 rng draws) so the per-seed stream is stable. Below
-      // rocketUnlockHeight (endless/daily only — Levels Mode passes Infinity), a
-      // rocket pick CONVERTS to a shield rather than being discarded or re-rolled —
-      // this never changes the RNG draw count, which platforms get a powerup, or
-      // the total power-up density; the rocket simply debuts at the unlock height.
-      // The finite check matters: `height < Infinity` is always true for any real
-      // height, so without it the Infinity default would gate every rocket.
+      // Always roll (consumes 2 rng draws) so the per-seed stream is stable.
       const pk = rollPowerup(this.rng);
-      const rocketGated = pk === 'rocket' && Number.isFinite(this.rocketUnlockHeight) && height < this.rocketUnlockHeight;
-      const eligiblePk = rocketGated ? 'shield' : pk;
-      if (eligiblePk && !p.bounce && !p.enemy && height >= HAZARD.graceHeight) {
-        p.powerup = { kind: eligiblePk };
+      if (pk && !p.bounce && !p.enemy && height >= HAZARD.graceHeight) {
+        p.powerup = { kind: pk };
       }
     }
 

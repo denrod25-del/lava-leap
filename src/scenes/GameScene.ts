@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TUNING, POWERUP, HAZARD, COMBO_POINTS, powerupDurationFactor } from '../tuning';
+import { TUNING, POWERUP, COMBO_POINTS, powerupDurationFactor } from '../tuning';
 import { Player } from '../entities/Player';
 import { LevelStream } from '../core/LevelStream';
 import { PlatformManager } from '../entities/PlatformManager';
@@ -183,8 +183,7 @@ export class GameScene extends Phaser.Scene {
 
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
     this.runSeed = seed;
-    const rocketUnlockHeight = this.levelDef ? Infinity : HAZARD.rocketUnlockHeight;
-    this.stream = new LevelStream(seed, startHeightOffset, rocketUnlockHeight);
+    this.stream = new LevelStream(seed, startHeightOffset);
     this.platforms = new PlatformManager(this, this.gameEvents);
 
     // Spawn the initial platform(s).
