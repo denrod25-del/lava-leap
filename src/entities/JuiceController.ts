@@ -63,6 +63,10 @@ export class JuiceController {
     events.on('doubleJump', () => this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY));
     events.on('wallJump', () => this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY));
     events.on('dash', () => this.dustAt(this.player.x, this.player.y + 12, 6));
+    events.on('ledgeVault', ({ x, y }) => {
+      this.squash(JUICE.jumpSquashX, JUICE.jumpStretchY);
+      this.dustAt(x, y + 12, 8);
+    });
     events.on('land', ({ impactVy }) => {
       const k = Phaser.Math.Clamp(impactVy / 900, 0.4, 1);
       this.squash(1 + (JUICE.landSquashX - 1) * k, 1 - (1 - JUICE.landSquashY) * k);

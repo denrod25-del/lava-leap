@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { TUNING, POWERUP } from '../tuning';
+import { TUNING, POWERUP, LEDGE } from '../tuning';
 import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
 import type { InputState } from '../core/InputState';
-import { animKey, staticKey, isCharacter, DEFAULT_CHARACTER, DEFAULT_MOVEMENT, type MovementProfile, type PlayerState } from '../core/characters';
+import { findLedge, type LedgePlatform } from '../core/ledge';
+import { animKey, staticKey, frameKey, isCharacter, DEFAULT_CHARACTER, DEFAULT_MOVEMENT, type MovementProfile, type PlayerState } from '../core/characters';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -20,6 +21,10 @@ export class Player {
   private dashDir = 1;
   private wasOnGround = true;
   private _wallSliding = false;
+  private hanging = false;
+  private hangTimer = 0;
+  private hangSide: 'left' | 'right' = 'left';
+  private regrabTimer = 0;
   /** Max jumps before landing (ground + air). Seeded from the movement profile
    *  (2 = double for the standard kit). GameScene then raises it to 3 on touch
    *  devices for the triple jump (mobile is harder to climb) — a movement profile
@@ -72,7 +77,7 @@ export class Player {
     if (equipped && equipped.id !== 'default') this.sprite.setTint(equipped.tint);
   }
 
-  update(input: InputState): void {
+  update(input: InputState, platforms: ReadonlyArray<LedgePlatform> = []): void {
     const dt = this.scene.game.loop.delta; // ms
     const body = this.sprite.body as Body;
 
@@ -110,6 +115,33 @@ export class Player {
     const onWall = (onWallLeft || onWallRight) && !onGround;
 
     if (onGround || onWall) this.dashAvailable = true;
+
+    // Ledge hang (movement-profile characters): frozen on a platform edge.
+    // Mirrors the dash block's early-return pattern.
+    if (this.hanging) {
+      this.hangTimer -= dt;
+      const jumpEdge = (jumpDown && !this.jumpHeldLast) || input.jumpPressed;
+      const steerAway = (this.hangSide === 'left' && left) || (this.hangSide === 'right' && right);
+      const autoVault = this.autoJump && this.hangTimer <= LEDGE.hangMaxMs - LEDGE.autoVaultDelayMs;
+      if (jumpEdge || autoVault) {
+        // Vault: the headline move — strong upward impulse and a FULL air-jump refund.
+        this.hanging = false;
+        this.regrabTimer = LEDGE.regrabCooldownMs;
+        body.setAllowGravity(true);
+        this.sprite.setVelocityY(-LEDGE.vaultVelocity);
+        this.jumpsUsed = 0;
+        this.events.emit('ledgeVault', { x: this.sprite.x, y: this.sprite.y });
+      } else if (steerAway || input.fastFall || this.hangTimer <= 0) {
+        this.hanging = false;
+        this.regrabTimer = LEDGE.regrabCooldownMs;
+        body.setAllowGravity(true);
+      } else {
+        body.setVelocity(0, 0);
+      }
+      this.jumpHeldLast = jumpDown;
+      return;
+    }
+    this.regrabTimer = Math.max(0, this.regrabTimer - dt);
 
     // Maintain an active dash (overrides normal horizontal movement & gravity).
     if (this.dashTimer > 0) {
@@ -159,6 +191,38 @@ export class Player {
     if (input.fastFall && !onGround && !this._wallSliding
         && body.velocity.y > 0 && body.velocity.y < TUNING.fastFallSpeed) {
       this.sprite.setVelocityY(TUNING.fastFallSpeed);
+    }
+
+    // Ledge grab entry (profile-gated): catch a static platform's top corner while
+    // falling toward it. Skipped while wall-sliding (that mechanic wins on contact).
+    if (this.profile.ledgeGrab && !onGround && !this._wallSliding
+        && body.velocity.y > 0 && this.regrabTimer <= 0) {
+      const steer: -1 | 0 | 1 = right ? 1 : left ? -1 : 0;
+      const cand = steer === 0 ? null : findLedge(
+        { x: body.x, y: body.y, width: body.width, height: body.height, vy: body.velocity.y },
+        steer, platforms,
+      );
+      if (cand) {
+        this.hanging = true;
+        this.hangSide = cand.side;
+        this.hangTimer = LEDGE.hangMaxMs;
+        // body.reset takes the GAME OBJECT position (sprite center). The body is
+        // horizontally centered and bottom-anchored on the sprite, so:
+        //   spriteCenterX = bodyTopLeftX + bodyW/2
+        //   spriteCenterY = bodyTopLeftY + bodyH - displayH/2
+        body.reset(
+          cand.snapX + TUNING.playerBodyW / 2,
+          cand.snapY + TUNING.playerBodyH - TUNING.playerDisplayH / 2,
+        );
+        body.setVelocity(0, 0);
+        body.setAllowGravity(false);
+        this.sprite.setFlipX(cand.side === 'right'); // face the platform
+        this.sprite.anims.stop();
+        this.sprite.setTexture(frameKey(this.charId, 'jump-2')); // hang pose = mid-air frame
+        this.events.emit('ledgeGrab', { x: this.sprite.x, y: this.sprite.y });
+        this.jumpHeldLast = jumpDown;
+        return;
+      }
     }
 
     // Dash trigger (airborne only, once per airtime).

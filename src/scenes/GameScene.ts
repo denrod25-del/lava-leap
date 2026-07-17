@@ -302,6 +302,7 @@ export class GameScene extends Phaser.Scene {
     this.gameEvents.on('coinCollected', () => this.flow.beat());
     this.gameEvents.on('enemyStomped', () => this.flow.beat());
     this.gameEvents.on('bouncePad', () => this.flow.beat());
+    this.gameEvents.on('ledgeVault', () => { this.flow.beat(); track('ledge_vault', {}); });
 
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
@@ -320,7 +321,7 @@ export class GameScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     const sampled = this.inputSrc.sample();
-    this.player.update(sampled);
+    this.player.update(sampled, this.stream.active);
     // Flow: build while airborne/dashing, drain when camping on the ground.
     const pbody = this.player.sprite.body as Phaser.Physics.Arcade.Body;
     const grounded = pbody.blocked.down || pbody.touching.down;
