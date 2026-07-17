@@ -24,6 +24,9 @@ export interface GameEventMap {
   /** The Revive upgrade saved the player from a lethal hit (juice/audio only —
    *  deliberately NOT a combo/power-up event so it doesn't inflate the multiplier). */
   playerRevived: { x: number; y: number };
+  /** Ledge grab→vault (movement-profile characters, v0.13.0+). */
+  ledgeGrab: { x: number; y: number };
+  ledgeVault: { x: number; y: number };
 }
 
 export type GameEventName = keyof GameEventMap;

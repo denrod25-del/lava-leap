@@ -4,7 +4,7 @@ import { GameEvents } from '../core/events';
 import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
 import type { InputState } from '../core/InputState';
-import { animKey, staticKey, isCharacter, DEFAULT_CHARACTER, type PlayerState } from '../core/characters';
+import { animKey, staticKey, isCharacter, DEFAULT_CHARACTER, DEFAULT_MOVEMENT, type MovementProfile, type PlayerState } from '../core/characters';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -20,8 +20,10 @@ export class Player {
   private dashDir = 1;
   private wasOnGround = true;
   private _wallSliding = false;
-  /** Max jumps before landing (ground + air). 2 = double (keyboard); GameScene sets
-   *  3 on touch devices for the triple jump (mobile is harder to climb). */
+  /** Max jumps before landing (ground + air). Seeded from the movement profile
+   *  (2 = double for the standard kit). GameScene then raises it to 3 on touch
+   *  devices for the triple jump (mobile is harder to climb) — a movement profile
+   *  can also set it higher (e.g. Kiko's 3 everywhere). */
   maxJumps = 2;
   /** Fractional moveSpeed bonus from the Flow tier (GameScene wires this per-frame; stays 0 until then). */
   flowSpeedNudge = 0;
@@ -48,7 +50,9 @@ export class Player {
     this.refreshDash();
   }
 
-  constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents) {
+  constructor(scene: Phaser.Scene, x: number, y: number, private events: GameEvents,
+              private profile: Readonly<MovementProfile> = DEFAULT_MOVEMENT) {
+    this.maxJumps = this.profile.maxJumps;
     this.scene = scene;
     const charId = isCharacter(save.get().character) ? save.get().character : DEFAULT_CHARACTER;
     this.charId = charId;
@@ -118,7 +122,7 @@ export class Player {
         this.dashTimer = 0;
         body.setAllowGravity(true);
         this.sprite.setVelocityX(this.dashDir * TUNING.dashSpeed); // momentum carries (wall contact clamps it next physics step)
-        this.sprite.setVelocityY(-TUNING.jumpVelocity);
+        this.sprite.setVelocityY(-this.profile.jumpVelocity);
         this.jumpsUsed = Math.min(this.maxJumps, this.jumpsUsed + 1);
         this.jumpHeldLast = jumpDown;
         this.events.emit('dashJumpCancel', {});
@@ -186,7 +190,7 @@ export class Player {
     // (e.g. a late dash-cancel tap) can't re-arm it into a free air jump next
     // frame — one tap, one action.
     if (this.autoJump && onGround) {
-      this.sprite.setVelocityY(-TUNING.jumpVelocity);
+      this.sprite.setVelocityY(-this.profile.jumpVelocity);
       this.jumpsUsed = 1;
       this.coyoteTimer = 0;
       this.bufferTimer = 0;
@@ -196,7 +200,7 @@ export class Player {
     const canGroundJump = this.coyoteTimer > 0 && this.jumpsUsed === 0;
     if (this.bufferTimer > 0) {
       if (canGroundJump) {
-        this.sprite.setVelocityY(-TUNING.jumpVelocity);
+        this.sprite.setVelocityY(-this.profile.jumpVelocity);
         this.jumpsUsed = 1;
         this.bufferTimer = 0;
         this.coyoteTimer = 0;
@@ -210,7 +214,7 @@ export class Player {
         this.events.emit('wallJump', {});
       } else if (!onGround && this.jumpsUsed >= 1 && this.jumpsUsed < this.maxJumps) {
         // Air jump(s): one for double (keyboard), two for triple (touch, maxJumps=3).
-        this.sprite.setVelocityY(-TUNING.doubleJumpVelocity);
+        this.sprite.setVelocityY(-this.profile.airJumpVelocity);
         this.jumpsUsed += 1;
         this.bufferTimer = 0;
         this.events.emit('doubleJump', {});

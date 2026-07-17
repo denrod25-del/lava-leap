@@ -37,6 +37,7 @@ import { COLE_PAGE_ID, type StoryPage } from '../core/story';
 import { CutsceneDirector } from '../core/CutsceneDirector';
 import { StingController } from '../entities/StingController';
 import { LEVELS, type LevelDef } from '../core/levels';
+import { isCharacter, DEFAULT_CHARACTER, resolveMovement } from '../core/characters';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -189,7 +190,9 @@ export class GameScene extends Phaser.Scene {
     // Spawn the initial platform(s).
     for (const p of this.stream.active) this.platforms.spawn(p);
 
-    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - startHeightOffset - 40, this.gameEvents);
+    const equippedId = isCharacter(save.get().character) ? save.get().character : DEFAULT_CHARACTER;
+    const profile = resolveMovement(equippedId);
+    this.player = new Player(this, TUNING.playerStartX, TUNING.groundY - startHeightOffset - 40, this.gameEvents, profile);
     // Input source by device + chosen scheme. AUTO (touch default): hold-to-steer +
     // tap-to-dash with automatic jumping. MANUAL: the two-thumb scheme. Keyboard
     // unchanged. Changing the Settings row takes effect here, on the next run.
@@ -205,9 +208,10 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.inputSrc = new KeyboardInput(this);
     }
-    // Touch climbing is harder, so grant a triple jump (ground + 2 air); keyboard stays
-    // double. Auto keeps 3 too: dash-jump launches consume jump slots.
-    this.player.maxJumps = wantTouch ? 3 : 2;
+    // Touch keeps its v4.4 triple-jump floor; a movement profile can only raise it.
+    // (Default profile: max(2, 3|2) — identical to the old `wantTouch ? 3 : 2`.
+    // Auto keeps 3 too: dash-jump launches consume jump slots.)
+    this.player.maxJumps = Math.max(this.player.maxJumps, wantTouch ? 3 : 2);
     // First-run tutorial (once ever; Settings can reset the flag).
     this.tutorial = undefined;
     if (!save.get().tutorialDone) {
