@@ -10,9 +10,9 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const cx = TUNING.width / 2, cy = TUNING.height / 2;
-    this.add.text(cx, cy - 64, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '42px', color: '#ff7b00' }).setOrigin(0.5);
+    this.add.text(cx, cy - 64, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '42px', color: '#ffb800' }).setOrigin(0.5);
     this.add.rectangle(cx, cy, 322, 16, 0x2a2a3e).setOrigin(0.5);
-    const bar = this.add.rectangle(cx - 159, cy, 0, 10, 0xff7b00).setOrigin(0, 0.5);
+    const bar = this.add.rectangle(cx - 159, cy, 0, 10, 0xff4500).setOrigin(0, 0.5);
     const pct = this.add.text(cx, cy + 30, 'loading… 0%', { fontFamily: 'monospace', fontSize: '13px', color: '#888888' }).setOrigin(0.5);
     this.add.text(cx, cy + 56, 'Loading Lava Leap…', {
       fontFamily: 'monospace', fontSize: '13px', color: '#9aa4b2' }).setOrigin(0.5);
@@ -23,6 +23,7 @@ export class BootScene extends Phaser.Scene {
       pct.setText(`loading… ${Math.round(p * 100)}%`);
     });
 
+    this.load.image('brand-logo', 'assets/brand/logo.png');
     this.load.image('platform', 'assets/platform.png');
     this.load.image('coin', 'assets/coin.png');
     this.load.image('lava', 'assets/lava-tile.png');

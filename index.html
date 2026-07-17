@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#ff4d00" />
+    <meta name="theme-color" content="#ff4500" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <meta name="description" content="Jump, climb, and escape rising lava in a fast arcade platformer." />
     <meta property="og:title" content="Lava Leap — Arcade Lava Climber" />
@@ -42,19 +42,19 @@
                    display: flex; flex-direction: column; align-items: center; justify-content: center;
                    font-family: monospace; text-align: center; transition: opacity 0.25s ease; }
       #preloader.done { opacity: 0; pointer-events: none; }
-      #preloader h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: 3px; color: #ff7b00; }
-      #preloader .sub { margin: 0 0 28px; font-size: 13px; color: #888; letter-spacing: 1px; }
+      #preloader h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: 3px; color: #ffb800; }
+      #preloader .sub { margin: 0 0 28px; font-size: 13px; color: #ff4500; letter-spacing: 1px; }
       #preloader .msg { font-size: 14px; margin-bottom: 14px; }
       #preloader .lava-bar { width: 220px; height: 10px; border-radius: 5px; overflow: hidden;
                              background: #26121a; box-shadow: 0 0 12px #ff4d0055; }
       #preloader .lava-bar::before { content: ''; display: block; height: 100%; width: 200%;
-                                     background: linear-gradient(90deg, #ff4d00, #ffb066, #ff2d55, #ff4d00);
+                                     background: linear-gradient(90deg, #ff4500, #ffb800, #ffd247, #ff4500);
                                      animation: lavaflow 1.2s linear infinite; }
       @keyframes lavaflow { from { transform: translateX(-50%); } to { transform: translateX(0); } }
       #preloader .build { margin-top: 22px; font-size: 11px; color: #666; }
       noscript .shell { position: fixed; inset: 0; z-index: 20; background: #10101a; color: #cfd8e3;
                         font-family: monospace; padding: 40px 24px; overflow: auto; text-align: center; }
-      noscript h1 { color: #ff7b00; letter-spacing: 3px; }
+      noscript h1 { color: #ffb800; letter-spacing: 3px; }
       noscript a { color: #16e0e0; }
     </style>
   </head>
@@ -62,7 +62,7 @@
     <div id="game"></div>
     <div id="preloader" aria-label="Loading Lava Leap">
       <h1>LAVA LEAP</h1>
-      <p class="sub">Arcade Lava Climber</p>
+      <p class="sub">ENDLESS CLIMB. BEAT THE TITAN.</p>
       <p class="msg">Loading Lava Leap&hellip;</p>
       <div class="lava-bar"></div>
       <p class="build">v%APP_VERSION% &middot; %BUILD_ID% &middot; %BUILD_DATE%</p>

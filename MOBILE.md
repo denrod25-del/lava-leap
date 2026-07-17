@@ -16,11 +16,17 @@ npm run build                 # produce dist/
 npx cap sync android          # copy dist/ into the native project
 ```
 
-## Regenerate the icon + splash (from the Lava Titan art)
+## Regenerate the icon + splash (from the brand art)
+The source art lives in `branding/` (logo, banner, brand sheet, concept art).
 ```bash
-node tools/gen-app-icon.mjs           # builds assets/icon.png + splash from public/assets/boss/titan.png
-npx capacitor-assets generate --android
+node tools/gen-brand-assets.mjs
 ```
+This pure-JS (jimp) script rebuilds everything from `branding/logo.png`: the in-game
+menu logo (`public/assets/brand/logo.png`), PWA icons, the OG share card, every
+Android launcher-icon/splash density under `android/app/src/main/res/`, and the iOS
+icon + splash in `ios/App/App/Assets.xcassets/`. No native binaries needed — the
+older `tools/gen-app-icon.mjs` + `npx capacitor-assets generate` flow (sharp-based)
+still exists but is superseded by this.
 
 ## Build a debug APK (sideloadable)
 ```bash
@@ -45,9 +51,17 @@ Sideload: copy the `.apk` to your phone (USB, Google Drive, email) and open it
 4. Upload the `.aab` at [play.google.com/console](https://play.google.com/console)
    (one-time $25 developer account).
 
-## iOS (App Store) — needs a Mac
-Apple requires macOS + Xcode to build/sign/submit. Options without buying a Mac:
-- A cloud-Mac CI such as [Codemagic](https://codemagic.io) or Ionic Appflow — point it
-  at this repo; it runs `npx cap add ios` + builds + submits.
-- Then `npx cap add ios` and open `ios/App/App.xcworkspace` in Xcode on that machine.
-Requires an Apple Developer account ($99/year).
+## iOS (App Store)
+The Capacitor iOS project is committed at `ios/` (Capacitor 8, Swift Package
+Manager — no CocoaPods needed) with the brand icon + splash already generated.
+After changing the game:
+```bash
+npm run build
+npx cap sync ios
+```
+Building/signing/submitting still requires macOS + Xcode (Apple's rule):
+- On a Mac: open `ios/App/App.xcodeproj` in Xcode, set your signing team, then
+  Product → Archive → Distribute.
+- Without a Mac: a cloud-Mac CI such as [Codemagic](https://codemagic.io) or
+  Ionic Appflow can build and submit straight from this repo.
+Either path requires an Apple Developer account ($99/year).

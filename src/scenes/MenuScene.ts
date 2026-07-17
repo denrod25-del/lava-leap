@@ -36,17 +36,20 @@ export class MenuScene extends Phaser.Scene {
     this.sound.stopAll();
     this.sound.play('sfx-music-menu', { loop: true, volume: (save.get().settings.musicVol / 10) * 0.6 });
     const cx = TUNING.width / 2;
-    if (this.textures.exists('boss-titan')) {
-      this.add.image(cx, 96, 'boss-titan').setDisplaySize(104, 104).setAlpha(0.95);
+    if (this.textures.exists('brand-logo')) {
+      // Brand wordmark art (tagline baked in) replaces the old text title + titan mark.
+      const logo = this.add.image(cx, 142, 'brand-logo');
+      logo.setDisplaySize(330, 330 * (logo.height / logo.width));
+    } else {
+      if (this.textures.exists('boss-titan')) {
+        this.add.image(cx, 96, 'boss-titan').setDisplaySize(104, 104).setAlpha(0.95);
+      }
+      this.add.text(cx, 180, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '48px', color: '#ffb800' }).setOrigin(0.5);
+      this.add.text(cx, 212, 'ENDLESS CLIMB. BEAT THE TITAN.', { fontFamily: 'monospace', fontSize: '15px', color: '#ff4500' }).setOrigin(0.5);
     }
-    this.add.text(cx, 180, 'LAVA LEAP', { fontFamily: 'monospace', fontSize: '48px', color: '#ff7b00' }).setOrigin(0.5);
-    this.add.text(cx, 212, 'Arcade Lava Climber', { fontFamily: 'monospace', fontSize: '15px', color: '#ffb066' }).setOrigin(0.5);
-    this.add.text(cx, 233, "Jump fast. Climb higher. Don't let the lava catch you.", {
-      fontFamily: 'monospace', fontSize: '11px', color: '#8a93a3',
-    }).setOrigin(0.5);
     const hi = save.get().highScore;
-    this.add.text(cx, 260, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
-    this.add.text(cx, 290, `Bank: ${save.get().coinBank} coins`, { fontFamily: 'monospace', fontSize: '16px', color: '#ffd166' }).setOrigin(0.5);
+    this.add.text(cx, 292, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
+    this.add.text(cx, 318, `Bank: ${save.get().coinBank} coins`, { fontFamily: 'monospace', fontSize: '16px', color: '#ffd247' }).setOrigin(0.5);
 
     const items: Array<{ line: string; tap: () => void }> = [
       { line: 'SPACE  Climb', tap: () => this.scene.start('Game', { daily: false }) },
@@ -73,8 +76,8 @@ export class MenuScene extends Phaser.Scene {
     // Big tap-to-start zone (mobile): a tap anywhere in the upper area starts a climb
     // instantly, so players don't have to hit the small "Climb" text. The secondary
     // option rows below (y >= 380) stay individually tappable.
-    const tapText = this.add.text(cx, 340, '▶  TAP TO CLIMB  ◀', {
-      fontFamily: 'monospace', fontSize: '20px', color: '#ffd166',
+    const tapText = this.add.text(cx, 348, '▶  TAP TO CLIMB  ◀', {
+      fontFamily: 'monospace', fontSize: '20px', color: '#ffb800',
     }).setOrigin(0.5);
     this.tweens.add({ targets: tapText, scale: 1.07, alpha: 0.75, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.add.rectangle(0, 0, TUNING.width, 365, 0xffffff, 0).setOrigin(0, 0).setDepth(50)
