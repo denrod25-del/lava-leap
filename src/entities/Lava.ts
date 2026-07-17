@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { zoneForHeight } from '../core/zones';
 
-const BASE_SPEED = 44;        // px/s upward (y decreases) — was 55; ~20% slower per play-testing
-const SPEED_PER_HEIGHT = 0.010; // extra px/s per px climbed — was 0.012, same slowdown on the ramp
+const BASE_SPEED = 35;        // px/s upward (y decreases) — was 55, then 44; two play-testing slowdowns
+const SPEED_PER_HEIGHT = 0.008; // extra px/s per px climbed — was 0.012, then 0.010; softened with each pass
 
 const GLOW_HEIGHT = 90; // px of gradient glow above the lava surface
 

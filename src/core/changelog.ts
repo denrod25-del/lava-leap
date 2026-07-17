@@ -5,7 +5,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   { version: '0.12.0', date: '2026-07-16', notes: [
     'Power-ups are now a real part of every climb — they spawn far more often, and the orange boost leads the pack as the most common of the four.',
     'Power-up pickups got a visual upgrade: distinct icons for each type, plus a pulse so they stand out.',
-    'The lava rises about 20% slower — more room to breathe, chain dashes, and go for style.',
+    'The lava rises about a third slower — more room to breathe, chain dashes, and go for style.',
   ]},
   { version: '0.11.0', date: '2026-07-14', notes: [
     'LEVELS MODE: a real 4-level campaign — The Magma Vault, The Forge, Ashfall, Obsidian Crown.',

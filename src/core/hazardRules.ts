@@ -3,9 +3,10 @@ import type { EnemyKind, PowerupKind } from './types';
 import type { Rng } from './rng';
 
 // Weighted kind mix — the rocket (orange boost) is deliberately the most common:
-// play-testing found the boost is the "fun one," so it leads the distribution.
+// play-testing found the boost is the "fun one," so it leads the distribution
+// (raised 0.4 → 0.55 on a second feedback round: "make more rockets").
 const POWERUP_WEIGHTS: ReadonlyArray<readonly [PowerupKind, number]> = [
-  ['rocket', 0.4], ['shield', 0.2], ['magnet', 0.2], ['slowlava', 0.2],
+  ['rocket', 0.55], ['shield', 0.15], ['magnet', 0.15], ['slowlava', 0.15],
 ];
 
 /** Decide whether a platform is a bounce pad. Consumes exactly 1 rng draw. */
