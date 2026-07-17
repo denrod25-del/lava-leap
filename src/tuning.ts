@@ -89,6 +89,16 @@ export const ENEMY = {
   bodyH: 20,
 } as const;
 
+// Ledge grab→vault (Kiko / any MovementProfile with ledgeGrab). Pure detection
+// in src/core/ledge.ts; state machine in Player.
+export const LEDGE = {
+  reachX: 10,            // px horizontal reach to catch an edge
+  hangMaxMs: 600,        // auto-drop after hanging this long (lava stays honest)
+  vaultVelocity: 620,    // upward impulse on vault — above Kiko's 560 ground jump
+  autoVaultDelayMs: 150, // AUTO scheme has no jump button: vault this long after grab
+  regrabCooldownMs: 300, // after any hang exit, no immediate re-grab
+} as const;
+
 // Touch run-joystick tuning (left-half floating stick → runAxis ∈ [-1,1]).
 export const TOUCH = {
   joystickRange: 60,     // px of finger travel from the origin = full run
