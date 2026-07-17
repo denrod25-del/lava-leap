@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   CHARACTERS, DEFAULT_CHARACTER, FRAME_NAMES,
   staticKey, frameKey, animKey, isCharacter,
+  DEFAULT_MOVEMENT, KIKO_MOVEMENT, resolveMovement,
 } from '../src/core/characters';
 import { characterAnims } from '../src/animManifest';
+import { TUNING } from '../src/tuning';
 
 describe('characters roster', () => {
   it('has ember (default), classic, and cole — all price 0', () => {
@@ -63,5 +65,28 @@ describe('cole (v0.9.0)', () => {
   it('ember and classic remain un-gated', () => {
     expect(CHARACTERS.find((c) => c.id === 'ember')!.unlock).toBeUndefined();
     expect(CHARACTERS.find((c) => c.id === 'classic')!.unlock).toBeUndefined();
+  });
+});
+
+describe('movement profiles (v0.13.0)', () => {
+  it('DEFAULT_MOVEMENT is byte-equal to the standard TUNING kit', () => {
+    expect(DEFAULT_MOVEMENT.jumpVelocity).toBe(TUNING.jumpVelocity);
+    expect(DEFAULT_MOVEMENT.airJumpVelocity).toBe(TUNING.doubleJumpVelocity);
+    expect(DEFAULT_MOVEMENT.maxJumps).toBe(2);
+    expect(DEFAULT_MOVEMENT.ledgeGrab).toBe(false);
+  });
+
+  it('every existing roster character resolves to the default (physics provably unchanged)', () => {
+    for (const id of ['ember', 'classic', 'cole']) {
+      expect(resolveMovement(id)).toEqual(DEFAULT_MOVEMENT);
+    }
+    expect(resolveMovement('nonsense-id')).toEqual(DEFAULT_MOVEMENT);
+  });
+
+  it("Kiko's kit: springy triple jump + ledge grab", () => {
+    expect(KIKO_MOVEMENT.maxJumps).toBe(3);
+    expect(KIKO_MOVEMENT.jumpVelocity).toBeLessThan(TUNING.jumpVelocity);
+    expect(KIKO_MOVEMENT.airJumpVelocity).toBeLessThan(TUNING.doubleJumpVelocity);
+    expect(KIKO_MOVEMENT.ledgeGrab).toBe(true);
   });
 });
