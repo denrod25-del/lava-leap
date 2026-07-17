@@ -5,7 +5,7 @@ import {
   DEFAULT_MOVEMENT, KIKO_MOVEMENT, resolveMovement,
 } from '../src/core/characters';
 import { characterAnims } from '../src/animManifest';
-import { TUNING } from '../src/tuning';
+import { TUNING, REACH } from '../src/tuning';
 
 describe('characters roster', () => {
   it('has ember (default), classic, and cole — all price 0', () => {
@@ -88,5 +88,19 @@ describe('movement profiles (v0.13.0)', () => {
     expect(KIKO_MOVEMENT.jumpVelocity).toBeLessThan(TUNING.jumpVelocity);
     expect(KIKO_MOVEMENT.airJumpVelocity).toBeLessThan(TUNING.doubleJumpVelocity);
     expect(KIKO_MOVEMENT.ledgeGrab).toBe(true);
+  });
+});
+
+describe('Kiko reach validity (spec §7 — definition of done, not optional)', () => {
+  const apex = (v: number) => (v * v) / (2 * TUNING.gravityY);
+
+  it('two of three jumps clear the max generated vertical gap with margin; the third is spare', () => {
+    const twoJump = apex(KIKO_MOVEMENT.jumpVelocity) + apex(KIKO_MOVEMENT.airJumpVelocity);
+    expect(twoJump).toBeGreaterThanOrEqual(REACH.maxVerticalGap + 10);
+    // Full kit exceeds the standard character's two-jump total — Kiko is never
+    // reach-disadvantaged overall.
+    const kikoTotal = twoJump + apex(KIKO_MOVEMENT.airJumpVelocity);
+    const standardTotal = apex(TUNING.jumpVelocity) + apex(TUNING.doubleJumpVelocity);
+    expect(kikoTotal).toBeGreaterThanOrEqual(standardTotal);
   });
 });
