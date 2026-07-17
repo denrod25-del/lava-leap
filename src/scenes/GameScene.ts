@@ -470,6 +470,9 @@ export class GameScene extends Phaser.Scene {
     if (!this.revivedThisRun && save.get().upgrades.revive > 0) {
       this.revivedThisRun = true;
       // Lift the player back to safety above the lava, with a fresh shield + brief grace.
+      // A mid-hang revive must abort the hang first, or the teleported player would
+      // stay frozen (gravity off) at the revive point until the hang timeout.
+      this.player.clearHang();
       const safeY = this.lava.surfaceY - 220;
       const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
       body.reset(TUNING.playerStartX, safeY);

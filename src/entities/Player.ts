@@ -48,6 +48,15 @@ export class Player {
   /** Refresh the air-dash mid-air (coin grabs; stomp/bounce already refresh). */
   refreshDash(): void { this.dashAvailable = true; }
 
+  /** Abort any ledge hang (e.g. the revive teleport): restore gravity so the
+   *  player can't stay frozen mid-air at the revive point. */
+  clearHang(): void {
+    if (!this.hanging) return;
+    this.hanging = false;
+    this.regrabTimer = LEDGE.regrabCooldownMs;
+    (this.sprite.body as Body).setAllowGravity(true);
+  }
+
   /** Tiny upward kick on successful stomp, refreshes air abilities. */
   stompBounce(): void {
     this.sprite.setVelocityY(-TUNING.stompBounceVelocity);
@@ -314,7 +323,11 @@ export class Player {
     else if (moving) state = 'run';
     else state = 'idle';
     const key = animKey(this.charId, state);
-    if (this.scene.anims.exists(key) && this.sprite.anims.getName() !== key) {
+    // Also re-play when nothing is running: a ledge hang stops anims but leaves
+    // currentAnim set, so the name check alone would leave the static hang pose
+    // stuck through a post-drop fall.
+    if (this.scene.anims.exists(key)
+        && (this.sprite.anims.getName() !== key || !this.sprite.anims.isPlaying)) {
       this.sprite.anims.play(key, true);
     }
   }
