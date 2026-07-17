@@ -15,12 +15,12 @@
   "dependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.2",
     "phaser": "^3.80.1"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.4.1",
-    "@capacitor/ios": "^8.4.2",
     "@playwright/test": "^1.60.0",
     "jimp": "^1.6.1",
     "typescript": "^5.4.0",
