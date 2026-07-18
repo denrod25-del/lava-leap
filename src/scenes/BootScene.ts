@@ -32,10 +32,10 @@ export class BootScene extends Phaser.Scene {
     // Hand-painted zone environments (parallax far backdrop) + UI screen art.
     // Optional: GameScene / MenuScene / GameOverScene fall back to procedural
     // rendering when these textures aren't present.
-    for (let z = 0; z < 4; z++) this.load.image(`bg-z${z}`, `assets/backgrounds/bg-z${z}.png`);
-    this.load.image('bg-menu', 'assets/backgrounds/menu.png');
-    this.load.image('bg-victory', 'assets/backgrounds/victory.png');
-    this.load.image('bg-gameover', 'assets/backgrounds/gameover.png');
+    for (let z = 0; z < 4; z++) this.load.image(`bg-z${z}`, `assets/backgrounds/bg-z${z}.jpg`);
+    this.load.image('bg-menu', 'assets/backgrounds/menu.jpg');
+    this.load.image('bg-victory', 'assets/backgrounds/victory.jpg');
+    this.load.image('bg-gameover', 'assets/backgrounds/gameover.jpg');
     for (const c of CHARACTERS) {
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
       for (const name of FRAME_NAMES) {
