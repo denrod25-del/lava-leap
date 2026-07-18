@@ -36,6 +36,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image('bg-menu', 'assets/backgrounds/menu.jpg');
     this.load.image('bg-victory', 'assets/backgrounds/victory.jpg');
     this.load.image('bg-gameover', 'assets/backgrounds/gameover.jpg');
+    // Pattern textures (UI backdrops, ambient overlays, menu accents).
+    this.load.image('ui-plate', 'assets/ui-plate.png');
+    this.load.image('ash', 'assets/ash.png');
+    this.load.image('grid', 'assets/grid.png');
+    this.load.image('ember', 'assets/ember.png');
+    this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
       for (const name of FRAME_NAMES) {

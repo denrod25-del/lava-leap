@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save } from '../main';
 import { track } from '../core/track';
+import { addUiBackdrop } from './uiBackdrop';
 
 const OPTIONS = ['Resume', 'Restart', 'Settings', 'Quit to Menu'] as const;
 
@@ -13,7 +14,8 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     const cx = TUNING.width / 2;
-    this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x000000, 0.6).setOrigin(0, 0);
+    // Forged-metal pause panel; kept semi-transparent so the frozen run peeks through.
+    addUiBackdrop(this, 0.82, 0.15);
     this.add.text(cx, 200, 'PAUSED', { fontFamily: 'monospace', fontSize: '36px', color: '#ffb066' }).setOrigin(0.5);
     this.rows = OPTIONS.map((o, i) =>
       this.add.text(cx, 290 + i * 40, o, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' })

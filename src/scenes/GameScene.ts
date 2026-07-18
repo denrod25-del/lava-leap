@@ -62,6 +62,7 @@ export class GameScene extends Phaser.Scene {
   private booked = false;
   private bgFar!: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image;
   private bgNear!: Phaser.GameObjects.TileSprite;
+  private ash?: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
   private audio!: AudioDirector;
@@ -230,6 +231,29 @@ export class GameScene extends Phaser.Scene {
     this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(startBg.zone).near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
+    // Ambient atmosphere (screen-space, behind gameplay): warm volcanic-ash haze
+    // drifting over the view + slow rising embers. Both degrade to nothing if the
+    // pattern textures aren't present.
+    if (this.textures.exists('ash')) {
+      this.ash = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, 'ash')
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(-8).setAlpha(0.10)
+        .setBlendMode(Phaser.BlendModes.ADD);
+    }
+    if (this.textures.exists('ember')) {
+      this.add.particles(0, 0, 'ember', {
+        x: { min: 0, max: TUNING.width },
+        y: TUNING.height + 8,
+        lifespan: { min: 3200, max: 6500 },
+        speedY: { min: -26, max: -64 },
+        speedX: { min: -14, max: 14 },
+        scale: { start: 0.55, end: 0.05 },
+        alpha: { start: 0.8, end: 0 },
+        frequency: 300,
+        quantity: 1,
+        blendMode: 'ADD',
+      }).setScrollFactor(0).setDepth(-8);
+    }
+
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
     this.runSeed = seed;
     this.stream = new LevelStream(seed, startHeightOffset);
@@ -396,6 +420,7 @@ export class GameScene extends Phaser.Scene {
       this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
     }
     this.bgNear.tilePositionY = this.cameras.main.scrollY * 0.5;
+    if (this.ash) { this.ash.tilePositionX += 0.12; this.ash.tilePositionY -= 0.05; }
 
     const cameraTopY = this.cameras.main.scrollY;
     const pruneBelowY = this.cameras.main.scrollY + TUNING.height + 100;

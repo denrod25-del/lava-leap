@@ -43,6 +43,15 @@ export class MenuScene extends Phaser.Scene {
       this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x0a0508, 0.35)
         .setOrigin(0, 0).setDepth(-9);
     }
+    // Faint carved-titan emblem watermark + a subtle retro arcade grid.
+    if (this.textures.exists('titan-emblem')) {
+      this.add.image(cx, 410, 'titan-emblem').setDisplaySize(360, 360)
+        .setDepth(-9).setAlpha(0.06);
+    }
+    if (this.textures.exists('grid')) {
+      this.add.tileSprite(0, 0, TUNING.width, TUNING.height, 'grid')
+        .setOrigin(0, 0).setDepth(-8).setAlpha(0.10);
+    }
     if (this.textures.exists('boss-titan')) {
       this.add.image(cx, 96, 'boss-titan').setDisplaySize(104, 104).setAlpha(0.95);
     }

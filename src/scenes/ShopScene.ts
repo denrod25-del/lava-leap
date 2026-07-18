@@ -3,6 +3,7 @@ import { TUNING, UPGRADES } from '../tuning';
 import { save } from '../main';
 import { CHARACTERS, frameKey } from '../core/characters';
 import { track } from '../core/track';
+import { addUiBackdrop } from './uiBackdrop';
 
 export interface CosmeticDef { id: string; name: string; tint: number; price: number }
 
@@ -34,6 +35,7 @@ export class ShopScene extends Phaser.Scene {
 
   create(): void {
     const cx = TUNING.width / 2;
+    addUiBackdrop(this);
     this.add.text(cx, 60, 'SHOP', { fontFamily: 'monospace', fontSize: '32px', color: '#ffd166' }).setOrigin(0.5);
     this.bankText = this.add.text(cx, 100, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
 

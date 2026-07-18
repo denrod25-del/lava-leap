@@ -74,6 +74,13 @@ def _save(arr, name):
     Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), 'RGB').save(os.path.join(OUT, name))
 
 
+def _save_rgba(rgb, alpha, name):
+    """rgb: HxWx3 float 0..255, alpha: HxW float 0..1."""
+    a = np.clip(alpha, 0, 1)[:, :, None] * 255
+    out = np.concatenate([np.clip(rgb, 0, 255), a], axis=-1).astype(np.uint8)
+    Image.fromarray(out, 'RGBA').save(os.path.join(OUT, name))
+
+
 # ----------------------------------------------------------------------------
 # ROCK — platform ledge (64x16, grayscale, tint-friendly)
 # ----------------------------------------------------------------------------
@@ -127,10 +134,129 @@ def gen_lava():
     _save(img, 'lava-tile.png')
 
 
+# ----------------------------------------------------------------------------
+# CHAIN / METAL — UI panel backdrop (128x128 seamless, dark forged plate)
+# ----------------------------------------------------------------------------
+def gen_ui_plate():
+    W = H = 128
+    grain = tileable_fbm(W, H, 8, 4, seed=5)
+    base = 26 + 16 * grain                                   # dark steel
+    # brushed-metal horizontal streaks
+    base += (tileable_fbm(W, H, 2, 2, seed=9) - 0.5) * 10
+    val = base.copy()
+    yy, xx = np.mgrid[0:H, 0:W]
+    # riveted panel seams: a border groove every 64px (tiles), + rivets at corners
+    seam = ((xx % 64 < 2) | (yy % 64 < 2)).astype(float)
+    val -= seam * 12                                         # recessed groove
+    val += (((xx % 64 == 2) | (yy % 64 == 2)).astype(float)) * 8   # lit lip
+    img = np.stack([val * 0.95, val * 0.97, val * 1.06], -1)  # cool steel cast
+    # rivets on the 64-grid corners
+    for cy in (0, 64):
+        for cx in (0, 64):
+            d = (xx - cx) ** 2 + (yy - cy) ** 2
+            r = np.clip(1 - d / 20, 0, 1)
+            img += r[:, :, None] * np.array([34, 30, 26], float)
+            img += np.clip(1 - ((xx - cx + 1) ** 2 + (yy - cy + 1) ** 2) / 6, 0, 1)[:, :, None] * 26
+    _save(img, 'ui-plate.png')
+
+
+# ----------------------------------------------------------------------------
+# VOLCANIC ASH — drifting haze overlay (256x256 seamless, additive wisps)
+# ----------------------------------------------------------------------------
+def gen_ash():
+    W = H = 256
+    clouds = tileable_fbm(W, H, 3, 6, seed=61)
+    wisp = np.clip(clouds - 0.42, 0, 1) ** 1.6              # sparse light wisps
+    val = wisp * 150
+    img = np.stack([val, val * 0.82, val * 0.66], -1)       # warm ash lit by lava
+    _save(img, 'ash.png')                                   # used ADD-blended, low alpha
+
+
+# ----------------------------------------------------------------------------
+# ARCADE GRID — retro overlay (64x64 seamless RGBA, glowing red lines)
+# ----------------------------------------------------------------------------
+def gen_grid():
+    W = H = 64
+    yy, xx = np.mgrid[0:H, 0:W]
+    line = ((xx < 1) | (yy < 1)).astype(float)              # 1px lines at cell edges
+    node = np.clip(1 - ((xx) ** 2 + (yy) ** 2) / 6, 0, 1)   # brighter node at corner
+    node += np.clip(1 - ((xx - W) ** 2 + (yy) ** 2) / 6, 0, 1)
+    node += np.clip(1 - ((xx) ** 2 + (yy - H) ** 2) / 6, 0, 1)
+    inten = np.clip(line * 0.7 + node, 0, 1)
+    # soft glow around the lines
+    glow = np.asarray(Image.fromarray((inten * 255).astype(np.uint8))
+                      .filter(ImageFilter.GaussianBlur(0.8))).astype(float) / 255.0
+    rgb = np.stack([np.full((H, W), 255.0), np.full((H, W), 70.0), np.full((H, W), 60.0)], -1)
+    _save_rgba(rgb, np.clip(inten + glow * 0.5, 0, 1), 'grid.png')
+
+
+# ----------------------------------------------------------------------------
+# EMBER PARTICLES — soft glowing dot sprite (16x16 RGBA, additive)
+# ----------------------------------------------------------------------------
+def gen_ember():
+    S = 16
+    yy, xx = np.mgrid[0:S, 0:S].astype(float)
+    d = np.sqrt((xx - (S - 1) / 2) ** 2 + (yy - (S - 1) / 2) ** 2) / (S / 2)
+    a = np.clip(1 - d, 0, 1) ** 2
+    core = np.clip(1 - d * 2.2, 0, 1)
+    rgb = np.stack([np.full((S, S), 255.0),
+                    120 + 110 * core,          # hotter center
+                    40 + 120 * core], -1)
+    _save_rgba(rgb, a, 'ember.png')
+
+
+# ----------------------------------------------------------------------------
+# TITAN EMBLEM — menu watermark (256 RGBA, glowing carved demon face)
+# ----------------------------------------------------------------------------
+def gen_titan_emblem():
+    from PIL import ImageDraw
+    S = 256
+    mask = Image.new('L', (S, S), 0)
+    d = ImageDraw.Draw(mask)
+    cx = S / 2
+
+    def mirror(pts):
+        return [(S - x, y) for (x, y) in pts]
+    # horns (up-swept)
+    horn = [(cx - 8, 70), (78, 20), (96, 26), (cx - 12, 92)]
+    d.polygon(horn, fill=230); d.polygon(mirror(horn), fill=230)
+    # angry brow ridge
+    d.polygon([(cx - 84, 96), (cx - 6, 84), (cx - 10, 112), (cx - 80, 120)], fill=200)
+    d.polygon(mirror([(cx - 84, 96), (cx - 6, 84), (cx - 10, 112), (cx - 80, 120)]), fill=200)
+    # eyes (slanted, glowing)
+    eye = [(cx - 74, 116), (cx - 30, 108), (cx - 36, 140), (cx - 70, 138)]
+    d.polygon(eye, fill=255); d.polygon(mirror(eye), fill=255)
+    # snarling fanged mouth (zigzag)
+    teeth = []
+    n = 7
+    for i in range(n + 1):
+        x = cx - 84 + i * (168 / n)
+        teeth.append((x, 176 + (18 if i % 2 else 0)))
+    mouth = [(cx - 88, 168)] + teeth + [(cx + 88, 168)]
+    d.polygon(mouth, fill=255)
+    # jaw sides
+    d.polygon([(cx - 90, 150), (cx - 78, 150), (cx - 60, 210), (cx - 84, 196)], fill=180)
+    d.polygon(mirror([(cx - 90, 150), (cx - 78, 150), (cx - 60, 210), (cx - 84, 196)]), fill=180)
+
+    m = np.asarray(mask).astype(float) / 255.0
+    glow = np.asarray(mask.filter(ImageFilter.GaussianBlur(6))).astype(float) / 255.0
+    inten = np.clip(m + glow * 0.6, 0, 1)
+    rgb = np.stack([np.full((S, S), 255.0),
+                    90 + 120 * m,              # cores whiter-hot
+                    20 + 70 * m], -1)
+    _save_rgba(rgb, inten, 'titan-emblem.png')
+
+
 def main():
     gen_platform()
     gen_lava()
-    for f in ('platform.png', 'lava-tile.png'):
+    gen_ui_plate()
+    gen_ash()
+    gen_grid()
+    gen_ember()
+    gen_titan_emblem()
+    for f in ('platform.png', 'lava-tile.png', 'ui-plate.png', 'ash.png',
+              'grid.png', 'ember.png', 'titan-emblem.png'):
         p = os.path.join(OUT, f)
         print(f, Image.open(p).size, os.path.getsize(p), 'bytes')
 

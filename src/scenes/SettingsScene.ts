@@ -3,6 +3,7 @@ import { TUNING } from '../tuning';
 import { save, leaderboard } from '../main';
 import { APP_NAME, APP_VERSION, BUILD_ID, BUILD_DATE } from '../core/buildInfo';
 import { promptName } from '../entities/NameEntry';
+import { addUiBackdrop } from './uiBackdrop';
 
 const ROWS = ['Music volume', 'SFX volume', 'Screen shake', 'Reduce motion', 'Controls', 'Replay tutorial', 'Name'] as const;
 
@@ -19,7 +20,7 @@ export class SettingsScene extends Phaser.Scene {
 
   create(): void {
     const cx = TUNING.width / 2;
-    this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x000000, 0.7).setOrigin(0, 0);
+    addUiBackdrop(this);
     this.add.text(cx, 180, 'SETTINGS', { fontFamily: 'monospace', fontSize: '30px', color: '#ffb066' }).setOrigin(0.5);
     this.rows = ROWS.map((_r, i) =>
       this.add.text(cx, 270 + i * 44, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
