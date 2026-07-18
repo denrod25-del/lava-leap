@@ -15,9 +15,13 @@ export class GameOverScene extends Phaser.Scene {
     // Dimmed with a dark scrim so the score readout stays readable.
     const bgKey = cleared ? 'bg-victory' : 'bg-gameover';
     if (this.textures.exists(bgKey)) {
+      // The victory sunburst is uniformly bright, so dim it harder than the
+      // dark Titan art to keep the cyan/white readout legible over it.
+      const imgAlpha = cleared ? 0.5 : 0.6;
+      const scrimAlpha = cleared ? 0.5 : 0.4;
       this.add.image(0, 0, bgKey).setOrigin(0, 0)
-        .setDisplaySize(TUNING.width, TUNING.height).setDepth(-10).setAlpha(0.6);
-      this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x0a0508, 0.4)
+        .setDisplaySize(TUNING.width, TUNING.height).setDepth(-10).setAlpha(imgAlpha);
+      this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x0a0508, scrimAlpha)
         .setOrigin(0, 0).setDepth(-9);
     }
     this.add.text(cx, 200, cleared ? 'LEVEL CLEAR' : 'YOU MELTED', {
