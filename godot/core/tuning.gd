@@ -73,3 +73,28 @@ const POWERUP_MAGNET_PULL := 320.0
 const POWERUP_SLOWLAVA_MS := 6000.0
 const POWERUP_SLOWLAVA_FACTOR := 0.5
 const POWERUP_PICKUP_SIZE := 16.0
+
+# Combo multiplier (COMBO in src/tuning.ts) — grows with pickup/kill actions,
+# decays to 1 after a quiet window.
+const COMBO_STEP := 0.5
+const COMBO_MAX := 5.0
+const COMBO_DECAY_MS := 2500.0
+
+# Points each combo action is worth before the combo x heat multiplier
+# (COMBO_POINTS in src/tuning.ts).
+const COMBO_POINTS_COIN := 10
+const COMBO_POINTS_STOMP := 25
+const COMBO_POINTS_BOUNCE := 5
+const COMBO_POINTS_POWERUP := 15
+
+# Dash-Flow momentum meter (FLOW in src/tuning.ts). value in [0,1] -> 4 tiers.
+const FLOW_BUILD_AIRBORNE_PER_SEC := 0.02
+const FLOW_BUILD_DASHING_PER_SEC := 0.30
+const FLOW_BEAT_BONUS := 0.12
+const FLOW_DRAIN_GROUND_PER_SEC := 0.25
+const FLOW_GROUND_GRACE_MS := 350.0
+const FLOW_TIER_THRESHOLDS := [0.25, 0.55, 0.85]           # Warm/Hot/Blazing lower bounds
+const FLOW_TIER_NAMES := ["COOL", "WARM", "HOT", "BLAZING"]
+const FLOW_HEAT_MULTIPLIERS := [1.0, 1.25, 1.6, 2.0]       # score multiplier per tier
+const FLOW_SPEED_NUDGE := [0.0, 0.0, 0.04, 0.08]           # move-speed fraction per tier
+const FLOW_COMBINED_CAP := 8.0                             # max combo x heat for pickups

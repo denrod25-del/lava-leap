@@ -26,8 +26,17 @@ var _active_kind := ""         # timed effect: "rocket" | "magnet" | "slowlava"
 var _active_ms := 0.0          # remaining duration of the timed effect
 var _coin_nodes: Array = []    # live coins, for the magnet pull (pruned lazily)
 
+# Flow + combo momentum, and the derived score.
+var _flow: FlowMeter
+var _combo: ComboTracker
+var _bonus_score := 0          # already-multiplied pickup/kill points
+var _heat_acc := 0.0           # fractional Flow-heat bonus on height gained
+var _was_dashing := false      # rising-edge detect so a dash beats Flow once
+
 func _ready() -> void:
 	_stream = LevelStream.new(randi())
+	_flow = FlowMeter.new()
+	_combo = ComboTracker.new()
 
 	_bg = Background.new()
 	add_child(_bg)
@@ -65,25 +74,43 @@ func _physics_process(delta: float) -> void:
 
 	_sync_platforms()
 
+	var dt_ms := delta * 1000.0
+
 	# Platforms the player is standing on: crumbling ones start to drop, bounce
-	# pads launch them skyward.
+	# pads launch them skyward (once per landing, guarded on downward velocity).
 	for i in _player.get_slide_collision_count():
 		var c := _player.get_slide_collision(i)
 		if c.get_collider() is Platform and c.get_normal().y < -0.5:
 			var plat := c.get_collider() as Platform
 			plat.on_stood()
-			if plat.desc != null and plat.desc.bounce:
+			if plat.desc != null and plat.desc.bounce and _player.velocity.y >= 0.0:
 				_player.spring(Tuning.BOUNCE_PAD_VELOCITY)
+				_combo_action(Tuning.COMBO_POINTS_BOUNCE)
+				_flow.beat()
+
+	# Flow momentum: build airborne/dashing, drain on the ground, beat on dash.
+	var dashing := _player.is_dashing()
+	if dashing and not _was_dashing:
+		_flow.beat()
+	_was_dashing = dashing
+	_flow.update(dt_ms, not _player.is_on_floor(), dashing)
+	_combo.update(dt_ms)
+	_player.speed_scale = 1.0 + _flow.speed_nudge()
 
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
+	# Flow heat: newly-gained height earns (heat - 1) bonus points before we bank
+	# the new max, so the multiplier only rewards fresh climbing.
+	var heat := _flow.heat_multiplier()
+	if heat > 1.0 and climbed > _max_height:
+		_heat_acc += (climbed - _max_height) * (heat - 1.0)
 	_max_height = maxf(_max_height, climbed)
 	_bg.update_height(_max_height)
 
 	# Timed power-ups (rocket boost, magnet, slow-lava) tick every frame, including
 	# during grace; the returned factor slows the lava while slow-lava is active.
 	var lava_factor := _update_powerups(delta)
-	_hud.text = "Height: %d\nCoins: %d\nKills: %d\nPower:%s" % \
-		[int(_max_height), _coins, _kills, _power_label()]
+	_hud.text = "Score: %d\nHeight: %d  Coins: %d  Kills: %d\nFlow: %s  Combo: x%.1f%s" % \
+		[_score(), int(_max_height), _coins, _kills, _flow.tier_name(), _combo.multiplier, _power_label()]
 
 	# Grace period at the start so you can settle + test movement before the lava
 	# becomes a threat.
@@ -126,13 +153,28 @@ func _spawn_platform(d: PlatformDesc) -> void:
 
 func _on_coin() -> void:
 	_coins += 1
+	_player.refresh_dash()  # mid-air coin grab re-arms the dash (chain enabler)
+	_combo_action(Tuning.COMBO_POINTS_COIN)
+	_flow.beat()
 
 func _on_enemy_stomped() -> void:
 	_kills += 1
 	_player.spring(Tuning.ENEMY_STOMP_BOUNCE)  # spring off the squashed enemy
+	_combo_action(Tuning.COMBO_POINTS_STOMP)
+	_flow.beat()
 
 func _on_enemy_killed() -> void:
 	_kills += 1
+	_combo_action(Tuning.COMBO_POINTS_STOMP)
+
+## Bump the combo and bank base points scaled by combo x heat (capped).
+func _combo_action(base_points: int) -> void:
+	_combo.bump()
+	var combined := FlowMeter.combined_multiplier(_combo.multiplier, _flow.heat_multiplier())
+	_bonus_score += int(floor(base_points * combined))
+
+func _score() -> int:
+	return int(_max_height) + _bonus_score + int(_heat_acc)
 
 func _on_player_hit() -> void:
 	# The shield absorbs one otherwise-lethal hit.
@@ -142,6 +184,7 @@ func _on_player_hit() -> void:
 	_dead = true
 
 func _on_powerup(kind: String) -> void:
+	_combo_action(Tuning.COMBO_POINTS_POWERUP)
 	if kind == "shield":
 		_shield = true
 		return

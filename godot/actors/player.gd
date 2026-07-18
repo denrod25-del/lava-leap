@@ -8,6 +8,7 @@ extends CharacterBody2D
 ## Arcade, so these numbers are a starting point for a re-tuning pass against the
 ## web build (plan §7). Ledge-grab/vault, animations, and juice come later.
 
+var speed_scale := 1.0   # Flow heat nudges run speed (set by the game each frame)
 var _facing := 1
 var _coyote_ms := 0.0
 var _buffer_ms := 0.0
@@ -18,6 +19,10 @@ var _max_jumps := 2
 
 func is_dashing() -> bool:
 	return _dash_ms > 0.0
+
+## Re-arm the air-dash (mid-air coin grab, per the web build's chain enabler).
+func refresh_dash() -> void:
+	_dash_ready = true
 
 ## Launch the player upward and refresh air moves (bounce pad / stomp / rocket).
 ## Mirrors Player.bounce/stompBounce/applyRocket in the web build.
@@ -63,7 +68,7 @@ func _physics_process(delta: float) -> void:
 		_facing = 1
 	elif dir < -0.01:
 		_facing = -1
-	velocity.x = dir * Tuning.MOVE_SPEED
+	velocity.x = dir * Tuning.MOVE_SPEED * speed_scale
 
 	# --- Gravity, wall-slide clamp, fast-fall ---
 	var on_wall := is_on_wall() and not on_floor
