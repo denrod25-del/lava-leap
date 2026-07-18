@@ -9,7 +9,11 @@ func _ready() -> void:
 	var rng := Rng.new(123)
 	var sample := "%f, %f, %f" % [rng.next(), rng.next(), rng.next()]
 	var actions := "move_left/right, jump, dash, fast_fall, pause"
-	_label.text = "LAVA LEAP — Godot port\nPhase 0 scaffold\n\nRNG(123): %s\nInput actions: %s" % [sample, actions]
+	var lines := PackedStringArray([
+		"LAVA LEAP — Godot port", "Phase 0 scaffold", "",
+		"RNG(123): " + sample, "Input actions: " + actions,
+	])
+	_label.text = "\n".join(lines)
 	print("[Lava Leap/Godot] Phase 0 boot OK. RNG(123) first: ", sample)
 	print("[Lava Leap/Godot] Gameplay input actions registered: ",
 		InputMap.has_action("jump") and InputMap.has_action("dash"))
