@@ -102,5 +102,14 @@ func next() -> PlatformDesc:
 	# the web build: the rng draw is skipped for crumbling ones).
 	p.has_coin = p.type != "crumbling" and _rng.next() < Reach.COIN_CHANCE
 
+	# Enemy attachment: static platforms only, above the grace height (matches the
+	# web build's "static only" rule). A stomp target the player must clear.
+	var climbed := Tuning.GROUND_Y - p.y
+	if p.type == "static" and climbed >= Tuning.ENEMY_GRACE_HEIGHT:
+		var has_enemy := _rng.next() < Tuning.ENEMY_BASE_CHANCE + Tuning.ENEMY_CHANCE_PER_T * t
+		var is_drifter := _rng.next() < Tuning.ENEMY_DRIFTER_SHARE
+		if has_enemy:
+			p.enemy = "drifter" if is_drifter else "crawler"
+
 	_last = p
 	return p

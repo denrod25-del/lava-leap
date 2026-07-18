@@ -16,6 +16,9 @@ var _dash_ms := 0.0
 var _dash_ready := true
 var _max_jumps := 2
 
+func is_dashing() -> bool:
+	return _dash_ms > 0.0
+
 func _ready() -> void:
 	queue_redraw()
 

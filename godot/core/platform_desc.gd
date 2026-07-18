@@ -12,6 +12,10 @@ var type: String = "static"  # "static" | "crumbling" | "moving"
 var has_coin: bool = false
 var move_range: float = 0.0  # px travel from origin to each extreme (moving only)
 var move_speed: float = 0.0  # px/s
+var enemy: String = ""       # "" | "crawler" | "drifter"
 
 func is_moving() -> bool:
 	return type == "moving" and move_range > 0.0
+
+func has_enemy() -> bool:
+	return enemy != ""

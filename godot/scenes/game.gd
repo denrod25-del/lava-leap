@@ -15,6 +15,8 @@ var _stream: LevelStream
 var _plats: Dictionary = {}        # PlatformDesc.id -> Platform node
 var _max_height := 0.0
 var _coins := 0
+var _kills := 0
+var _dead := false
 var _grace := 2.5              # seconds before the lava starts rising
 var _hud: Label
 
@@ -66,7 +68,7 @@ func _physics_process(delta: float) -> void:
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
 	_max_height = maxf(_max_height, climbed)
 	_bg.update_height(_max_height)
-	_hud.text = "Height: %d\nCoins: %d" % [int(_max_height), _coins]
+	_hud.text = "Height: %d\nCoins: %d\nKills: %d" % [int(_max_height), _coins, _kills]
 
 	# Grace period at the start so you can settle + test movement before the lava
 	# becomes a threat.
@@ -75,9 +77,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		_lava.rise(delta, _max_height)
 
-	# Death: caught by lava, or fell well below the view.
+	# Death: hit by an enemy, caught by lava, or fell well below the view.
 	var cam_bottom := _cam.position.y + Tuning.HEIGHT / 2.0
-	if _player.position.y >= _lava.surface_y or _player.position.y > cam_bottom + 120.0:
+	if _dead or _player.position.y >= _lava.surface_y or _player.position.y > cam_bottom + 120.0:
 		get_tree().reload_current_scene()
 
 func _spawn_platform(d: PlatformDesc) -> void:
@@ -91,10 +93,27 @@ func _spawn_platform(d: PlatformDesc) -> void:
 		coin.position = Vector2(0.0, -Tuning.PLATFORM_H / 2.0 - 22.0)  # float above the top
 		coin.collected.connect(_on_coin)
 		p.add_child(coin)
+	if d.has_enemy():
+		var enemy := Enemy.new()
+		enemy.setup(d, _player)
+		enemy.stomped.connect(_on_enemy_stomped)
+		enemy.killed.connect(_on_enemy_killed)
+		enemy.hit_player.connect(_on_player_hit)
+		p.add_child(enemy)
 	_plats[d.id] = p
 
 func _on_coin() -> void:
 	_coins += 1
+
+func _on_enemy_stomped() -> void:
+	_kills += 1
+	_player.velocity.y = -Tuning.ENEMY_STOMP_BOUNCE  # spring off the squashed enemy
+
+func _on_enemy_killed() -> void:
+	_kills += 1
+
+func _on_player_hit() -> void:
+	_dead = true
 
 func _sync_platforms() -> void:
 	var cam_top := _cam.position.y - Tuning.HEIGHT / 2.0

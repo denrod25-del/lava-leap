@@ -39,3 +39,19 @@ const PLATFORM_H := 16.0
 const LAVA_BASE_SPEED := 35.0
 const LAVA_SPEED_PER_HEIGHT := 0.008
 const LAVA_START_BELOW := 500.0       # starts this far below the ground platform
+
+# Enemies (from src/tuning.ts ENEMY + src/tuning.ts HAZARD enemy rolls).
+const ENEMY_CRAWLER_SPEED := 55.0     # px/s patrol speed along the platform
+const ENEMY_DRIFTER_AMPLITUDE := 30.0 # px sine-bob amplitude
+const ENEMY_DRIFTER_FREQ := 1.4       # Hz of the bob
+const ENEMY_DRIFTER_HOVER_H := 28.0   # px the drifter floats above the platform top
+const ENEMY_STOMP_WINDOW := 12.0      # px: feet-below-top slack that still counts as a stomp
+const ENEMY_BODY_W := 20.0
+const ENEMY_BODY_H := 20.0
+const ENEMY_STOMP_BOUNCE := 520.0     # upward velocity awarded on a successful stomp
+
+# Enemy spawn rolls (HAZARD.* in src/tuning.ts).
+const ENEMY_GRACE_HEIGHT := 400.0     # no enemies below this climbed height
+const ENEMY_BASE_CHANCE := 0.05
+const ENEMY_CHANCE_PER_T := 0.20
+const ENEMY_DRIFTER_SHARE := 0.4      # fraction of enemies that are drifters
