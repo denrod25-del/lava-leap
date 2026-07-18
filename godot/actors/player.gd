@@ -19,6 +19,13 @@ var _max_jumps := 2
 func is_dashing() -> bool:
 	return _dash_ms > 0.0
 
+## Launch the player upward and refresh air moves (bounce pad / stomp / rocket).
+## Mirrors Player.bounce/stompBounce/applyRocket in the web build.
+func spring(vy: float) -> void:
+	velocity.y = -vy
+	_jumps_left = _max_jumps
+	_dash_ready = true
+
 func _ready() -> void:
 	queue_redraw()
 

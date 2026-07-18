@@ -53,9 +53,16 @@ func _draw() -> void:
 	var w := desc.width
 	var h := Tuning.PLATFORM_H
 	var body := Color(0.62, 0.55, 0.47)          # static: stone
-	if desc.type == "crumbling":
+	if desc.bounce:
+		body = Color(0.36, 0.86, 0.45)           # bounce pad: springy green
+	elif desc.type == "crumbling":
 		body = Color(0.78, 0.42, 0.28)           # crumbling: warm red
 	elif desc.type == "moving":
 		body = Color(0.42, 0.74, 0.82)           # moving: cyan
 	draw_rect(Rect2(-w / 2.0, -h / 2.0, w, h), body)
 	draw_rect(Rect2(-w / 2.0, -h / 2.0, w, 3.0), body.lightened(0.35))  # lit top edge
+	if desc.bounce:
+		# A chevron cue that this platform will launch you.
+		var cy := -h / 2.0 - 4.0
+		draw_line(Vector2(-8.0, cy), Vector2(0.0, cy - 6.0), Color(0.7, 1.0, 0.8), 2.0)
+		draw_line(Vector2(0.0, cy - 6.0), Vector2(8.0, cy), Color(0.7, 1.0, 0.8), 2.0)

@@ -12,8 +12,9 @@ func _ready() -> void:
 	queue_redraw()
 
 ## Advance the lava for this frame given how far the player has climbed.
-func rise(delta: float, height_climbed: float) -> void:
-	var speed := Tuning.LAVA_BASE_SPEED + Tuning.LAVA_SPEED_PER_HEIGHT * height_climbed
+## `factor` scales the rise speed (the slow-lava power-up passes < 1).
+func rise(delta: float, height_climbed: float, factor: float = 1.0) -> void:
+	var speed := (Tuning.LAVA_BASE_SPEED + Tuning.LAVA_SPEED_PER_HEIGHT * height_climbed) * factor
 	surface_y -= speed * delta
 	queue_redraw()
 

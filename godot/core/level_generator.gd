@@ -102,14 +102,39 @@ func next() -> PlatformDesc:
 	# the web build: the rng draw is skipped for crumbling ones).
 	p.has_coin = p.type != "crumbling" and _rng.next() < Reach.COIN_CHANCE
 
-	# Enemy attachment: static platforms only, above the grace height (matches the
-	# web build's "static only" rule). A stomp target the player must clear.
+	# Hazard/pickup attachment: static platforms only. The three rolls always run
+	# in this fixed order — bounce (1 draw), enemy (2 draws), power-up (2 draws) —
+	# so the seeded stream stays stable regardless of grace gating. When more than
+	# one would attach, priority is bounce > enemy > power-up (mutually exclusive).
 	var climbed := Tuning.GROUND_Y - p.y
-	if p.type == "static" and climbed >= Tuning.ENEMY_GRACE_HEIGHT:
-		var has_enemy := _rng.next() < Tuning.ENEMY_BASE_CHANCE + Tuning.ENEMY_CHANCE_PER_T * t
-		var is_drifter := _rng.next() < Tuning.ENEMY_DRIFTER_SHARE
-		if has_enemy:
-			p.enemy = "drifter" if is_drifter else "crawler"
+	if p.type == "static":
+		var bounce_roll := _rng.next()
+		var enemy_has := _rng.next() < Tuning.ENEMY_BASE_CHANCE + Tuning.ENEMY_CHANCE_PER_T * t
+		var enemy_drift := _rng.next() < Tuning.ENEMY_DRIFTER_SHARE
+		var pk := _roll_powerup()  # always consumes 2 draws
+		if climbed >= Tuning.HAZARD_GRACE_HEIGHT:
+			if bounce_roll < Tuning.BOUNCE_CHANCE:
+				p.bounce = true
+			elif enemy_has:
+				p.enemy = "drifter" if enemy_drift else "crawler"
+			elif pk != "":
+				p.powerup = pk
 
 	_last = p
 	return p
+
+## Weighted power-up kind (or "" for none). Consumes exactly 2 rng draws so the
+## stream stays stable whether or not the pick is used. Weights match the web
+## build: the rocket boost leads the mix.
+func _roll_powerup() -> String:
+	var has := _rng.next() < Tuning.POWERUP_CHANCE
+	var r := _rng.next()
+	var weights := [["rocket", 0.55], ["shield", 0.15], ["magnet", 0.15], ["slowlava", 0.15]]
+	var acc := 0.0
+	var pick: String = weights[weights.size() - 1][0]
+	for w in weights:
+		acc += w[1]
+		if r < acc:
+			pick = w[0]
+			break
+	return pick if has else ""

@@ -51,7 +51,25 @@ const ENEMY_BODY_H := 20.0
 const ENEMY_STOMP_BOUNCE := 520.0     # upward velocity awarded on a successful stomp
 
 # Enemy spawn rolls (HAZARD.* in src/tuning.ts).
-const ENEMY_GRACE_HEIGHT := 400.0     # no enemies below this climbed height
 const ENEMY_BASE_CHANCE := 0.05
 const ENEMY_CHANCE_PER_T := 0.20
 const ENEMY_DRIFTER_SHARE := 0.4      # fraction of enemies that are drifters
+
+# Hazard/pickup gating + rolls (HAZARD.* in src/tuning.ts). Below the grace
+# height the climb stays clean — no bounce pads, enemies, or power-ups.
+const HAZARD_GRACE_HEIGHT := 400.0
+const BOUNCE_CHANCE := 0.06           # flat, static platforms only
+const POWERUP_CHANCE := 0.20          # per eligible static platform
+
+# Bounce pad (TUNING.bouncePadVelocity).
+const BOUNCE_PAD_VELOCITY := 1040.0   # ~1.6x a normal jump
+
+# Power-up effects (POWERUP.* in src/tuning.ts).
+const POWERUP_ROCKET_MS := 2000.0
+const POWERUP_ROCKET_VELOCITY := 900.0
+const POWERUP_MAGNET_MS := 8000.0
+const POWERUP_MAGNET_RADIUS := 160.0
+const POWERUP_MAGNET_PULL := 320.0
+const POWERUP_SLOWLAVA_MS := 6000.0
+const POWERUP_SLOWLAVA_FACTOR := 0.5
+const POWERUP_PICKUP_SIZE := 16.0

@@ -13,9 +13,14 @@ var has_coin: bool = false
 var move_range: float = 0.0  # px travel from origin to each extreme (moving only)
 var move_speed: float = 0.0  # px/s
 var enemy: String = ""       # "" | "crawler" | "drifter"
+var bounce: bool = false     # springboard platform
+var powerup: String = ""     # "" | "rocket" | "shield" | "magnet" | "slowlava"
 
 func is_moving() -> bool:
 	return type == "moving" and move_range > 0.0
 
 func has_enemy() -> bool:
 	return enemy != ""
+
+func has_powerup() -> bool:
+	return powerup != ""

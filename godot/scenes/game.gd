@@ -20,6 +20,12 @@ var _dead := false
 var _grace := 2.5              # seconds before the lava starts rising
 var _hud: Label
 
+# Power-up state.
+var _shield := false           # one-hit absorb from the shield pickup
+var _active_kind := ""         # timed effect: "rocket" | "magnet" | "slowlava"
+var _active_ms := 0.0          # remaining duration of the timed effect
+var _coin_nodes: Array = []    # live coins, for the magnet pull (pruned lazily)
+
 func _ready() -> void:
 	_stream = LevelStream.new(randi())
 
@@ -59,23 +65,32 @@ func _physics_process(delta: float) -> void:
 
 	_sync_platforms()
 
-	# Start crumbling any crumbling platform the player is standing on.
+	# Platforms the player is standing on: crumbling ones start to drop, bounce
+	# pads launch them skyward.
 	for i in _player.get_slide_collision_count():
 		var c := _player.get_slide_collision(i)
 		if c.get_collider() is Platform and c.get_normal().y < -0.5:
-			(c.get_collider() as Platform).on_stood()
+			var plat := c.get_collider() as Platform
+			plat.on_stood()
+			if plat.desc != null and plat.desc.bounce:
+				_player.spring(Tuning.BOUNCE_PAD_VELOCITY)
 
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
 	_max_height = maxf(_max_height, climbed)
 	_bg.update_height(_max_height)
-	_hud.text = "Height: %d\nCoins: %d\nKills: %d" % [int(_max_height), _coins, _kills]
+
+	# Timed power-ups (rocket boost, magnet, slow-lava) tick every frame, including
+	# during grace; the returned factor slows the lava while slow-lava is active.
+	var lava_factor := _update_powerups(delta)
+	_hud.text = "Height: %d\nCoins: %d\nKills: %d\nPower:%s" % \
+		[int(_max_height), _coins, _kills, _power_label()]
 
 	# Grace period at the start so you can settle + test movement before the lava
 	# becomes a threat.
 	if _grace > 0.0:
 		_grace -= delta
 	else:
-		_lava.rise(delta, _max_height)
+		_lava.rise(delta, _max_height, lava_factor)
 
 	# Death: hit by an enemy, caught by lava, or fell well below the view.
 	var cam_bottom := _cam.position.y + Tuning.HEIGHT / 2.0
@@ -93,6 +108,7 @@ func _spawn_platform(d: PlatformDesc) -> void:
 		coin.position = Vector2(0.0, -Tuning.PLATFORM_H / 2.0 - 22.0)  # float above the top
 		coin.collected.connect(_on_coin)
 		p.add_child(coin)
+		_coin_nodes.append(coin)
 	if d.has_enemy():
 		var enemy := Enemy.new()
 		enemy.setup(d, _player)
@@ -100,6 +116,12 @@ func _spawn_platform(d: PlatformDesc) -> void:
 		enemy.killed.connect(_on_enemy_killed)
 		enemy.hit_player.connect(_on_player_hit)
 		p.add_child(enemy)
+	if d.has_powerup():
+		var pw := Powerup.new()
+		pw.setup(d.powerup)
+		pw.position = Vector2(0.0, -Tuning.PLATFORM_H / 2.0 - 26.0)  # float above the top
+		pw.collected.connect(_on_powerup)
+		p.add_child(pw)
 	_plats[d.id] = p
 
 func _on_coin() -> void:
@@ -107,13 +129,68 @@ func _on_coin() -> void:
 
 func _on_enemy_stomped() -> void:
 	_kills += 1
-	_player.velocity.y = -Tuning.ENEMY_STOMP_BOUNCE  # spring off the squashed enemy
+	_player.spring(Tuning.ENEMY_STOMP_BOUNCE)  # spring off the squashed enemy
 
 func _on_enemy_killed() -> void:
 	_kills += 1
 
 func _on_player_hit() -> void:
+	# The shield absorbs one otherwise-lethal hit.
+	if _shield:
+		_shield = false
+		return
 	_dead = true
+
+func _on_powerup(kind: String) -> void:
+	if kind == "shield":
+		_shield = true
+		return
+	_active_kind = kind
+	if kind == "rocket":
+		_active_ms = Tuning.POWERUP_ROCKET_MS
+	elif kind == "magnet":
+		_active_ms = Tuning.POWERUP_MAGNET_MS
+	else:
+		_active_ms = Tuning.POWERUP_SLOWLAVA_MS
+
+## Advance the active timed power-up, apply its per-frame effect, and return the
+## factor the lava rise should be multiplied by this frame (< 1 while slow-lava).
+func _update_powerups(delta: float) -> float:
+	var lava_factor := 1.0
+	if _active_kind != "" and _active_ms > 0.0:
+		_active_ms -= delta * 1000.0
+		match _active_kind:
+			"rocket":
+				_player.spring(Tuning.POWERUP_ROCKET_VELOCITY)  # sustained boost
+			"magnet":
+				_pull_coins(delta)
+			"slowlava":
+				lava_factor = Tuning.POWERUP_SLOWLAVA_FACTOR
+		if _active_ms <= 0.0:
+			_active_kind = ""
+	return lava_factor
+
+## Drag nearby coins toward the player while the magnet is active. Prunes freed
+## coins from the tracking list as it goes.
+func _pull_coins(delta: float) -> void:
+	var pp := _player.global_position
+	var kept: Array = []
+	for c in _coin_nodes:
+		if not is_instance_valid(c):
+			continue
+		kept.append(c)
+		var to_player := pp - c.global_position
+		if to_player.length() <= Tuning.POWERUP_MAGNET_RADIUS:
+			c.global_position += to_player.normalized() * Tuning.POWERUP_MAGNET_PULL * delta
+	_coin_nodes = kept
+
+func _power_label() -> String:
+	var out := ""
+	if _shield:
+		out += " shield"
+	if _active_kind != "":
+		out += " %s %.1fs" % [_active_kind, _active_ms / 1000.0]
+	return out
 
 func _sync_platforms() -> void:
 	var cam_top := _cam.position.y - Tuning.HEIGHT / 2.0
