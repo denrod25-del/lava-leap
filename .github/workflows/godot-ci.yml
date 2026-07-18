@@ -1,0 +1,30 @@
+# Godot port CI — build check + GdUnit4 unit tests.
+# Runs only when the Godot project changes, so it never interferes with the
+# existing web build. NOTE: authored without a local Godot to validate against;
+# the first run may need a version/path tweak — treat that first green as the
+# real proof.
+name: godot-ci
+
+on:
+  push:
+    paths: ['godot/**', '.github/workflows/godot-ci.yml']
+  pull_request:
+    paths: ['godot/**', '.github/workflows/godot-ci.yml']
+
+jobs:
+  test:
+    name: Import + GdUnit4 tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs Godot 4.x, imports the project (catches script/scene parse
+      # errors), and runs the GdUnit4 suite in tests/.
+      - name: Run GdUnit4
+        uses: MikeSchulze/gdunit4-action@v1
+        with:
+          godot-version: '4.3'
+          paths: 'res://tests'
+          project_dir: 'godot'
+          timeout: 10

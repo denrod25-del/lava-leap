@@ -1,0 +1,9 @@
+# Godot 4 — editor/import cache and exports (never commit these).
+.godot/
+/android/build/
+/builds/
+/export/
+*.translation
+
+# GdUnit4 addon is installed locally / by CI, not vendored (see README).
+/addons/gdUnit4/

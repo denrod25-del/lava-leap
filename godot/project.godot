@@ -1,0 +1,40 @@
+; Godot 4.x project — Lava Leap re-engine (Phase 0 scaffold).
+; See ../docs/GODOT-PORT-PLAN.md for the full plan.
+; Renderer is GL Compatibility on purpose: best support on low-end hardware and
+; the Raspberry Pi / Linux-ARM target.
+
+config_version=5
+
+[application]
+
+config/name="Lava Leap (Godot Port)"
+config/description="Re-engine of Lava Leap for native / controller / hardware targets."
+run/main_scene="res://scenes/boot.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+; Registers gameplay input actions (keyboard + gamepad + touch) at startup so we
+; don't hand-serialise InputEvents into this file. UI nav uses Godot's built-in
+; ui_* actions (already keyboard + gamepad by default).
+GameInput="*res://autoload/game_input.gd"
+
+[display]
+
+; Base play-field is the web game's 600x720 portrait. Stretch "canvas_items" +
+; aspect "expand" keeps the vertical play column crisp while revealing extra
+; screen real-estate on wider displays (to be filled with side art / HUD in
+; Phase 1). Orientation "sensor" supports both portrait and landscape devices.
+window/size/viewport_width=600
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="sensor"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+; Nearest-neighbour by default suits the pixel sprites; painterly background
+; textures set Linear filtering per-import in Phase 1.
+textures/canvas_textures/default_texture_filter=0
