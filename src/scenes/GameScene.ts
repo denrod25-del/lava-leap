@@ -12,7 +12,7 @@ import { save, leaderboard } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
 import { AudioDirector } from '../entities/AudioDirector';
-import { zoneForHeight, type ZoneDef } from '../core/zones';
+import { zoneForHeight, ZONES, type ZoneDef } from '../core/zones';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
@@ -39,6 +39,14 @@ import { StingController } from '../entities/StingController';
 import { LEVELS, type LevelDef } from '../core/levels';
 import { isCharacter, DEFAULT_CHARACTER, resolveMovement } from '../core/characters';
 
+/**
+ * Height (px) each background "scene" spans in endless/daily before crossfading
+ * to the next environment. Deliberately longer than a gameplay zone (1000px) so
+ * the climb reads as a sequence of distinct levels rather than flipping backdrops
+ * constantly; scenes cycle through the four environments endlessly. Tune here.
+ */
+const BG_SCENE_SPAN = 2000;
+
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private inputSrc!: InputSource;
@@ -58,6 +66,7 @@ export class GameScene extends Phaser.Scene {
   private juice!: JuiceController;
   private audio!: AudioDirector;
   private zoneIndex = 0;
+  private bgSceneKey = 0;
   private tracker!: AchievementTracker;
   private enemies!: EnemyManager;
   private powerups!: PowerupController;
@@ -87,6 +96,22 @@ export class GameScene extends Phaser.Scene {
 
   private bgKeys(zone: ZoneDef): { far: string; near: string } {
     return { far: `bg-far-z${zone.index}`, near: `bg-near-z${zone.index}` };
+  }
+
+  /**
+   * Which environment the background should currently show, plus a `key` that
+   * changes only when the backdrop should crossfade. Campaign levels pin to their
+   * own (zone-aligned) environment for the whole level. Endless/daily advance on a
+   * longer, cycling `BG_SCENE_SPAN` cadence, so the climb feels like a run of
+   * distinct levels instead of swapping backdrops every gameplay zone (1000px).
+   */
+  private bgSceneFor(height: number): { key: number; zone: ZoneDef } {
+    if (this.levelDef) {
+      const z = zoneForHeight(height);
+      return { key: z.index, zone: z };
+    }
+    const sceneIdx = Math.floor(Math.max(0, height) / BG_SCENE_SPAN);
+    return { key: sceneIdx, zone: ZONES[sceneIdx % ZONES.length] };
   }
 
   /** Hand-painted environment art for this zone, if the asset shipped. */
@@ -198,10 +223,11 @@ export class GameScene extends Phaser.Scene {
       this.sound.play('sfx-ding', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
     });
 
-    this.buildBackground(startZone);
-    const startZoneKeys = this.bgKeys(startZone);
-    this.bgFar = this.makeFarLayer(startZone, 1);
-    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.near)
+    const startBg = this.bgSceneFor(startHeightOffset);
+    this.bgSceneKey = startBg.key;
+    this.buildBackground(startBg.zone);
+    this.bgFar = this.makeFarLayer(startBg.zone, 1);
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(startBg.zone).near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
@@ -438,14 +464,20 @@ export class GameScene extends Phaser.Scene {
     }
     this.registry.set('combo', { multiplier: this.combo.multiplier, remaining01: this.combo.remaining01 });
 
-    // Zone tracking — crossfade background and emit event on zone change.
-    const zone = zoneForHeight(heightClimbed);
-    if (zone.index !== this.zoneIndex) {
-      this.zoneIndex = zone.index;
-      this.buildBackground(zone);
-      this.crossfadeBg(zone, this.bgKeys(zone).near);
-      this.gameEvents.emit('zoneEntered', { zoneIndex: zone.index, name: zone.name });
-      this.registry.set('zoneBanner', zone.name);
+    // Gameplay zone drives lava speed / difficulty / analytics on its own 1000px
+    // cadence — tracked silently here, with no visual change.
+    this.zoneIndex = zoneForHeight(heightClimbed).index;
+
+    // Background "scene" runs on a longer, cycling cadence (endless/daily) so the
+    // climb reads as a sequence of distinct levels rather than flipping backdrops
+    // every zone. Campaign levels stay pinned to their own environment.
+    const bg = this.bgSceneFor(heightClimbed);
+    if (bg.key !== this.bgSceneKey) {
+      this.bgSceneKey = bg.key;
+      this.buildBackground(bg.zone);
+      this.crossfadeBg(bg.zone, this.bgKeys(bg.zone).near);
+      this.gameEvents.emit('zoneEntered', { zoneIndex: bg.zone.index, name: bg.zone.name });
+      this.registry.set('zoneBanner', bg.zone.name);
     }
 
     this.tracker.updateHeight(Math.floor(heightClimbed), this.zoneIndex);
