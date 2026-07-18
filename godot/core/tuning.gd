@@ -38,4 +38,4 @@ const PLATFORM_H := 16.0
 # Rising lava (from src/entities/Lava.ts BASE_SPEED / SPEED_PER_HEIGHT, post-v0.12).
 const LAVA_BASE_SPEED := 35.0
 const LAVA_SPEED_PER_HEIGHT := 0.008
-const LAVA_START_BELOW := 260.0       # starts this far below the ground platform
+const LAVA_START_BELOW := 500.0       # starts this far below the ground platform

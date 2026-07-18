@@ -13,6 +13,7 @@ var _lava: Lava
 var _stream: LevelStream
 var _plats: Dictionary = {}        # PlatformDesc.id -> Platform node
 var _max_height := 0.0
+var _grace := 2.5              # seconds before the lava starts rising
 var _hud: Label
 
 func _ready() -> void:
@@ -37,6 +38,11 @@ func _ready() -> void:
 	_hud.add_theme_font_size_override("font_size", 20)
 	layer.add_child(_hud)
 
+	# Spawn nodes for platforms already in the stream (the starting platform),
+	# then generate the ones above. Without this the player spawns in mid-air and
+	# falls to an instant death every frame — the "keeps looping" bug.
+	for d in _stream.active:
+		_spawn_platform(d)
 	_sync_platforms()
 
 func _physics_process(delta: float) -> void:
@@ -50,22 +56,32 @@ func _physics_process(delta: float) -> void:
 	_max_height = maxf(_max_height, climbed)
 	_hud.text = "Height: %d" % int(_max_height)
 
-	_lava.rise(delta, _max_height)
+	# Grace period at the start so you can settle + test movement before the lava
+	# becomes a threat.
+	if _grace > 0.0:
+		_grace -= delta
+	else:
+		_lava.rise(delta, _max_height)
 
-	# Death: caught by lava, or fell off the bottom of the view.
+	# Death: caught by lava, or fell well below the view.
 	var cam_bottom := _cam.position.y + Tuning.HEIGHT / 2.0
-	if _player.position.y >= _lava.surface_y or _player.position.y > cam_bottom + 80.0:
+	if _player.position.y >= _lava.surface_y or _player.position.y > cam_bottom + 120.0:
 		get_tree().reload_current_scene()
+
+func _spawn_platform(d: PlatformDesc) -> void:
+	if _plats.has(d.id):
+		return
+	var p := Platform.new()
+	add_child(p)
+	p.setup(d)
+	_plats[d.id] = p
 
 func _sync_platforms() -> void:
 	var cam_top := _cam.position.y - Tuning.HEIGHT / 2.0
 	var prune_below := _cam.position.y + Tuning.HEIGHT / 2.0 + 160.0
 	var res := _stream.update(cam_top, prune_below)
 	for d in res["added"]:
-		var p := Platform.new()
-		add_child(p)
-		p.setup(d)
-		_plats[d.id] = p
+		_spawn_platform(d)
 	for d in res["removed"]:
 		if _plats.has(d.id):
 			_plats[d.id].queue_free()
