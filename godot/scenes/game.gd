@@ -10,6 +10,7 @@ const CAM_PLAYER_OFFSET := 120.0   # player sits this far below the camera centr
 var _player: Player
 var _cam: Camera2D
 var _lava: Lava
+var _bg: Background
 var _stream: LevelStream
 var _plats: Dictionary = {}        # PlatformDesc.id -> Platform node
 var _max_height := 0.0
@@ -19,6 +20,9 @@ var _hud: Label
 
 func _ready() -> void:
 	_stream = LevelStream.new(randi())
+
+	_bg = Background.new()
+	add_child(_bg)
 
 	_player = PLAYER_SCENE.instantiate()
 	_player.position = Vector2(Tuning.PLAYER_START_X, Tuning.GROUND_Y - Tuning.PLAYER_BODY_H / 2.0)
@@ -61,6 +65,7 @@ func _physics_process(delta: float) -> void:
 
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
 	_max_height = maxf(_max_height, climbed)
+	_bg.update_height(_max_height)
 	_hud.text = "Height: %d\nCoins: %d" % [int(_max_height), _coins]
 
 	# Grace period at the start so you can settle + test movement before the lava
