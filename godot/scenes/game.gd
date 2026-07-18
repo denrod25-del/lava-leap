@@ -179,9 +179,10 @@ func _pull_coins(delta: float) -> void:
 		if not is_instance_valid(c):
 			continue
 		kept.append(c)
-		var to_player := pp - c.global_position
+		var coin := c as Node2D
+		var to_player := pp - coin.global_position
 		if to_player.length() <= Tuning.POWERUP_MAGNET_RADIUS:
-			c.global_position += to_player.normalized() * Tuning.POWERUP_MAGNET_PULL * delta
+			coin.global_position += to_player.normalized() * Tuning.POWERUP_MAGNET_PULL * delta
 	_coin_nodes = kept
 
 func _power_label() -> String:
