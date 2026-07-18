@@ -4,13 +4,15 @@ extends AnimatableBody2D
 ## AnimatableBody2D (not StaticBody2D) so a moving platform carries the player
 ## standing on it. One-way collision lets the player jump up THROUGH platforms
 ## and land on top — standard climber feel.
-##
-## Phase-1 scope: static + moving. "crumbling" is drawn distinctly but doesn't
-## crumble yet (Phase 2), so it currently behaves like a static platform.
+
+const CRUMBLE_DELAY := 0.45   # seconds after first stood-on before it drops away
 
 var desc: PlatformDesc
 var _origin_x: float
 var _time := 0.0
+var _col: CollisionShape2D
+var _crumbling := false
+var _crumble_t := 0.0
 
 func setup(d: PlatformDesc) -> void:
 	desc = d
@@ -19,11 +21,17 @@ func setup(d: PlatformDesc) -> void:
 	sync_to_physics = true
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(d.width, Tuning.PLATFORM_H)
-	var col := CollisionShape2D.new()
-	col.shape = shape
-	col.one_way_collision = true
-	add_child(col)
+	_col = CollisionShape2D.new()
+	_col.shape = shape
+	_col.one_way_collision = true
+	add_child(_col)
 	queue_redraw()
+
+## Called by the game when the player is standing on this platform.
+func on_stood() -> void:
+	if desc != null and desc.type == "crumbling" and not _crumbling:
+		_crumbling = true
+		_crumble_t = CRUMBLE_DELAY
 
 func _physics_process(delta: float) -> void:
 	if desc != null and desc.is_moving():
@@ -31,6 +39,13 @@ func _physics_process(delta: float) -> void:
 		# Smooth ping-pong of amplitude move_range; peak speed == move_speed.
 		var off := desc.move_range * sin(_time * desc.move_speed / desc.move_range)
 		position.x = _origin_x + off
+
+	if _crumbling:
+		_crumble_t -= delta
+		modulate.a = clampf(_crumble_t / CRUMBLE_DELAY, 0.15, 1.0)
+		if _crumble_t <= 0.0 and _col != null and not _col.disabled:
+			_col.set_deferred("disabled", true)   # drop the floor out from under
+			modulate.a = 0.0
 
 func _draw() -> void:
 	if desc == null:

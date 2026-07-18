@@ -13,6 +13,7 @@ var _lava: Lava
 var _stream: LevelStream
 var _plats: Dictionary = {}        # PlatformDesc.id -> Platform node
 var _max_height := 0.0
+var _coins := 0
 var _grace := 2.5              # seconds before the lava starts rising
 var _hud: Label
 
@@ -52,9 +53,15 @@ func _physics_process(delta: float) -> void:
 
 	_sync_platforms()
 
+	# Start crumbling any crumbling platform the player is standing on.
+	for i in _player.get_slide_collision_count():
+		var c := _player.get_slide_collision(i)
+		if c.get_collider() is Platform and c.get_normal().y < -0.5:
+			(c.get_collider() as Platform).on_stood()
+
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
 	_max_height = maxf(_max_height, climbed)
-	_hud.text = "Height: %d" % int(_max_height)
+	_hud.text = "Height: %d\nCoins: %d" % [int(_max_height), _coins]
 
 	# Grace period at the start so you can settle + test movement before the lava
 	# becomes a threat.
@@ -74,7 +81,15 @@ func _spawn_platform(d: PlatformDesc) -> void:
 	var p := Platform.new()
 	add_child(p)
 	p.setup(d)
+	if d.has_coin:
+		var coin := Coin.new()
+		coin.position = Vector2(0.0, -Tuning.PLATFORM_H / 2.0 - 22.0)  # float above the top
+		coin.collected.connect(_on_coin)
+		p.add_child(coin)
 	_plats[d.id] = p
+
+func _on_coin() -> void:
+	_coins += 1
 
 func _sync_platforms() -> void:
 	var cam_top := _cam.position.y - Tuning.HEIGHT / 2.0
