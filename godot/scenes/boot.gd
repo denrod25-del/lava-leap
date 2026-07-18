@@ -1,19 +1,7 @@
 extends Control
-## Phase 0 placeholder boot scene. Confirms the project opens and runs, the
-## input actions registered, and the ported RNG produces the reference sequence.
-## Replaced by the real Boot → Menu flow in later phases.
-
-@onready var _label: Label = $Label
+## Phase 1: boot straight into the gameplay vertical slice. (Kept as the main
+## scene so we don't have to edit project.godot; the real Boot → Menu flow lands
+## in a later phase.)
 
 func _ready() -> void:
-	var rng := Rng.new(123)
-	var sample := "%f, %f, %f" % [rng.next(), rng.next(), rng.next()]
-	var actions := "move_left/right, jump, dash, fast_fall, pause"
-	var lines := PackedStringArray([
-		"LAVA LEAP — Godot port", "Phase 0 scaffold", "",
-		"RNG(123): " + sample, "Input actions: " + actions,
-	])
-	_label.text = "\n".join(lines)
-	print("[Lava Leap/Godot] Phase 0 boot OK. RNG(123) first: ", sample)
-	print("[Lava Leap/Godot] Gameplay input actions registered: ",
-		InputMap.has_action("jump") and InputMap.has_action("dash"))
+	get_tree().change_scene_to_file.call_deferred("res://scenes/game.tscn")

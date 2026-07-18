@@ -3,13 +3,21 @@
 Native / controller / hardware re-engine of Lava Leap. Full plan:
 [`../docs/GODOT-PORT-PLAN.md`](../docs/GODOT-PORT-PLAN.md).
 
-> **Status: Phase 0 scaffold.** This opens and runs, registers input actions,
-> and includes the first ported + tested core module (`Rng`). It is **not** the
-> game yet — the player, platforms, and lava land in Phase 1.
+> **Status: Phase 1 vertical slice.** Runs straight into a playable climb —
+> `CharacterBody2D` player (run/jump/double-jump/jump-cut/dash/wall/coyote/
+> buffer/fast-fall), the ported reach-based platform generator, an up-only
+> climber camera, and rising lava with restart-on-death. Placeholder box art;
+> movement numbers are a starting point pending a feel re-tune (plan §7).
 >
-> ⚠️ Authored in an environment without Godot installed, so the code here has
-> **not been opened in the editor yet**. First real validation is you opening it
-> (and the CI run). Anything that doesn't parse is a quick fix — flag it.
+> Ported + parity/reach-tested pure logic: `Rng`, `LevelGenerator`, `LevelStream`
+> (see `tests/`). Not yet ported (Phase 2+): set-pieces, hazards/enemies/
+> power-ups/bounce, crumble mechanic, exact web-seed parity, zones/backgrounds,
+> bosses, meta (shop/characters/save/story).
+>
+> ⚠️ The GDScript was authored without a local Godot (parse/lint-clean via
+> gdtoolkit, and the generator's determinism + reach-validity are cross-checked
+> in Python), but **runtime/API behavior is first proven when you open it**.
+> Anything that errors on open is a quick fix — flag it.
 
 ## Requirements
 - **Godot 4.3+** (GL Compatibility renderer — chosen for Raspberry Pi / low-end).
