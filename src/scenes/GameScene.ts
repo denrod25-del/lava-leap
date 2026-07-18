@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
   private peakFlowTier = 0;
   private dead = false;
   private booked = false;
-  private bgFar!: Phaser.GameObjects.TileSprite;
+  private bgFar!: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image;
   private bgNear!: Phaser.GameObjects.TileSprite;
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
@@ -89,13 +89,37 @@ export class GameScene extends Phaser.Scene {
     return { far: `bg-far-z${zone.index}`, near: `bg-near-z${zone.index}` };
   }
 
+  /** Hand-painted environment art for this zone, if the asset shipped. */
+  private zoneArtKey(zone: ZoneDef): string | null {
+    const key = `bg-z${zone.index}`;
+    return this.textures.exists(key) ? key : null;
+  }
+
+  /**
+   * Build the far (deepest) background layer for a zone. When zone environment
+   * art is available it's shown as a static, screen-filling backdrop; otherwise
+   * we fall back to the procedural gradient tile-sprite so the game still runs
+   * with no art assets present.
+   */
+  private makeFarLayer(zone: ZoneDef, alpha: number): Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image {
+    const art = this.zoneArtKey(zone);
+    if (art) {
+      return this.add.image(0, 0, art)
+        .setOrigin(0, 0).setDisplaySize(TUNING.width, TUNING.height)
+        .setScrollFactor(0).setDepth(-10).setAlpha(alpha);
+    }
+    return this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(zone).far)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10).setAlpha(alpha);
+  }
+
   /** Build two procedural parallax background textures for the given zone. */
   private buildBackground(zone: ZoneDef): void {
     const w = TUNING.width;
     const h = TUNING.height;
     const { far, near } = this.bgKeys(zone);
 
-    if (!this.textures.exists(far)) {
+    // Skip the procedural gradient when hand-painted zone art is present.
+    if (!this.zoneArtKey(zone) && !this.textures.exists(far)) {
       const g = this.make.graphics({ x: 0, y: 0 }, false);
       const top = Phaser.Display.Color.ValueToColor(zone.bgTop);
       const bot = Phaser.Display.Color.ValueToColor(zone.bgBottom);
@@ -135,10 +159,9 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private crossfadeBg(farKey: string, nearKey: string): void {
+  private crossfadeBg(zone: ZoneDef, nearKey: string): void {
     const oldFar = this.bgFar, oldNear = this.bgNear;
-    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, farKey)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10).setAlpha(0);
+    this.bgFar = this.makeFarLayer(zone, 0);
     this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, nearKey)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9).setAlpha(0);
     this.tweens.add({
@@ -177,8 +200,7 @@ export class GameScene extends Phaser.Scene {
 
     this.buildBackground(startZone);
     const startZoneKeys = this.bgKeys(startZone);
-    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.far)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+    this.bgFar = this.makeFarLayer(startZone, 1);
     this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
@@ -341,8 +363,12 @@ export class GameScene extends Phaser.Scene {
     this.platforms.update(time);
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
 
-    // Parallax: scroll background layers at fractions of the camera.
-    this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
+    // Parallax: scroll background layers at fractions of the camera. The far
+    // layer only scrolls when it's the procedural tile-sprite; environment art
+    // is a static, screen-filling backdrop.
+    if (this.bgFar instanceof Phaser.GameObjects.TileSprite) {
+      this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
+    }
     this.bgNear.tilePositionY = this.cameras.main.scrollY * 0.5;
 
     const cameraTopY = this.cameras.main.scrollY;
@@ -417,8 +443,7 @@ export class GameScene extends Phaser.Scene {
     if (zone.index !== this.zoneIndex) {
       this.zoneIndex = zone.index;
       this.buildBackground(zone);
-      const keys = this.bgKeys(zone);
-      this.crossfadeBg(keys.far, keys.near);
+      this.crossfadeBg(zone, this.bgKeys(zone).near);
       this.gameEvents.emit('zoneEntered', { zoneIndex: zone.index, name: zone.name });
       this.registry.set('zoneBanner', zone.name);
     }
