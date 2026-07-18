@@ -17,24 +17,24 @@ export interface CharacterDef {
   movement?: MovementProfile;
 }
 
-export const CHARACTERS: CharacterDef[] = [
-  { id: 'ember',   name: 'Ember',   price: 0 },
-  { id: 'classic', name: 'Classic', price: 0 },
-  { id: 'cole',    name: 'Cole',    price: 0, unlock: 'titanDefeat' },
-];
-
-export const DEFAULT_CHARACTER = 'ember';
-
 export const DEFAULT_MOVEMENT: MovementProfile = {
   jumpVelocity: 650, airJumpVelocity: 560, maxJumps: 2, ledgeGrab: false,
 };
 
-/** Kiko's kit. Exported separately (not yet a roster entry) so mechanics and
- *  reach-validity tests land art-independently; the roster entry arrives with
- *  the art in one atomic commit (BootScene loads assets for every entry). */
+/** Kiko's kit: springy triple jump (lower arcs, three slots) + ledge grab→vault.
+ *  Declared before CHARACTERS because the roster entry references it. */
 export const KIKO_MOVEMENT: MovementProfile = {
   jumpVelocity: 560, airJumpVelocity: 500, maxJumps: 3, ledgeGrab: true,
 };
+
+export const CHARACTERS: CharacterDef[] = [
+  { id: 'ember',   name: 'Ember',   price: 0 },
+  { id: 'classic', name: 'Classic', price: 0 },
+  { id: 'cole',    name: 'Cole',    price: 0, unlock: 'titanDefeat' },
+  { id: 'kiko',    name: 'Kiko',    price: 750, movement: KIKO_MOVEMENT },
+];
+
+export const DEFAULT_CHARACTER = 'ember';
 
 export function resolveMovement(id: string): MovementProfile {
   return CHARACTERS.find((c) => c.id === id)?.movement ?? DEFAULT_MOVEMENT;

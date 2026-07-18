@@ -8,10 +8,14 @@ import { characterAnims } from '../src/animManifest';
 import { TUNING, REACH } from '../src/tuning';
 
 describe('characters roster', () => {
-  it('has ember (default), classic, and cole — all price 0', () => {
+  it('has ember (default), classic, cole (free) and kiko (750c, movement kit)', () => {
     expect(DEFAULT_CHARACTER).toBe('ember');
-    expect(CHARACTERS.map((c) => c.id)).toEqual(['ember', 'classic', 'cole']);
-    expect(CHARACTERS.every((c) => c.price === 0)).toBe(true);
+    expect(CHARACTERS.map((c) => c.id)).toEqual(['ember', 'classic', 'cole', 'kiko']);
+    expect(CHARACTERS.filter((c) => c.id !== 'kiko').every((c) => c.price === 0)).toBe(true);
+    const kiko = CHARACTERS.find((c) => c.id === 'kiko')!;
+    expect(kiko.price).toBe(750);
+    expect(kiko.unlock).toBeUndefined(); // coin-buyable, not story-gated
+    expect(kiko.movement).toEqual(KIKO_MOVEMENT);
   });
   it('isCharacter recognizes roster ids only', () => {
     expect(isCharacter('ember')).toBe(true);
