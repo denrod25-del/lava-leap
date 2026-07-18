@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.13.0', date: '2026-07-17', notes: [
+    'NEW CHARACTER: Kiko the Vaultrunner — 750 coins in the Shop.',
+    'Kiko jumps different: a springy TRIPLE jump (three hops, lower arcs).',
+    'Kiko can catch platform edges mid-fall and vault up — every vault refills all air jumps.',
+  ]},
   { version: '0.12.0', date: '2026-07-16', notes: [
     'Power-ups are now a real part of every climb — they spawn far more often, and the orange boost leads the pack as the most common of the four.',
     'Power-up pickups got a visual upgrade: distinct icons for each type, plus a pulse so they stand out.',
