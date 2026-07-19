@@ -8,6 +8,7 @@ var _pulse := 0.0
 
 func _ready() -> void:
 	Engine.time_scale = 1.0
+	SaveData.load_data()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var cx := Tuning.WIDTH / 2.0
 
@@ -39,20 +40,28 @@ func _ready() -> void:
 		logo.modulate = Color(1, 1, 1, 0.9)
 		add_child(logo)
 
-	_add_label("LAVA LEAP", cx, 236, 52, Color(1.0, 0.48, 0.0))
-	_add_label("Arcade Lava Climber", cx, 300, 16, Color(1.0, 0.69, 0.4))
-	if RunResult.best > 0:
-		_add_label("Best  %d" % RunResult.best, cx, 344, 18, Color(1.0, 0.82, 0.35))
+	_add_label("LAVA LEAP", cx, 226, 52, Color(1.0, 0.48, 0.0))
+	_add_label("Arcade Lava Climber", cx, 290, 16, Color(1.0, 0.69, 0.4))
+	_add_label("Best  %d      Bank  %d coins" % [SaveData.high_score, SaveData.coin_bank],
+		cx, 334, 18, Color(1.0, 0.82, 0.35))
 
-	_prompt = _add_label("SPACE / tap to climb", cx, 430, 22, Color(0.09, 0.88, 0.88))
+	_prompt = _add_label("SPACE / tap to climb", cx, 420, 22, Color(0.09, 0.88, 0.88))
 	_add_label("← → move    SPACE jump    SHIFT dash    ↓ fast-fall",
 		cx, 640, 13, Color(0.6, 0.66, 0.76))
 
-	# Settings button (consumes its own click, so it doesn't also start a run).
+	# Menu buttons (each consumes its own click, so tapping them doesn't also
+	# start a run via the tap-anywhere handler).
+	var shop := Button.new()
+	shop.text = "🛒  Shop  (C)"
+	shop.add_theme_font_size_override("font_size", 16)
+	shop.position = Vector2(cx - 190, 490)
+	shop.custom_minimum_size = Vector2(180, 36)
+	shop.pressed.connect(_open_shop)
+	add_child(shop)
 	var gear := Button.new()
 	gear.text = "⚙  Settings  (S)"
 	gear.add_theme_font_size_override("font_size", 16)
-	gear.position = Vector2(cx - 90, 500)
+	gear.position = Vector2(cx + 10, 490)
 	gear.custom_minimum_size = Vector2(180, 36)
 	gear.pressed.connect(_open_settings)
 	add_child(gear)
@@ -62,6 +71,10 @@ func _ready() -> void:
 func _open_settings() -> void:
 	Audio.play("ui_select", -2.0, 0.0)
 	get_tree().change_scene_to_file("res://scenes/settings.tscn")
+
+func _open_shop() -> void:
+	Audio.play("ui_select", -2.0, 0.0)
+	get_tree().change_scene_to_file("res://scenes/shop.tscn")
 
 func _add_label(text: String, cx: float, y: float, size: int, color: Color) -> Label:
 	var l := Label.new()
@@ -83,6 +96,9 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_S:
 		_open_settings()
+		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_C:
+		_open_shop()
 		return
 	if event.is_action_pressed("jump") or event.is_action_pressed("ui_accept") \
 			or (event is InputEventMouseButton and event.pressed) \

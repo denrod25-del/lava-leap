@@ -46,18 +46,29 @@ var _boss_prev := 0.0          # previous max height, for boundary-crossing chec
 var _banner: Label             # transient boss announcement
 var _banner_t := 0.0           # remaining banner display time
 
+# Meta / upgrades.
+var _dur_factor := 1.0         # power-up duration multiplier (Power-Up Time upgrade)
+var _revive_used := false      # the Revive upgrade fires at most once per run
+
 func _ready() -> void:
 	Engine.time_scale = 1.0  # clear any hit-stop that outlived the previous scene
+	SaveData.load_data()
 	var seed := randi()
 	_stream = LevelStream.new(seed)
 	_flow = FlowMeter.new()
 	_combo = ComboTracker.new()
+
+	# Apply purchased upgrades for this run.
+	_dur_factor = 1.0 + 0.15 * SaveData.upgrade_level("powerupDuration")
+	if SaveData.upgrade_level("startShield") > 0:
+		_shield = true
 
 	_bg = Background.new()
 	add_child(_bg)
 
 	_player = PLAYER_SCENE.instantiate()
 	_player.position = Vector2(Tuning.PLAYER_START_X, Tuning.GROUND_Y - Tuning.PLAYER_BODY_H / 2.0)
+	_player.modulate = SaveData.cosmetic_color()  # equipped cosmetic tint
 	add_child(_player)
 
 	_cam = Camera2D.new()
@@ -187,12 +198,44 @@ func _physics_process(delta: float) -> void:
 	var caught := _player.position.y >= _lava.surface_y
 	var fell := _player.position.y > cam_bottom + 120.0
 	if (_dead or caught or fell) and not _dying:
-		_die()
+		# The Revive upgrade snatches you back once per run instead of ending it.
+		if not _revive_used and SaveData.upgrade_level("revive") > 0:
+			_revive()
+		else:
+			_die()
 
-## Death juice, then hand off to the game-over screen. Guarded so it runs once.
+## Revive: lift the player back above the lava with a fresh shield and grace.
+func _revive() -> void:
+	_revive_used = true
+	_dead = false
+	var safe_y := _lava.surface_y - 220.0
+	_player.position = Vector2(Tuning.PLAYER_START_X, safe_y)
+	_player.velocity = Vector2.ZERO
+	_shield = true
+	_grace = 1.5  # brief lava pause so you can recover
+	# Absorb the lift into max height now so Flow heat can't score the teleport.
+	_max_height = maxf(_max_height, maxf(0.0, Tuning.GROUND_Y - safe_y))
+	_boss_prev = _max_height
+	Audio.play("pickup", 2.0, 0.0)
+	_shake_amt = 10.0
+	_burst(_player.global_position, Color(0.4, 0.87, 1.0), 28, 220.0)
+
+## Death juice, bank the run, then hand off to the game-over screen. Runs once.
 func _die() -> void:
 	_dying = true
-	RunResult.record(_score(), int(_max_height), _coins, _kills)
+	var final_score := _score()
+	var prev_best := SaveData.high_score
+	SaveData.coin_bank += _coins
+	if final_score > SaveData.high_score:
+		SaveData.high_score = final_score
+	SaveData.save_data()
+	RunResult.score = final_score
+	RunResult.height = int(_max_height)
+	RunResult.coins = _coins
+	RunResult.kills = _kills
+	RunResult.best = SaveData.high_score
+	RunResult.is_best = final_score > prev_best
+	RunResult.banked = _coins
 	Audio.stop_music()
 	Audio.play("death", 0.0, 0.0)
 	_burst(_player.global_position, Color(1.0, 0.42, 0.16), 36, 260.0)
@@ -322,11 +365,11 @@ func _on_powerup(kind: String) -> void:
 		return
 	_active_kind = kind
 	if kind == "rocket":
-		_active_ms = Tuning.POWERUP_ROCKET_MS
+		_active_ms = Tuning.POWERUP_ROCKET_MS * _dur_factor
 	elif kind == "magnet":
-		_active_ms = Tuning.POWERUP_MAGNET_MS
+		_active_ms = Tuning.POWERUP_MAGNET_MS * _dur_factor
 	else:
-		_active_ms = Tuning.POWERUP_SLOWLAVA_MS
+		_active_ms = Tuning.POWERUP_SLOWLAVA_MS * _dur_factor
 
 ## Advance the active timed power-up, apply its per-frame effect, and return the
 ## factor the lava rise should be multiplied by this frame (< 1 while slow-lava).

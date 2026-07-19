@@ -21,18 +21,20 @@ func _ready() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	_add_label("GAME OVER", cx, 150.0, 46, Color(1.0, 0.42, 0.2))
-	var newbest := RunResult.score >= RunResult.best and RunResult.score > 0
-	if newbest:
-		_add_label("NEW BEST!", cx, 200.0, 20, Color(1.0, 0.82, 0.35))
+	SaveData.load_data()
+	_add_label("GAME OVER", cx, 140.0, 46, Color(1.0, 0.42, 0.2))
+	if RunResult.is_best:
+		_add_label("NEW BEST!", cx, 190.0, 20, Color(1.0, 0.82, 0.35))
 
-	_add_label("SCORE", cx, 262.0, 16, Color(0.7, 0.74, 0.82))
-	_add_label(str(RunResult.score), cx, 292.0, 40, Color.WHITE)
-	_add_label("Best  %d" % RunResult.best, cx, 342.0, 16, Color(1.0, 0.82, 0.35))
+	_add_label("SCORE", cx, 250.0, 16, Color(0.7, 0.74, 0.82))
+	_add_label(str(RunResult.score), cx, 280.0, 40, Color.WHITE)
+	_add_label("Best  %d" % RunResult.best, cx, 330.0, 16, Color(1.0, 0.82, 0.35))
 
 	_add_label("Height  %d      Coins  %d      Kills  %d"
 		% [RunResult.height, RunResult.coins, RunResult.kills],
-		cx, 400.0, 15, Color(0.62, 0.68, 0.78))
+		cx, 384.0, 15, Color(0.62, 0.68, 0.78))
+	_add_label("+%d coins banked      Bank  %d" % [RunResult.banked, SaveData.coin_bank],
+		cx, 414.0, 15, Color(1.0, 0.82, 0.35))
 
 	_hint = _add_label("", cx, 500.0, 18, Color(0.09, 0.88, 0.88))
 	_hint.visible = false
