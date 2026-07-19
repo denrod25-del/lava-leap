@@ -40,9 +40,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
-        // 57 production frames packed into a uniform 8×8 sheet. The source package is
-        // 256px/frame; this runtime sheet is downsampled to 128px/frame because the
-        // character displays at ~24×32 world pixels and this cuts download size sharply.
         this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas-128.png', {
           frameWidth: 128,
           frameHeight: 128,
@@ -67,11 +64,12 @@ export class BootScene extends Phaser.Scene {
     for (const c of CHARACTERS) {
       for (const def of characterAnims(c.id)) {
         if (this.anims.exists(def.key)) continue;
+        const frames = def.sheetKey
+          ? this.anims.generateFrameNumbers(def.sheetKey, { frames: def.frames as number[] })
+          : def.frames.map((key) => ({ key: String(key) }));
         this.anims.create({
           key: def.key,
-          frames: def.sheetKey
-            ? def.frames.map((frame) => ({ key: def.sheetKey!, frame }))
-            : def.frames.map((key) => ({ key: String(key) })),
+          frames,
           frameRate: def.frameRate,
           repeat: def.repeat,
         });
