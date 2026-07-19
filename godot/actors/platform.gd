@@ -27,11 +27,14 @@ func setup(d: PlatformDesc) -> void:
 	add_child(_col)
 	queue_redraw()
 
-## Called by the game when the player is standing on this platform.
-func on_stood() -> void:
+## Called by the game when the player is standing on this platform. Returns true
+## on the frame a crumble actually begins (so the caller can play the crack SFX).
+func on_stood() -> bool:
 	if desc != null and desc.type == "crumbling" and not _crumbling:
 		_crumbling = true
 		_crumble_t = CRUMBLE_DELAY
+		return true
+	return false
 
 func _physics_process(delta: float) -> void:
 	if desc != null and desc.is_moving():

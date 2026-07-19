@@ -18,6 +18,8 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 ; don't hand-serialise InputEvents into this file. UI nav uses Godot's built-in
 ; ui_* actions (already keyboard + gamepad by default).
 GameInput="*res://autoload/game_input.gd"
+; Global SFX/music director — one-shot voice pool + a looping music track.
+Audio="*res://autoload/audio.gd"
 
 [display]
 

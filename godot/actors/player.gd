@@ -84,15 +84,18 @@ func _physics_process(delta: float) -> void:
 			velocity.x = get_wall_normal().x * Tuning.WALL_JUMP_X
 			velocity.y = -Tuning.WALL_JUMP_Y
 			_buffer_ms = 0.0
+			Audio.play("jump", -3.0, 0.06)
 		elif on_floor or _coyote_ms > 0.0:
 			velocity.y = -Tuning.JUMP_VELOCITY
 			_jumps_left = _max_jumps - 1
 			_coyote_ms = 0.0
 			_buffer_ms = 0.0
+			Audio.play("jump", -3.0, 0.06)
 		elif _jumps_left > 0:
 			velocity.y = -Tuning.DOUBLE_JUMP_VELOCITY
 			_jumps_left -= 1
 			_buffer_ms = 0.0
+			Audio.play("jump", -1.0, 0.1)  # double-jump: a touch higher
 
 	# --- Jump-cut on early release ---
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:

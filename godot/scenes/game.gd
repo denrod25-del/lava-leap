@@ -75,6 +75,8 @@ func _ready() -> void:
 		_spawn_platform(d)
 	_sync_platforms()
 
+	Audio.play_music()
+
 func _physics_process(delta: float) -> void:
 	# Up-only climber camera, plus a decaying screen shake offset.
 	_cam.position.x = Tuning.WIDTH / 2.0
@@ -95,13 +97,15 @@ func _physics_process(delta: float) -> void:
 		var c := _player.get_slide_collision(i)
 		if c.get_collider() is Platform and c.get_normal().y < -0.5:
 			var plat := c.get_collider() as Platform
-			plat.on_stood()
+			if plat.on_stood():
+				Audio.play("crack", -2.0, 0.05)  # a crumbling platform just started to go
 			if plat.desc != null and plat.desc.bounce and _player.velocity.y >= 0.0:
 				_player.spring(Tuning.BOUNCE_PAD_VELOCITY)
 				_combo_action(Tuning.COMBO_POINTS_BOUNCE)
 				_flow.beat()
 				_shake_amt = maxf(_shake_amt, 5.0)
 				_burst(_player.global_position, Color(0.4, 0.95, 0.5), 14, 220.0)
+				Audio.play("jump", 1.0, 0.04)  # springy launch
 
 	# Flow momentum: build airborne/dashing, drain on the ground, beat on dash.
 	var dashing := _player.is_dashing()
@@ -117,6 +121,7 @@ func _physics_process(delta: float) -> void:
 	if tier > _flow_tier:
 		_shake_amt = maxf(_shake_amt, 4.0)
 		_burst(_player.global_position, Color(1.0, 0.6, 0.2), 12, 150.0)
+		Audio.play("ding", -4.0, 0.0)
 	_flow_tier = tier
 
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
@@ -152,6 +157,8 @@ func _physics_process(delta: float) -> void:
 func _die() -> void:
 	_dying = true
 	RunResult.record(_score(), int(_max_height), _coins, _kills)
+	Audio.stop_music()
+	Audio.play("death", 0.0, 0.0)
 	_burst(_player.global_position, Color(1.0, 0.42, 0.16), 36, 260.0)
 	_shake_amt = 12.0
 	_hitstop(0.12)
@@ -192,6 +199,7 @@ func _on_coin() -> void:
 	_combo_action(Tuning.COMBO_POINTS_COIN)
 	_flow.beat()
 	_burst(_player.global_position, Color(1.0, 0.82, 0.25), 10, 130.0)
+	Audio.play("coin", -3.0, 0.1)
 
 func _on_enemy_stomped() -> void:
 	_kills += 1
@@ -201,6 +209,7 @@ func _on_enemy_stomped() -> void:
 	_shake_amt = maxf(_shake_amt, 6.0)
 	_hitstop(0.05)
 	_burst(_player.global_position, Color(0.95, 0.35, 0.4), 16, 200.0)
+	Audio.play("stomp", 0.0, 0.08)
 
 func _on_enemy_killed() -> void:
 	_kills += 1
@@ -248,6 +257,8 @@ func _on_player_hit() -> void:
 	# The shield absorbs one otherwise-lethal hit.
 	if _shield:
 		_shield = false
+		Audio.play("hit", 0.0, 0.05)
+		_shake_amt = maxf(_shake_amt, 6.0)
 		return
 	_dead = true
 
@@ -255,6 +266,7 @@ func _on_powerup(kind: String) -> void:
 	_combo_action(Tuning.COMBO_POINTS_POWERUP)
 	var col: Color = Powerup.COLORS.get(kind, Color.WHITE)
 	_burst(_player.global_position, col, 18, 190.0)
+	Audio.play("pickup", -2.0, 0.06)
 	if kind == "shield":
 		_shield = true
 		return
