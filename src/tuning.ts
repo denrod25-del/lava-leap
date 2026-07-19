@@ -29,11 +29,10 @@ export const TUNING = {
   groundY: 640,             // y of the starting platform's top
   playerStartX: 300,        // centered: width / 2
 
-  // Player presentation vs collision: the sprite is drawn a touch larger than its
-  // hitbox for presence. Hitbox (playerBody*) is what gameplay is tuned against and
-  // must not change; display (playerDisplay*) is purely visual. Source art is 48x48.
-  playerDisplayW: 30,
-  playerDisplayH: 40,
+  // Player presentation vs collision: approved larger Climber display size.
+  // Hitbox stays unchanged so movement, platform collisions, and gameplay tuning remain intact.
+  playerDisplayW: 42,
+  playerDisplayH: 56,
   playerBodyW: 24,
   playerBodyH: 32,
 } as const;
@@ -148,9 +147,9 @@ export const FLOW = {
 
 export interface UpgradeDef { id: 'powerupDuration' | 'startShield' | 'revive'; name: string; maxLevel: number; costs: number[]; desc: string }
 export const UPGRADES: UpgradeDef[] = [
-  { id: 'powerupDuration', name: 'Power-Up Time', maxLevel: 3, costs: [150, 300, 500], desc: '+15% power-up duration / level' },
-  { id: 'startShield',     name: 'Start Shield',  maxLevel: 1, costs: [400],          desc: 'Begin each run with a shield' },
-  { id: 'revive',          name: 'Revive',        maxLevel: 1, costs: [600],          desc: 'Auto-revive once per run' },
+  { id: 'powerupDuration', maxLevel: 3, costs: [150, 300, 500], name: 'Power-Up Time', desc: '+15% power-up duration / level' },
+  { id: 'startShield',     maxLevel: 1, costs: [400],          name: 'Start Shield', desc: 'Begin each run with a shield' },
+  { id: 'revive',          maxLevel: 1, costs: [600],          name: 'Revive', desc: 'Auto-revive once per run' },
 ];
 export function powerupDurationFactor(level: number): number { return 1 + 0.15 * level; }
 
