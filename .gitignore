@@ -14,3 +14,6 @@ playwright-report/
 tools/hero-raw/
 
 .worktrees/
+
+# Godot export outputs
+/builds/

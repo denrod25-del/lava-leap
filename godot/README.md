@@ -1,73 +1,86 @@
-# Lava Leap — Godot port (Phase 0 scaffold)
+# Lava Leap — Godot port
 
 Native / controller / hardware re-engine of Lava Leap. Full plan:
 [`../docs/GODOT-PORT-PLAN.md`](../docs/GODOT-PORT-PLAN.md).
+Build/export instructions: [`EXPORT.md`](EXPORT.md).
 
-> **Status: Phase 1 vertical slice.** Runs straight into a playable climb —
-> `CharacterBody2D` player (run/jump/double-jump/jump-cut/dash/wall/coyote/
-> buffer/fast-fall), the ported reach-based platform generator, an up-only
-> climber camera, and rising lava with restart-on-death. Placeholder box art;
-> movement numbers are a starting point pending a feel re-tune (plan §7).
->
-> Ported + parity/reach-tested pure logic: `Rng`, `LevelGenerator`, `LevelStream`
-> (see `tests/`). Not yet ported (Phase 2+): set-pieces, hazards/enemies/
-> power-ups/bounce, crumble mechanic, exact web-seed parity, zones/backgrounds,
-> bosses, meta (shop/characters/save/story).
->
-> ⚠️ The GDScript was authored without a local Godot (parse/lint-clean via
-> gdtoolkit, and the generator's determinism + reach-validity are cross-checked
-> in Python), but **runtime/API behavior is first proven when you open it**.
-> Anything that errors on open is a quick fix — flag it.
+> **Status: feature-complete core game.** The full arcade loop runs end to end:
+> title menu → climb → game over / shop / settings, with boss encounters and
+> persistent progression. Parity milestone with the web build's core loop.
+
+## What's in
+- **Movement** — `CharacterBody2D` player: run / jump / double-jump / jump-cut /
+  dash (with i-frames) / wall-slide / wall-jump / coyote / jump-buffer / fast-fall.
+- **Procedural climb** — ported reach-based generator (deterministic, reach-valid),
+  streamed platforms, crumbling + moving + bounce-pad platforms, coins.
+- **Zones** — the four AI backgrounds crossfade every 2000px.
+- **Enemies** — crawler + drifter with stomp / dash-kill / lethal contact.
+- **Power-ups** — rocket / shield / magnet / slow-lava + bounce pads.
+- **Scoring** — Flow (momentum tiers) × Combo multiplier + heat-bonus height.
+- **Bosses** — the Lava Titan rises at 1000/2000/3000 and lobs telegraphed
+  fireballs (deterministic schedule).
+- **Juice** — screen shake, hit-stop, particle bursts, Flow tier pops.
+- **Audio** — SFX voice pool + looping music (menu + gameplay), volume-mixed.
+- **Meta** — persistent save (`user://save.cfg`): best score, coin bank, shop
+  (cosmetics + upgrades: Power-Up Time / Start Shield / Revive).
+- **Settings** — persisted volume + screen-shake toggle (`user://settings.cfg`).
 
 ## Requirements
-- **Godot 4.3+** (GL Compatibility renderer — chosen for Raspberry Pi / low-end).
+- **Godot 4.7** (developed against; 4.3+ should load). GL Compatibility renderer —
+  chosen for Raspberry Pi / low-end hardware.
 
 ## Open & run
 ```bash
 godot --path godot            # opens the editor
-# or run headless without the editor:
-godot --headless --path godot
 ```
-Press ▶ (main scene is `scenes/boot.tscn`). You should see the "LAVA LEAP —
-Godot port" screen and, in the console, the RNG sample + confirmation that the
-gameplay input actions registered.
+Press ▶ (main scene is `scenes/boot.tscn`) → boots to the title menu. First open
+imports `assets/` (art + audio) — let it finish before playing.
 
-## Tests (GdUnit4)
-Unit tests live in `tests/` and mirror the web build's `tests/*.ts` — a module
-isn't "ported" until its test passes with the same expectations.
+Controls: **← →** move · **Space** jump · **Shift** dash · **↓** fast-fall ·
+**Esc/P** pause-back. Full gamepad support (see EXPORT.md → Controllers).
 
-GdUnit4 isn't vendored (it's a large addon). Install it once:
-1. In the editor: **AssetLib → search "gdUnit4" → Download → Install** into
-   `addons/gdUnit4/`, then enable it in **Project Settings → Plugins**.
-2. Run the suite from the GdUnit panel, or headless:
-   ```bash
-   godot --path godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a tests
-   ```
-The GitHub Action (`.github/workflows/godot-ci.yml`) installs Godot + GdUnit4
-and runs `tests/` on every push touching `godot/**`.
+## Build & export
+Desktop (Windows/Linux/macOS), Android, and Raspberry Pi (Linux ARM64) — see
+**[`EXPORT.md`](EXPORT.md)**. Seed presets are in `export_presets.cfg`; outputs
+go to `../builds/` (gitignored).
 
 ## Layout
 ```
-project.godot        Godot 4.x config (viewport = 600x720 base, "expand" stretch
-                     for both orientations; GL Compatibility renderer)
-autoload/game_input.gd   Registers gameplay input (keyboard + gamepad + touch-ready)
-core/                Pure, node-free, unit-tested logic (ported from src/core)
-  rng.gd             ✅ ported + parity-locked to the JS mulberry32
-scenes/              .tscn scenes + scripts (boot placeholder for now)
-actors/              Player / Platform / Coin / Enemy / Lava scenes (Phase 1+)
-tests/               GdUnit4 suites mirroring tests/*.ts
-assets/              art/audio copied from ../public/assets (Phase 1)
-shaders/             lava flow / heat-haze / glow (new headroom, later)
+project.godot        Godot config (600x720 base, "expand" stretch for both
+                     orientations; GL Compatibility; GameInput + Audio autoloads)
+export_presets.cfg   Seed export presets (Win / Linux / Pi arm64 / macOS / Android)
+autoload/
+  game_input.gd      Registers gameplay input (keyboard + gamepad + touch)
+  audio.gd           SFX voice pool + looping music director
+core/                Pure, node-free logic (ported from src/core)
+  rng.gd             mulberry32, bit-exact with the web build
+  tuning.gd reach.gd platform_desc.gd level_generator.gd level_stream.gd
+  flow_meter.gd combo_tracker.gd boss.gd
+  save_data.gd game_settings.gd run_result.gd
+scenes/              boot / menu / game / game_over / settings / shop (+ .tscn)
+  background.gd      zone crossfade layer
+actors/              player / platform / coin / enemy / powerup / lava /
+                     fireball / titan / boss_controller (+ player.tscn)
+assets/              art + audio copied from ../public/assets
 ```
 
 ## Design rules carried over from the web build
 - **`core/` stays free of node/engine dependencies** so it's unit-testable in
-  isolation — the same discipline that keeps `src/core` test-locked today.
-- **Determinism:** `Rng` is bit-exact with the web build so daily-challenge and
-  replay seeds match across every platform. Don't swap it for
+  isolation — the discipline that keeps `src/core` test-locked.
+- **Determinism:** `Rng` is bit-exact with the web build so daily-seed and boss
+  schedules match across every platform. Don't swap it for
   `RandomNumberGenerator` in gameplay-affecting paths.
 
-## Next (Phase 1)
-Port `level_generator` + `Player` movement into a runnable vertical slice — the
-"does it feel right" milestone. Movement tuning will need re-tuning against the
-web build (physics integration differs); see the plan's §7.
+## Verification note
+The GDScript is authored without a local Godot in the dev sandbox: every file is
+parse/lint-clean via **gdtoolkit**, and pure logic (generator determinism +
+reach-validity, Flow tiers, boss schedule) is cross-checked in Python. Runtime/API
+behaviour is confirmed on open in the editor — anything that errors there is a
+quick fix; flag it.
+
+## Tests (GdUnit4)
+Unit suites in `tests/` mirror the web build's `tests/*.ts`. GdUnit4 isn't
+vendored — install via **AssetLib → gdUnit4** into `addons/gdUnit4/`, then:
+```bash
+godot --path godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a tests
+```
