@@ -44,9 +44,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
-        this.load.atlas('climber-atlas',
-          'assets/characters/climber/climber-atlas.png',
-          'assets/characters/climber/climber-atlas.json');
+        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas.png', {
+          frameWidth: 256,
+          frameHeight: 256,
+        });
         continue;
       }
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
@@ -70,9 +71,9 @@ export class BootScene extends Phaser.Scene {
         if (this.anims.exists(def.key)) continue;
         this.anims.create({
           key: def.key,
-          frames: def.atlasKey
-            ? def.frames.map((frame) => ({ key: def.atlasKey!, frame }))
-            : def.frames.map((key) => ({ key })),
+          frames: def.sheetKey
+            ? def.frames.map((frame) => ({ key: def.sheetKey!, frame }))
+            : def.frames.map((key) => ({ key: String(key) })),
           frameRate: def.frameRate,
           repeat: def.repeat,
         });
