@@ -27,11 +27,15 @@ export const KIKO_MOVEMENT: MovementProfile = {
   jumpVelocity: 560, airJumpVelocity: 500, maxJumps: 3, ledgeGrab: true,
 };
 
+/** High-resolution production sprite set integrated from the Lava Leap branding pass. */
+export const CLIMBER_CHARACTER = 'climber';
+
 export const CHARACTERS: CharacterDef[] = [
   { id: 'ember',   name: 'Ember',   price: 0 },
   { id: 'classic', name: 'Classic', price: 0 },
   { id: 'cole',    name: 'Cole',    price: 0, unlock: 'titanDefeat' },
   { id: 'kiko',    name: 'Kiko',    price: 750, movement: KIKO_MOVEMENT },
+  { id: CLIMBER_CHARACTER, name: 'Climber', price: 0 },
 ];
 
 export const DEFAULT_CHARACTER = 'ember';
@@ -40,10 +44,15 @@ export function resolveMovement(id: string): MovementProfile {
   return CHARACTERS.find((c) => c.id === id)?.movement ?? DEFAULT_MOVEMENT;
 }
 
-export type PlayerState = 'run' | 'jump' | 'fall' | 'idle';
+/** Player animation states. Legacy characters use the first four. The Climber atlas
+ *  additionally exposes the production action states for richer state-driven animation. */
+export type PlayerState =
+  | 'run' | 'jump' | 'fall' | 'idle'
+  | 'land' | 'double_jump' | 'dash' | 'wall_slide' | 'wall_jump'
+  | 'climb' | 'crouch' | 'hurt' | 'death';
 
-/** The 15 per-character animation frame files (run-0..5, jump-1..5, idle-0..3).
- *  The static sprite (player.png → staticKey) is loaded separately. */
+/** The 15 per-character animation frame files used by the legacy 48px characters
+ *  (run-0..5, jump-1..5, idle-0..3). The Climber uses a Texture Atlas instead. */
 export const FRAME_NAMES: string[] = [
   'run-0', 'run-1', 'run-2', 'run-3', 'run-4', 'run-5',
   'jump-1', 'jump-2', 'jump-3', 'jump-4', 'jump-5',
