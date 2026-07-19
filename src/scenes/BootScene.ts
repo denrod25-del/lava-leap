@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { characterAnims } from '../animManifest';
-import { CHARACTERS, FRAME_NAMES, staticKey, frameKey } from '../core/characters';
+import { CHARACTERS, CLIMBER_CHARACTER, FRAME_NAMES, staticKey, frameKey } from '../core/characters';
 import { TUNING } from '../tuning';
 import { VERSION_LABEL } from '../core/buildInfo';
 import { save } from '../main';
@@ -43,6 +43,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image('ember', 'assets/ember.png');
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
+      if (c.id === CLIMBER_CHARACTER) {
+        this.load.atlas('climber-atlas',
+          'assets/characters/climber/climber-atlas.png',
+          'assets/characters/climber/climber-atlas.json');
+        continue;
+      }
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
       for (const name of FRAME_NAMES) {
         this.load.image(frameKey(c.id, name), `assets/characters/${c.id}/${name}.png`);
@@ -64,7 +70,9 @@ export class BootScene extends Phaser.Scene {
         if (this.anims.exists(def.key)) continue;
         this.anims.create({
           key: def.key,
-          frames: def.frames.map((f) => ({ key: f })),
+          frames: def.atlasKey
+            ? def.frames.map((frame) => ({ key: def.atlasKey!, frame }))
+            : def.frames.map((key) => ({ key })),
           frameRate: def.frameRate,
           repeat: def.repeat,
         });
