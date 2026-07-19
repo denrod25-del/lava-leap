@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { TUNING, UPGRADES } from '../tuning';
 import { save } from '../main';
-import { CHARACTERS, frameKey } from '../core/characters';
+import { CHARACTERS, CLIMBER_CHARACTER, frameKey } from '../core/characters';
 import { track } from '../core/track';
 import { addUiBackdrop } from './uiBackdrop';
 
@@ -27,7 +27,6 @@ export class ShopScene extends Phaser.Scene {
 
   constructor() { super('Shop'); }
 
-  /** Number of selectable rows in the active tab. */
   private listLength(): number {
     if (this.tab === 'characters') return CHARACTERS.length;
     return this.tab === 'cosmetics' ? COSMETICS.length : UPGRADES.length;
@@ -50,7 +49,6 @@ export class ShopScene extends Phaser.Scene {
     this.rows = COSMETICS.map((_c, i) =>
       this.add.text(cx, 170 + i * 36, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' })
         .setOrigin(0.5)
-        // Tap a row to select it, then buy/equip it directly.
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => { if (i >= this.listLength()) return; this.idx = i; this.render(); this.buyOrEquip(); }),
     );
@@ -58,7 +56,6 @@ export class ShopScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '13px', color: '#888888',
     }).setOrigin(0.5);
 
-    // On-screen tap targets for touch devices (same handlers as the keyboard).
     const tapBtn = (x: number, label: string, fn: () => void): void => {
       this.add.text(x, 660, label, { fontFamily: 'monospace', fontSize: '22px', color: '#16e0e0' })
         .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
@@ -79,8 +76,6 @@ export class ShopScene extends Phaser.Scene {
     kb.on('keydown-ENTER', () => this.buyOrEquip());
     kb.on('keydown-ESC', () => this.scene.start('Menu'));
 
-    // Character preview (characters tab only): the highlighted hero's idle frame,
-    // tinted with the equipped cosmetic so the player sees the exact combo.
     this.preview = this.add.image(cx + 150, 210, frameKey(CHARACTERS[0].id, 'idle-0'))
       .setScale(2.5).setVisible(false);
 
@@ -105,7 +100,7 @@ export class ShopScene extends Phaser.Scene {
         this.sound.play('sfx-ui-select', { volume: 0.4 * sfxMult });
       } else if (ch.unlock) {
         // Story-gated: not buyable — the hint row says how to earn it.
-      } else if (blob.coinBank >= ch.price) { // scaffold for future paid characters
+      } else if (blob.coinBank >= ch.price) {
         save.update((b) => { b.coinBank -= ch.price; b.ownedCharacters.push(ch.id); b.character = ch.id; });
         track('character_equip', { id: ch.id });
         this.sound.play('sfx-kaching', { volume: 0.6 * sfxMult });
@@ -162,8 +157,12 @@ export class ShopScene extends Phaser.Scene {
       this.hintText.setText(sel.unlock && !selOwned
         ? "Free the fallen keeper — survive the Lava Titan's assault." : '');
       if (this.preview) {
-        this.preview.setTexture(frameKey(sel.id, 'idle-0'));
-        this.preview.setTint(selOwned ? equippedTint : 0x222230); // silhouette when locked
+        if (sel.id === CLIMBER_CHARACTER) {
+          this.preview.setTexture('climber-sheet', 0).setScale(0.95);
+        } else {
+          this.preview.setTexture(frameKey(sel.id, 'idle-0')).setScale(2.5);
+        }
+        this.preview.setTint(selOwned ? equippedTint : 0x222230);
         this.preview.setVisible(true);
       }
       return;
