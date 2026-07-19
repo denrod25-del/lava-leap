@@ -40,7 +40,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
-        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-full-master-production-atlas.png', {
+        // Cache-busted full master atlas. All Climber states now resolve from this one source.
+        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-full-master-production-atlas.png?v=full-master-51', {
           frameWidth: 422,
           frameHeight: 434,
         });
@@ -63,7 +64,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     for (const c of CHARACTERS) {
       for (const def of characterAnims(c.id)) {
-        if (this.anims.exists(def.key)) continue;
+        if (this.anims.exists(def.key)) this.anims.remove(def.key);
         const frames = def.sheetKey
           ? this.anims.generateFrameNumbers(def.sheetKey, { frames: def.frames as number[] })
           : def.frames.map((key) => ({ key: String(key) }));
