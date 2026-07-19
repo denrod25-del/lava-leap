@@ -29,14 +29,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image('enemy-crawler', 'assets/enemies/crawler.png');
     this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
     this.load.image('boss-titan', 'assets/boss/titan.png');
-    // Hand-painted zone environments (parallax far backdrop) + UI screen art.
-    // Optional: GameScene / MenuScene / GameOverScene fall back to procedural
-    // rendering when these textures aren't present.
     for (let z = 0; z < 4; z++) this.load.image(`bg-z${z}`, `assets/backgrounds/bg-z${z}.jpg`);
     this.load.image('bg-menu', 'assets/backgrounds/menu.jpg');
     this.load.image('bg-victory', 'assets/backgrounds/victory.jpg');
     this.load.image('bg-gameover', 'assets/backgrounds/gameover.jpg');
-    // Pattern textures (UI backdrops, ambient overlays, menu accents).
     this.load.image('ui-plate', 'assets/ui-plate.png');
     this.load.image('ash', 'assets/ash.png');
     this.load.image('grid', 'assets/grid.png');
@@ -44,9 +40,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
+        // 57 production frames packed into a uniform 8×8 sheet. The source package is
+        // 256px/frame; this runtime sheet is downsampled to 128px/frame because the
+        // character displays at ~24×32 world pixels and this cuts download size sharply.
         this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas.png', {
-          frameWidth: 256,
-          frameHeight: 256,
+          frameWidth: 128,
+          frameHeight: 128,
         });
         continue;
       }
@@ -61,7 +60,6 @@ export class BootScene extends Phaser.Scene {
     for (const k of ['music-menu', 'rumble', 'scrape', 'crack', 'swell', 'ding', 'kaching', 'ui-move', 'ui-select', 'stomp', 'hit', 'pickup', 'expire', 'boss-roar', 'projectile']) {
       this.load.audio(`sfx-${k}`, `assets/sfx/${k}.wav`);
     }
-    // Custom gameplay track (user-supplied). OGG first, MP3 fallback for iOS/Safari.
     this.load.audio('sfx-music-game', ['assets/music/gameplay.ogg', 'assets/music/gameplay.mp3']);
   }
 
@@ -79,9 +77,6 @@ export class BootScene extends Phaser.Scene {
         });
       }
     }
-    // First-ever boot (no runs yet, vignette never seen) opens on the story
-    // opening cutscene; everyone else goes straight to the Menu (replay lives
-    // in the Journal).
     const b = save.get();
     const freshPlayer = b.analytics.runs === 0 && !b.tutorialDone;
     if (!b.story.vignetteSeen && freshPlayer) {
