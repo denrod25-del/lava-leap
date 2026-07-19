@@ -6,6 +6,8 @@ extends Node2D
 
 const PLAYER_SCENE := preload("res://actors/player.tscn")
 const CAM_PLAYER_OFFSET := 120.0   # player sits this far below the camera centre
+const SHAKE_DECAY := 42.0          # px/s the screen-shake amplitude bleeds off
+const DEATH_HOLD := 0.7            # seconds of death juice before the game-over screen
 
 var _player: Player
 var _cam: Camera2D
@@ -33,7 +35,13 @@ var _bonus_score := 0          # already-multiplied pickup/kill points
 var _heat_acc := 0.0           # fractional Flow-heat bonus on height gained
 var _was_dashing := false      # rising-edge detect so a dash beats Flow once
 
+# Juice.
+var _shake_amt := 0.0          # current screen-shake amplitude, px
+var _flow_tier := 0            # last Flow tier, to detect tier-ups
+var _dying := false            # death sequence in progress (guards re-trigger)
+
 func _ready() -> void:
+	Engine.time_scale = 1.0  # clear any hit-stop that outlived the previous scene
 	_stream = LevelStream.new(randi())
 	_flow = FlowMeter.new()
 	_combo = ComboTracker.new()
@@ -68,9 +76,14 @@ func _ready() -> void:
 	_sync_platforms()
 
 func _physics_process(delta: float) -> void:
-	# Up-only climber camera.
+	# Up-only climber camera, plus a decaying screen shake offset.
 	_cam.position.x = Tuning.WIDTH / 2.0
 	_cam.position.y = minf(_cam.position.y, _player.position.y - CAM_PLAYER_OFFSET)
+	if _shake_amt > 0.0:
+		_cam.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake_amt
+		_shake_amt = maxf(0.0, _shake_amt - SHAKE_DECAY * delta)
+	else:
+		_cam.offset = Vector2.ZERO
 
 	_sync_platforms()
 
@@ -87,6 +100,8 @@ func _physics_process(delta: float) -> void:
 				_player.spring(Tuning.BOUNCE_PAD_VELOCITY)
 				_combo_action(Tuning.COMBO_POINTS_BOUNCE)
 				_flow.beat()
+				_shake_amt = maxf(_shake_amt, 5.0)
+				_burst(_player.global_position, Color(0.4, 0.95, 0.5), 14, 220.0)
 
 	# Flow momentum: build airborne/dashing, drain on the ground, beat on dash.
 	var dashing := _player.is_dashing()
@@ -96,6 +111,13 @@ func _physics_process(delta: float) -> void:
 	_flow.update(dt_ms, not _player.is_on_floor(), dashing)
 	_combo.update(dt_ms)
 	_player.speed_scale = 1.0 + _flow.speed_nudge()
+
+	# Flow tier-up: a little pop of feedback as you heat up.
+	var tier := _flow.tier()
+	if tier > _flow_tier:
+		_shake_amt = maxf(_shake_amt, 4.0)
+		_burst(_player.global_position, Color(1.0, 0.6, 0.2), 12, 150.0)
+	_flow_tier = tier
 
 	var climbed := maxf(0.0, Tuning.GROUND_Y - _player.position.y)
 	# Flow heat: newly-gained height earns (heat - 1) bonus points before we bank
@@ -121,8 +143,21 @@ func _physics_process(delta: float) -> void:
 
 	# Death: hit by an enemy, caught by lava, or fell well below the view.
 	var cam_bottom := _cam.position.y + Tuning.HEIGHT / 2.0
-	if _dead or _player.position.y >= _lava.surface_y or _player.position.y > cam_bottom + 120.0:
-		get_tree().reload_current_scene()
+	var caught := _player.position.y >= _lava.surface_y
+	var fell := _player.position.y > cam_bottom + 120.0
+	if (_dead or caught or fell) and not _dying:
+		_die()
+
+## Death juice, then hand off to the game-over screen. Guarded so it runs once.
+func _die() -> void:
+	_dying = true
+	RunResult.record(_score(), int(_max_height), _coins, _kills)
+	_burst(_player.global_position, Color(1.0, 0.42, 0.16), 36, 260.0)
+	_shake_amt = 12.0
+	_hitstop(0.12)
+	var t := get_tree().create_timer(DEATH_HOLD, true, false, true)  # real-time
+	t.timeout.connect(func() -> void:
+		get_tree().change_scene_to_file("res://scenes/game_over.tscn"))
 
 func _spawn_platform(d: PlatformDesc) -> void:
 	if _plats.has(d.id):
@@ -156,12 +191,16 @@ func _on_coin() -> void:
 	_player.refresh_dash()  # mid-air coin grab re-arms the dash (chain enabler)
 	_combo_action(Tuning.COMBO_POINTS_COIN)
 	_flow.beat()
+	_burst(_player.global_position, Color(1.0, 0.82, 0.25), 10, 130.0)
 
 func _on_enemy_stomped() -> void:
 	_kills += 1
 	_player.spring(Tuning.ENEMY_STOMP_BOUNCE)  # spring off the squashed enemy
 	_combo_action(Tuning.COMBO_POINTS_STOMP)
 	_flow.beat()
+	_shake_amt = maxf(_shake_amt, 6.0)
+	_hitstop(0.05)
+	_burst(_player.global_position, Color(0.95, 0.35, 0.4), 16, 200.0)
 
 func _on_enemy_killed() -> void:
 	_kills += 1
@@ -176,6 +215,35 @@ func _combo_action(base_points: int) -> void:
 func _score() -> int:
 	return int(_max_height) + _bonus_score + int(_heat_acc)
 
+## One-shot particle pop at a world position. Self-frees after its lifetime.
+func _burst(pos: Vector2, color: Color, count: int, speed: float) -> void:
+	var p := CPUParticles2D.new()
+	add_child(p)
+	p.global_position = pos
+	p.z_index = 10
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = count
+	p.lifetime = 0.5
+	p.direction = Vector2.UP
+	p.spread = 180.0
+	p.gravity = Vector2(0.0, 520.0)
+	p.initial_velocity_min = speed * 0.4
+	p.initial_velocity_max = speed
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 3.5
+	p.color = color
+	var t := get_tree().create_timer(1.0)
+	t.timeout.connect(p.queue_free)
+
+## Brief slow-motion hit-stop for impact. Uses a real-time timer so it restores
+## even though the engine clock is scaled down.
+func _hitstop(secs: float) -> void:
+	Engine.time_scale = 0.05
+	var t := get_tree().create_timer(secs, true, false, true)
+	t.timeout.connect(func() -> void: Engine.time_scale = 1.0)
+
 func _on_player_hit() -> void:
 	# The shield absorbs one otherwise-lethal hit.
 	if _shield:
@@ -185,6 +253,8 @@ func _on_player_hit() -> void:
 
 func _on_powerup(kind: String) -> void:
 	_combo_action(Tuning.COMBO_POINTS_POWERUP)
+	var col: Color = Powerup.COLORS.get(kind, Color.WHITE)
+	_burst(_player.global_position, col, 18, 190.0)
 	if kind == "shield":
 		_shield = true
 		return
