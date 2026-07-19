@@ -5,7 +5,7 @@ import { save } from '../main';
 import { COSMETICS } from '../scenes/ShopScene';
 import type { InputState } from '../core/InputState';
 import { findLedge, type LedgePlatform } from '../core/ledge';
-import { animKey, staticKey, frameKey, isCharacter, DEFAULT_CHARACTER, DEFAULT_MOVEMENT, type MovementProfile, type PlayerState } from '../core/characters';
+import { animKey, staticKey, frameKey, isCharacter, CLIMBER_CHARACTER, DEFAULT_CHARACTER, DEFAULT_MOVEMENT, type MovementProfile, type PlayerState } from '../core/characters';
 
 type Body = Phaser.Physics.Arcade.Body;
 
@@ -25,6 +25,8 @@ export class Player {
   private hangTimer = 0;
   private hangSide: 'left' | 'right' = 'left';
   private regrabTimer = 0;
+  private actionAnimUntil = 0;
+  private actionAnimState: PlayerState | null = null;
   /** Max jumps before landing (ground + air). Seeded from the movement profile
    *  (2 = double for the standard kit). GameScene then raises it to 3 on touch
    *  devices for the triple jump (mobile is harder to climb) — a movement profile
@@ -70,16 +72,19 @@ export class Player {
     this.scene = scene;
     const charId = isCharacter(save.get().character) ? save.get().character : DEFAULT_CHARACTER;
     this.charId = charId;
-    this.sprite = scene.physics.add.sprite(x, y, staticKey(charId));
+    this.sprite = charId === CLIMBER_CHARACTER
+      ? scene.physics.add.sprite(x, y, 'climber-atlas', 'idle_00')
+      : scene.physics.add.sprite(x, y, staticKey(charId));
     this.sprite.setCollideWorldBounds(false);
-    // Source art is 48x48; display it a touch larger than the hitbox for presence.
-    // The hitbox (playerBody*) is locked every frame in update so gameplay is unchanged.
+    // Display size is independent of source resolution. Legacy sprites are 48px;
+    // the Climber atlas frames are 256px. The world-space hitbox stays identical.
     this.sprite.setDisplaySize(TUNING.playerDisplayW, TUNING.playerDisplayH);
-    // Arcade body size is in source pixels and is scaled by the sprite, so a full
-    // 48x48 source body becomes 24x32 in world space — matching the old placeholder.
     const body = this.sprite.body as Body;
-    body.setSize(48, 48);
-    body.setOffset(0, 0);
+    const sx = Math.abs(this.sprite.scaleX) || 1;
+    const sy = Math.abs(this.sprite.scaleY) || 1;
+    const bw = TUNING.playerBodyW / sx, bh = TUNING.playerBodyH / sy;
+    body.setSize(bw, bh);
+    body.setOffset((this.sprite.width - bw) / 2, this.sprite.height - bh);
 
     // Apply equipped cosmetic tint.
     const equipped = COSMETICS.find((c) => c.id === save.get().equippedCosmetic);
@@ -116,7 +121,10 @@ export class Player {
     const onGround = body.blocked.down || body.touching.down;
 
     // Land detection: airborne last frame, grounded this frame.
-    if (onGround && !this.wasOnGround) this.events.emit('land', { impactVy: vyAtFrameStart });
+    if (onGround && !this.wasOnGround) {
+      this.events.emit('land', { impactVy: vyAtFrameStart });
+      this.playTransient('land', 260);
+    }
     this.wasOnGround = onGround;
 
     const onWallLeft = body.blocked.left || body.touching.left;
@@ -146,6 +154,7 @@ export class Player {
         body.setAllowGravity(true);
       } else {
         body.setVelocity(0, 0);
+        this.playState('climb');
       }
       this.jumpHeldLast = jumpDown;
       return;
@@ -154,6 +163,7 @@ export class Player {
 
     // Maintain an active dash (overrides normal horizontal movement & gravity).
     if (this.dashTimer > 0) {
+      this.playState('dash');
       // Dash-jump cancel (the signature move): tapping jump mid-dash ends the dash
       // and converts it into a full-strength jump that KEEPS the dash's horizontal
       // speed. Consumes one jump from the air budget.
@@ -167,6 +177,7 @@ export class Player {
         this.jumpsUsed = Math.min(this.maxJumps, this.jumpsUsed + 1);
         this.jumpHeldLast = jumpDown;
         this.events.emit('dashJumpCancel', {});
+        this.playTransient('jump', 220);
         return;
       } else if (jumpEdge) {
         // No jump slots left to cancel with — still arm the buffer so the press
@@ -180,7 +191,7 @@ export class Player {
       this.jumpHeldLast = jumpDown;
       return; // skip the rest while dashing
     }
-    (body as Body).setAllowGravity(true);
+    body.setAllowGravity(true);
 
     // Horizontal movement: run at runAxis × moveSpeed (analog on touch, ±1 on keyboard).
     // Facing tracks travel direction.
@@ -227,7 +238,8 @@ export class Player {
         body.setAllowGravity(false);
         this.sprite.setFlipX(cand.side === 'right'); // face the platform
         this.sprite.anims.stop();
-        this.sprite.setTexture(frameKey(this.charId, 'jump-2')); // hang pose = mid-air frame
+        if (this.charId === CLIMBER_CHARACTER) this.sprite.setTexture('climber-atlas', 'climb_00');
+        else this.sprite.setTexture(frameKey(this.charId, 'jump-2')); // legacy hang pose = mid-air frame
         this.events.emit('ledgeGrab', { x: this.sprite.x, y: this.sprite.y });
         this.jumpHeldLast = jumpDown;
         return;
@@ -285,12 +297,14 @@ export class Player {
         this.jumpsUsed = 1; // allow one air jump after a wall jump
         this.bufferTimer = 0;
         this.events.emit('wallJump', {});
+        this.playTransient('wall_jump', 360);
       } else if (!onGround && this.jumpsUsed >= 1 && this.jumpsUsed < this.maxJumps) {
         // Air jump(s): one for double (keyboard), two for triple (touch, maxJumps=3).
         this.sprite.setVelocityY(-this.profile.airJumpVelocity);
         this.jumpsUsed += 1;
         this.bufferTimer = 0;
         this.events.emit('doubleJump', {});
+        this.playTransient('double_jump', 360);
       }
     }
     // Variable height: cut upward velocity on release.
@@ -316,19 +330,38 @@ export class Player {
     this.refreshDash();
   }
 
-  private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
-    if (!this.scene.anims.exists(animKey(this.charId, 'run'))) return; // frames not built — static fallback
-    let state: PlayerState;
-    if (!onGround) state = vy < 0 ? 'jump' : 'fall';
-    else if (moving) state = 'run';
-    else state = 'idle';
+  private playTransient(state: PlayerState, durationMs: number): void {
+    if (this.charId !== CLIMBER_CHARACTER || !this.scene.anims.exists(animKey(this.charId, state))) return;
+    this.actionAnimState = state;
+    this.actionAnimUntil = this.scene.time.now + durationMs;
+    this.playState(state);
+  }
+
+  private playState(state: PlayerState): void {
     const key = animKey(this.charId, state);
-    // Also re-play when nothing is running: a ledge hang stops anims but leaves
-    // currentAnim set, so the name check alone would leave the static hang pose
-    // stuck through a post-drop fall.
     if (this.scene.anims.exists(key)
         && (this.sprite.anims.getName() !== key || !this.sprite.anims.isPlaying)) {
       this.sprite.anims.play(key, true);
     }
+  }
+
+  private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
+    if (!this.scene.anims.exists(animKey(this.charId, 'run'))) return; // frames not built — static fallback
+    if (this.charId === CLIMBER_CHARACTER) {
+      if (this.actionAnimState && this.scene.time.now < this.actionAnimUntil) {
+        this.playState(this.actionAnimState);
+        return;
+      }
+      this.actionAnimState = null;
+      if (this._wallSliding) {
+        this.playState('wall_slide');
+        return;
+      }
+    }
+    let state: PlayerState;
+    if (!onGround) state = vy < 0 ? 'jump' : 'fall';
+    else if (moving) state = 'run';
+    else state = 'idle';
+    this.playState(state);
   }
 }
