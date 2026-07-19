@@ -40,13 +40,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
-        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas-128.png', {
-          frameWidth: 128,
-          frameHeight: 128,
-        });
-        this.load.spritesheet('climber-master-idle-run', 'assets/characters/climber/IMG_0140.png', {
-          frameWidth: 167,
-          frameHeight: 255,
+        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-full-master-production-atlas.png', {
+          frameWidth: 422,
+          frameHeight: 434,
         });
         continue;
       }
