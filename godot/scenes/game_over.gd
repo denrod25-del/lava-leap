@@ -54,13 +54,16 @@ func _process(delta: float) -> void:
 	if _lock > 0.0:
 		_lock -= delta
 		if _lock <= 0.0:
-			_hint.text = "SPACE / tap to climb again"
+			_hint.text = "SPACE / tap to climb again      ESC for menu"
 			_hint.visible = true
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _lock > 0.0:
 		return
-	if event.is_action_pressed("jump") or event.is_action_pressed("ui_accept") \
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause"):
+		Audio.play("ui_move", -2.0, 0.0)
+		get_tree().change_scene_to_file("res://scenes/menu.tscn")
+	elif event.is_action_pressed("jump") or event.is_action_pressed("ui_accept") \
 			or (event is InputEventMouseButton and event.pressed) \
 			or (event is InputEventScreenTouch and event.pressed):
 		Audio.play("ui_select", -2.0, 0.0)

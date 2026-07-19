@@ -23,11 +23,13 @@ const SFX_PATHS := {
 	"ui_move": "res://assets/sfx/ui-move.wav",
 }
 const MUSIC_GAMEPLAY := "res://assets/music/gameplay.ogg"
+const MUSIC_MENU := "res://assets/sfx/music-menu.wav"
 
 var _sfx: Dictionary = {}
 var _voices: Array[AudioStreamPlayer] = []
 var _next := 0
 var _music: AudioStreamPlayer
+var _loop_music := false  # replay on finish (for streams without built-in looping)
 
 func _ready() -> void:
 	# Keep audio alive across scene changes.
@@ -42,7 +44,12 @@ func _ready() -> void:
 		_voices.append(p)
 	_music = AudioStreamPlayer.new()
 	_music.bus = "Master"
+	_music.finished.connect(_on_music_finished)
 	add_child(_music)
+
+func _on_music_finished() -> void:
+	if _loop_music:
+		_music.play()  # gap-replay loop for streams without built-in looping
 
 ## Fire a one-shot SFX. `pitch` randomises around 1.0 by ±`pitch_var` so repeated
 ## sounds (coins, stomps) don't machine-gun the exact same sample.
@@ -64,10 +71,25 @@ func play_music(volume_db: float = -9.0) -> void:
 	var ogg := load(MUSIC_GAMEPLAY) as AudioStreamOggVorbis
 	if ogg == null:
 		return
-	ogg.loop = true
+	ogg.loop = true         # seamless internal loop; no finished-replay needed
+	_loop_music = false
 	_music.stream = ogg
 	_music.volume_db = volume_db
 	_music.play()
 
+## Start (or restart) the looping menu music. The WAV has no built-in loop, so we
+## replay it on finish.
+func play_menu_music(volume_db: float = -11.0) -> void:
+	if not ResourceLoader.exists(MUSIC_MENU):
+		return
+	var wav := load(MUSIC_MENU) as AudioStream
+	if wav == null:
+		return
+	_loop_music = true
+	_music.stream = wav
+	_music.volume_db = volume_db
+	_music.play()
+
 func stop_music() -> void:
+	_loop_music = false
 	_music.stop()
