@@ -21,6 +21,8 @@ const SFX_PATHS := {
 	"expire": "res://assets/sfx/expire.wav",
 	"ui_select": "res://assets/sfx/ui-select.wav",
 	"ui_move": "res://assets/sfx/ui-move.wav",
+	"boss_roar": "res://assets/sfx/boss-roar.wav",
+	"projectile": "res://assets/sfx/projectile.wav",
 }
 const MUSIC_GAMEPLAY := "res://assets/music/gameplay.ogg"
 const MUSIC_MENU := "res://assets/sfx/music-menu.wav"

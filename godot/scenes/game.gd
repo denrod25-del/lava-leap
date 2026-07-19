@@ -40,9 +40,16 @@ var _shake_amt := 0.0          # current screen-shake amplitude, px
 var _flow_tier := 0            # last Flow tier, to detect tier-ups
 var _dying := false            # death sequence in progress (guards re-trigger)
 
+# Boss.
+var _boss: BossController
+var _boss_prev := 0.0          # previous max height, for boundary-crossing checks
+var _banner: Label             # transient boss announcement
+var _banner_t := 0.0           # remaining banner display time
+
 func _ready() -> void:
 	Engine.time_scale = 1.0  # clear any hit-stop that outlived the previous scene
-	_stream = LevelStream.new(randi())
+	var seed := randi()
+	_stream = LevelStream.new(seed)
 	_flow = FlowMeter.new()
 	_combo = ComboTracker.new()
 
@@ -61,12 +68,27 @@ func _ready() -> void:
 	_lava = Lava.new()
 	add_child(_lava)
 
+	_boss = BossController.new()
+	_boss.setup(_player, _lava, seed)
+	_boss.player_hit.connect(_on_player_hit)
+	_boss.started.connect(_on_boss_start)
+	_boss.ended.connect(_on_boss_end)
+	add_child(_boss)
+
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	_hud = Label.new()
 	_hud.position = Vector2(12, 10)
 	_hud.add_theme_font_size_override("font_size", 20)
 	layer.add_child(_hud)
+	_banner = Label.new()
+	_banner.size = Vector2(Tuning.WIDTH, 40)
+	_banner.position = Vector2(0, 150)
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.add_theme_font_size_override("font_size", 30)
+	_banner.add_theme_color_override("font_color", Color(1.0, 0.42, 0.2))
+	_banner.visible = false
+	layer.add_child(_banner)
 
 	# Spawn nodes for platforms already in the stream (the starting platform),
 	# then generate the ones above. Without this the player spawns in mid-air and
@@ -132,6 +154,19 @@ func _physics_process(delta: float) -> void:
 		_heat_acc += (climbed - _max_height) * (heat - 1.0)
 	_max_height = maxf(_max_height, climbed)
 	_bg.update_height(_max_height)
+
+	# Boss encounters trigger when the climb crosses a height boundary.
+	var crossed := Boss.boundary_crossed(_boss_prev, _max_height)
+	if crossed >= 0 and not _boss.is_active():
+		_boss.start(crossed)
+	_boss_prev = _max_height
+
+	# Fade the boss banner.
+	if _banner_t > 0.0:
+		_banner_t -= delta
+		_banner.modulate.a = clampf(_banner_t / 0.8, 0.0, 1.0)
+		if _banner_t <= 0.0:
+			_banner.visible = false
 
 	# Timed power-ups (rocket boost, magnet, slow-lava) tick every frame, including
 	# during grace; the returned factor slows the lava while slow-lava is active.
@@ -261,6 +296,20 @@ func _on_player_hit() -> void:
 		_shake_amt = maxf(_shake_amt, 6.0)
 		return
 	_dead = true
+
+func _on_boss_start(_zone: int) -> void:
+	Audio.play("boss_roar", 0.0, 0.0)
+	_shake_amt = maxf(_shake_amt, 10.0)
+	_banner.text = "⚠  LAVA TITAN  ⚠"
+	_banner_t = 2.4
+	_banner.visible = true
+	_banner.modulate.a = 1.0
+
+func _on_boss_end(zone: int) -> void:
+	_banner.text = "TITAN %d CLEARED" % zone
+	_banner_t = 1.8
+	_banner.visible = true
+	_banner.modulate.a = 1.0
 
 func _on_powerup(kind: String) -> void:
 	_combo_action(Tuning.COMBO_POINTS_POWERUP)
