@@ -44,6 +44,10 @@ export class BootScene extends Phaser.Scene {
           frameWidth: 128,
           frameHeight: 128,
         });
+        this.load.spritesheet('climber-master-idle-run', 'assets/characters/climber/climber-idle-run-production-atlas.png', {
+          frameWidth: 167,
+          frameHeight: 255,
+        });
         continue;
       }
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
