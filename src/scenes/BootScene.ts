@@ -43,7 +43,7 @@ export class BootScene extends Phaser.Scene {
         // 57 production frames packed into a uniform 8×8 sheet. The source package is
         // 256px/frame; this runtime sheet is downsampled to 128px/frame because the
         // character displays at ~24×32 world pixels and this cuts download size sharply.
-        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas.png', {
+        this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-atlas-128.png', {
           frameWidth: 128,
           frameHeight: 128,
         });
