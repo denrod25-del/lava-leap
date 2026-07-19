@@ -103,11 +103,12 @@ func _physics_process(delta: float) -> void:
 	# Up-only climber camera, plus a decaying screen shake offset.
 	_cam.position.x = Tuning.WIDTH / 2.0
 	_cam.position.y = minf(_cam.position.y, _player.position.y - CAM_PLAYER_OFFSET)
-	if _shake_amt > 0.0:
+	if _shake_amt > 0.0 and GameSettings.screen_shake:
 		_cam.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake_amt
 		_shake_amt = maxf(0.0, _shake_amt - SHAKE_DECAY * delta)
 	else:
 		_cam.offset = Vector2.ZERO
+		_shake_amt = 0.0
 
 	_sync_platforms()
 

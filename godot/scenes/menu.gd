@@ -48,7 +48,20 @@ func _ready() -> void:
 	_add_label("← → move    SPACE jump    SHIFT dash    ↓ fast-fall",
 		cx, 640, 13, Color(0.6, 0.66, 0.76))
 
+	# Settings button (consumes its own click, so it doesn't also start a run).
+	var gear := Button.new()
+	gear.text = "⚙  Settings  (S)"
+	gear.add_theme_font_size_override("font_size", 16)
+	gear.position = Vector2(cx - 90, 500)
+	gear.custom_minimum_size = Vector2(180, 36)
+	gear.pressed.connect(_open_settings)
+	add_child(gear)
+
 	Audio.play_menu_music()
+
+func _open_settings() -> void:
+	Audio.play("ui_select", -2.0, 0.0)
+	get_tree().change_scene_to_file("res://scenes/settings.tscn")
 
 func _add_label(text: String, cx: float, y: float, size: int, color: Color) -> Label:
 	var l := Label.new()
@@ -68,6 +81,9 @@ func _process(delta: float) -> void:
 	_prompt.modulate.a = 0.6 + 0.4 * (0.5 + 0.5 * sin(_pulse * 3.0))
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_S:
+		_open_settings()
+		return
 	if event.is_action_pressed("jump") or event.is_action_pressed("ui_accept") \
 			or (event is InputEventMouseButton and event.pressed) \
 			or (event is InputEventScreenTouch and event.pressed):

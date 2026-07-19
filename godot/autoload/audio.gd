@@ -32,8 +32,10 @@ var _voices: Array[AudioStreamPlayer] = []
 var _next := 0
 var _music: AudioStreamPlayer
 var _loop_music := false  # replay on finish (for streams without built-in looping)
+var _music_base_db := 0.0  # per-track base level, before the settings offset
 
 func _ready() -> void:
+	GameSettings.load_settings()
 	# Keep audio alive across scene changes.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	for name_key in SFX_PATHS:
@@ -62,9 +64,24 @@ func play(sound: String, volume_db: float = 0.0, pitch_var: float = 0.0) -> void
 	var p := _voices[_next]
 	_next = (_next + 1) % VOICES
 	p.stream = stream
-	p.volume_db = volume_db
+	p.volume_db = volume_db + _sfx_offset_db()
 	p.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	p.play()
+
+## dB offset from the SFX volume setting (0 = silent, 10 = full).
+func _sfx_offset_db() -> float:
+	if GameSettings.sfx_vol <= 0:
+		return -80.0
+	return linear_to_db(GameSettings.sfx_vol / 10.0)
+
+func _music_offset_db() -> float:
+	if GameSettings.music_vol <= 0:
+		return -80.0
+	return linear_to_db(GameSettings.music_vol / 10.0)
+
+## Re-apply the current music volume live (called when the setting changes).
+func apply_settings() -> void:
+	_music.volume_db = _music_base_db + _music_offset_db()
 
 ## Start (or restart) the looping gameplay music.
 func play_music(volume_db: float = -9.0) -> void:
@@ -75,8 +92,9 @@ func play_music(volume_db: float = -9.0) -> void:
 		return
 	ogg.loop = true         # seamless internal loop; no finished-replay needed
 	_loop_music = false
+	_music_base_db = volume_db
 	_music.stream = ogg
-	_music.volume_db = volume_db
+	_music.volume_db = volume_db + _music_offset_db()
 	_music.play()
 
 ## Start (or restart) the looping menu music. The WAV has no built-in loop, so we
@@ -88,8 +106,9 @@ func play_menu_music(volume_db: float = -11.0) -> void:
 	if wav == null:
 		return
 	_loop_music = true
+	_music_base_db = volume_db
 	_music.stream = wav
-	_music.volume_db = volume_db
+	_music.volume_db = volume_db + _music_offset_db()
 	_music.play()
 
 func stop_music() -> void:
