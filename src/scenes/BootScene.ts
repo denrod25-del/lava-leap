@@ -28,7 +28,19 @@ export class BootScene extends Phaser.Scene {
     this.load.image('lava', 'assets/lava-tile.png');
     this.load.image('enemy-crawler', 'assets/enemies/crawler.png');
     this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
-    this.load.image('boss-titan', 'assets/boss/titan.png');
+
+    // Lava Titan production art. These are the two approved files uploaded to public/assets/boss.
+    // IMG_0186.png = Titan-only atlas (6 columns, 253x141 cells).
+    // IMG_0198.png = 3-frame fireball atlas (476x110 cells).
+    this.load.spritesheet('boss-titan-sheet', 'assets/boss/IMG_0186.png?v=titan-production-1', {
+      frameWidth: 253,
+      frameHeight: 141,
+    });
+    this.load.spritesheet('boss-fireball-sheet', 'assets/boss/IMG_0198.png?v=titan-production-1', {
+      frameWidth: 476,
+      frameHeight: 110,
+    });
+
     for (let z = 0; z < 4; z++) this.load.image(`bg-z${z}`, `assets/backgrounds/bg-z${z}.jpg`);
     this.load.image('bg-menu', 'assets/backgrounds/menu.jpg');
     this.load.image('bg-victory', 'assets/backgrounds/victory.jpg');
@@ -76,6 +88,32 @@ export class BootScene extends Phaser.Scene {
         });
       }
     }
+
+    // Production Lava Titan animation map from the uploaded atlas.
+    const bossAnimations = [
+      { key: 'boss-titan-idle', frames: [0, 1, 2, 3, 4, 5], frameRate: 5, repeat: -1 },
+      { key: 'boss-titan-attack', frames: [6, 7, 8, 9, 10, 11], frameRate: 10, repeat: 0 },
+      { key: 'boss-titan-fireball', frames: [12, 13, 14, 15, 16, 17], frameRate: 9, repeat: 0 },
+      { key: 'boss-titan-stomp', frames: [18, 19, 20, 21, 22, 23], frameRate: 8, repeat: 0 },
+      { key: 'boss-titan-defeat', frames: [24, 25, 26], frameRate: 5, repeat: 0 },
+    ];
+    for (const def of bossAnimations) {
+      if (this.anims.exists(def.key)) this.anims.remove(def.key);
+      this.anims.create({
+        key: def.key,
+        frames: this.anims.generateFrameNumbers('boss-titan-sheet', { frames: def.frames }),
+        frameRate: def.frameRate,
+        repeat: def.repeat,
+      });
+    }
+    if (this.anims.exists('boss-fireball-fly')) this.anims.remove('boss-fireball-fly');
+    this.anims.create({
+      key: 'boss-fireball-fly',
+      frames: this.anims.generateFrameNumbers('boss-fireball-sheet', { frames: [0, 1, 2] }),
+      frameRate: 12,
+      repeat: -1,
+    });
+
     const b = save.get();
     const freshPlayer = b.analytics.runs === 0 && !b.tutorialDone;
     if (!b.story.vignetteSeen && freshPlayer) {
