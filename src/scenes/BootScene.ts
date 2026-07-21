@@ -39,6 +39,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('grid', 'assets/grid.png');
     this.load.image('ember', 'assets/ember.png');
     this.load.image('titan-emblem', 'assets/titan-emblem.png');
+    this.load.image('watermark', 'assets/watermark.png');
     for (const c of CHARACTERS) {
       if (c.id === CLIMBER_CHARACTER) {
         this.load.spritesheet('climber-sheet', 'assets/characters/climber/climber-full-master-production-atlas.png?v=full-master-51', {

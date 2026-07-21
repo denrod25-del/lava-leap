@@ -19,6 +19,10 @@ export class HudScene extends Phaser.Scene {
     this.toastQueue = [];
     this.toastShowing = false;
 
+    // Brand watermark, bottom-left (the only HUD-free corner). It rides the same
+    // canvas the ClipRecorder captures, so every shared clip carries the logo.
+    this.add.image(12, TUNING.height - 12, 'watermark').setOrigin(0, 1).setDisplaySize(96, 82).setAlpha(0.45);
+
     this.heightText = this.add.text(12, 12, 'Height: 0', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' });
     this.coinText = this.add.text(12, 36, 'Coins: 0', { fontFamily: 'monospace', fontSize: '18px', color: '#ffd166' });
 

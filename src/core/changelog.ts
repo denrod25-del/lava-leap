@@ -2,6 +2,9 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.14.1', date: '2026-07-21', notes: [
+    'Shared clips now carry the Lava Leap emblem — everyone watching knows where the climb happened.',
+  ]},
   { version: '0.14.0', date: '2026-07-21', notes: [
     'HIGHLIGHT CLIPS: every run auto-records its last 30 seconds — with the music.',
     "Die (or clear a level) and hit SHARE CLIP: watch the replay, then share straight to TikTok / Instagram / Discord from your phone, or download it on desktop.",
