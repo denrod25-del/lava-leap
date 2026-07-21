@@ -18,7 +18,9 @@ const STATE_DEFS: { state: PlayerState; frames: string[]; frameRate: number; rep
 // Full master-preserved Climber atlas order: idle, run, jump, fall, land,
 // double jump, dash, wall slide, wall jump, climb, crouch, hurt, death.
 const CLIMBER_STATE_DEFS: { state: PlayerState; frames: number[]; frameRate: number; repeat: number }[] = [
-  { state: 'idle',        frames: [0, 1, 2, 3, 4, 5], frameRate: 6, repeat: -1 },
+  // Keep idle visually anchored until the six source frames are normalized to one baseline.
+  // A single approved idle frame prevents cosmetic vertical bob without touching physics.
+  { state: 'idle',        frames: [0], frameRate: 1, repeat: -1 },
   { state: 'run',         frames: [6, 7, 8, 9, 10, 11], frameRate: 10, repeat: -1 },
   { state: 'jump',        frames: [12, 13, 14], frameRate: 8, repeat: 0 },
   { state: 'fall',        frames: [15, 16], frameRate: 8, repeat: 0 },
