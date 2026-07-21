@@ -11,9 +11,11 @@ export interface Settings {
   /** Mobile control scheme: 'auto' (steer + tap-dash, jumping automatic — default)
    *  or 'manual' (two-thumb: run joystick + tap-jump + DASH button). */
   controlScheme: 'auto' | 'manual';
+  /** Auto-record a rolling highlight clip during runs (v0.14.0). */
+  recordClips: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' };
+export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto', recordClips: true };
 
 export interface SaveBlob {
   version: 2;
