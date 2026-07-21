@@ -65,15 +65,19 @@ export class PlatformManager {
     v.crumbleAt = time + CRUMBLE_DELAY_MS;
   }
 
-  /** Find the platform id the player is currently resting on, if any. */
+  /** Find the platform id the player's actual Arcade body is currently resting on, if any. */
   platformUnder(sprite: Phaser.GameObjects.Sprite): number | null {
+    const body = sprite.body as Phaser.Physics.Arcade.Body | undefined;
+    const feetX = body ? body.center.x : sprite.x;
+    const feetY = body ? body.bottom : sprite.y + TUNING.playerBodyH / 2;
+
     for (const v of this.views.values()) {
       const b = v.rect;
       const halfW = (b.width as number) / 2;
-      const top = b.y - 8;
+      const top = b.y - PLATFORM_H / 2;
       if (
-        sprite.x >= b.x - halfW && sprite.x <= b.x + halfW &&
-        Math.abs((sprite.y + 16) - top) < 6
+        feetX >= b.x - halfW && feetX <= b.x + halfW &&
+        Math.abs(feetY - top) < 7
       ) return v.desc.id;
     }
     return null;
@@ -99,7 +103,7 @@ export class PlatformManager {
           this.events.emit('platformCrumble', { x: v.rect.x, y: v.rect.y });
           v.rect.setVisible(false);
           (v.rect.body as Phaser.Physics.Arcade.StaticBody).enable = false;
-          v.crumbleAt = time + CRUMBLE_RESPAWN_MS; // reuse field as respawn time
+          v.crumbleAt = time + CRUMBLE_RESPAWN_MS;
         } else if (!v.rect.visible && v.crumbleAt !== null && time >= v.crumbleAt) {
           v.rect.setVisible(true);
           (v.rect.body as Phaser.Physics.Arcade.StaticBody).enable = true;
