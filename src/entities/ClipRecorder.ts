@@ -46,10 +46,14 @@ export class ClipRecorder {
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
   }
 
-  /** Call each frame with scene time. Cheap no-op between 15s rotation boundaries. */
-  update(nowMs: number): void {
+  /** Call each frame. Cheap no-op between 15s rotation boundaries.
+   *  Rotation runs on performance.now(), NOT the scene clock: MediaRecorder
+   *  records in wall time, and Phaser's clamped/smoothed deltas make the scene
+   *  clock lag wall time under load — rotating on it would stretch clip windows
+   *  far past 30s of real footage on slow devices. */
+  update(_sceneNowMs?: number): void {
     if (this.dead || this.paused) return;
-    const { state, actions } = advance(this.state, nowMs);
+    const { state, actions } = advance(this.state, performance.now());
     this.state = state;
     for (const a of actions) {
       if (a === 'startA') this.startSlot('a');
@@ -60,10 +64,10 @@ export class ClipRecorder {
   }
 
   /** Stop the winner and resolve its footage; discard the other. Null = nothing usable. */
-  finish(nowMs: number): Promise<ClipResult | null> {
+  finish(_sceneNowMs?: number): Promise<ClipResult | null> {
     if (this.dead) return Promise.resolve(null);
     this.dead = true;
-    const winner = pickWinner(this.state, nowMs);
+    const winner = pickWinner(this.state, performance.now());
     const loser = winner === 'a' ? 'b' : 'a';
     this.discardSlot(loser as 'a' | 'b');
     if (!winner) { this.teardown(); return Promise.resolve(null); }
