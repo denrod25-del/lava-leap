@@ -207,6 +207,12 @@
 
   /* LEADERBOARD */
   .lb-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+  .lb-tabs{display:flex;gap:0;margin-bottom:0}
+  .lb-tab{font-family:'Press Start 2P';font-size:9px;letter-spacing:1px;cursor:pointer;
+    background:var(--coal);color:var(--smoke);border:2px solid var(--ash-border);border-bottom:0;
+    padding:12px 18px;min-height:40px}
+  .lb-tab.active{background:var(--ash);color:var(--molten);border-color:var(--ember)}
+  .lb-tab:hover{color:var(--molten)}
   .board{border:2px solid var(--ash-border);box-shadow:6px 6px 0 #000;background:var(--ash)}
   .board-row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;
     padding:16px 18px;border-bottom:2px solid var(--ash-border)}
@@ -400,19 +406,22 @@
 <section id="leaderboard" style="background:#0e0605" aria-labelledby="lb-h">
   <div class="wrap reveal">
     <p class="kicker">THE RANKINGS</p>
-    <h2 id="lb-h">Global leaderboards are coming</h2>
-    <p class="lede">For now, every run tracks your personal <strong>High Score</strong> and coin <strong>Bank</strong> right in the game. Online rankings that pit your climb against everyone else are on the way.</p>
+    <h2 id="lb-h">Global leaderboards are LIVE</h2>
+    <p class="lede">These are the real standings, pulled straight from the game. Every run auto-submits your best — no account needed. Beat a name below and yours takes its place.</p>
     <div class="lb-wrap">
-      <div class="board" aria-label="Leaderboard preview — coming soon">
-        <div class="board-row"><span class="rank">1</span><span class="who">— — —</span><span class="sc">SOON</span></div>
-        <div class="board-row"><span class="rank">2</span><span class="who">— — —</span><span class="sc">SOON</span></div>
-        <div class="board-row"><span class="rank">3</span><span class="who">— — —</span><span class="sc">SOON</span></div>
-        <div class="board-row you"><span class="rank">★</span><span class="who">Could be you</span><span class="sc">?</span></div>
+      <div>
+        <div class="lb-tabs" role="tablist" aria-label="Leaderboard views">
+          <button class="lb-tab active" id="lbTabAll" type="button" role="tab" aria-selected="true">ALL-TIME</button>
+          <button class="lb-tab" id="lbTabDaily" type="button" role="tab" aria-selected="false">TODAY</button>
+        </div>
+        <div class="board" id="lbBoard" aria-live="polite" aria-label="Global leaderboard — top climbers">
+          <div class="board-row"><span class="rank">…</span><span class="who">Loading the standings…</span><span class="sc"></span></div>
+        </div>
       </div>
       <div class="stat-cards">
-        <div class="stat"><span class="lbl">TRACKED NOW</span><div class="val">HIGH SCORE</div><p class="sub">Your personal best, saved locally in-game</p></div>
-        <div class="stat"><span class="lbl">TRACKED NOW</span><div class="val">COIN BANK</div><p class="sub">Coins you've banked to spend in the shop</p></div>
-        <div class="stat"><span class="lbl">COMING SOON</span><div class="val">GLOBAL RANKS</div><p class="sub">Online leaderboards across all climbers</p></div>
+        <div class="stat"><span class="lbl">LIVE NOW</span><div class="val">GLOBAL RANKS</div><p class="sub">All-time standings across every climber, updated as runs end</p></div>
+        <div class="stat"><span class="lbl">NEW EVERY DAY</span><div class="val">DAILY BOARD</div><p class="sub">Everyone climbs the same daily mountain — fresh race each day</p></div>
+        <div class="stat"><span class="lbl">YOUR NAME</span><div class="val">SET IN-GAME</div><p class="sub">Pick your climber name in Settings → NAME, then make a run count</p></div>
       </div>
     </div>
   </div>
@@ -796,6 +805,86 @@
         btn.setAttribute('aria-pressed', 'false');
       }
     });
+  })();
+
+  // Live global leaderboard - same Supabase read path the game uses (read-only
+  // RPC behind RLS; the anon key is public by design and ships in the game too).
+  (function () {
+    var boardEl = document.getElementById('lbBoard');
+    var tabAll = document.getElementById('lbTabAll');
+    var tabDaily = document.getElementById('lbTabDaily');
+    if (!boardEl || !tabAll || !tabDaily) return;
+
+    var SB_URL = 'https://alnvkpzzyahuztyrtjxv.supabase.co';
+    var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbnZrcHp6eWFodXp0eXJ0anh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNzMzODQsImV4cCI6MjA5ODk0OTM4NH0.33yzcep4l7XCP_nClvKbcWcHdkQQEB2pMfSUuVqOpEk';
+    var cache = {};
+
+    function todayBoard() {
+      var d = new Date();
+      var m = String(d.getMonth() + 1); if (m.length < 2) m = '0' + m;
+      var day = String(d.getDate()); if (day.length < 2) day = '0' + day;
+      return 'daily:' + d.getFullYear() + '-' + m + '-' + day;
+    }
+
+    function row(rank, who, sc, extraClass) {
+      var r = document.createElement('div');
+      r.className = 'board-row' + (extraClass ? ' ' + extraClass : '');
+      var a = document.createElement('span'); a.className = 'rank'; a.textContent = rank;
+      var b = document.createElement('span'); b.className = 'who'; b.textContent = who;
+      var c = document.createElement('span'); c.className = 'sc'; c.textContent = sc;
+      r.appendChild(a); r.appendChild(b); r.appendChild(c);
+      return r;
+    }
+
+    function render(rows, emptyMsg) {
+      boardEl.textContent = '';
+      if (!rows.length) {
+        boardEl.appendChild(row('—', emptyMsg, ''));
+      } else {
+        for (var i = 0; i < rows.length; i++) {
+          boardEl.appendChild(row(String(rows[i].rank), rows[i].name, Number(rows[i].score).toLocaleString()));
+        }
+      }
+      var cta = row('★', 'Your name here — play free', '?', 'you');
+      cta.style.cursor = 'pointer';
+      cta.addEventListener('click', function () {
+        window.open('https://lava-leap-84pb.vercel.app', '_blank', 'noopener');
+      });
+      boardEl.appendChild(cta);
+    }
+
+    function load(board, emptyMsg) {
+      if (cache[board]) { render(cache[board], emptyMsg); return; }
+      fetch(SB_URL + '/rest/v1/rpc/top_scores', {
+        method: 'POST',
+        headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_board: board, p_limit: 10 })
+      })
+        .then(function (res) { return res.ok ? res.json() : []; })
+        .then(function (rows) {
+          if (!Array.isArray(rows)) rows = [];
+          cache[board] = rows;
+          render(rows, emptyMsg);
+        })
+        .catch(function () {
+          boardEl.textContent = '';
+          boardEl.appendChild(row('!', 'Standings unavailable right now — the game itself is unaffected', ''));
+        });
+    }
+
+    function select(tab) {
+      var daily = tab === tabDaily;
+      tabAll.className = 'lb-tab' + (daily ? '' : ' active');
+      tabDaily.className = 'lb-tab' + (daily ? ' active' : '');
+      tabAll.setAttribute('aria-selected', String(!daily));
+      tabDaily.setAttribute('aria-selected', String(daily));
+      if (daily) load(todayBoard(), "No runs on today's mountain yet — be the first");
+      else load('alltime', 'No climbs recorded yet');
+    }
+
+    tabAll.addEventListener('click', function () { select(tabAll); });
+    tabDaily.addEventListener('click', function () { select(tabDaily); });
+    select(tabAll);
   })();
 </script>
 </body>
