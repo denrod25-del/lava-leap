@@ -29,6 +29,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('enemy-crawler', 'assets/enemies/crawler.png');
     this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
     this.load.image('boss-titan', 'assets/boss/titan.png');
+    this.load.image('watermark', 'assets/watermark.png');
     for (const c of CHARACTERS) {
       this.load.image(staticKey(c.id), `assets/characters/${c.id}/player.png`);
       for (const name of FRAME_NAMES) {

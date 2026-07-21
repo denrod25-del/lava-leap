@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.14.0', analytics: { runs: 1 },
+      version: 2, tutorialDone: true, lastSeenVersion: '0.14.1', analytics: { runs: 1 },
     }));
   });
 });
