@@ -38,6 +38,7 @@ import { CutsceneDirector } from '../core/CutsceneDirector';
 import { StingController } from '../entities/StingController';
 import { LEVELS, type LevelDef } from '../core/levels';
 import { isCharacter, DEFAULT_CHARACTER, resolveMovement } from '../core/characters';
+import { ClipRecorder, type ClipResult } from '../entities/ClipRecorder';
 
 /**
  * Height (px) each background "scene" spans in endless/daily before crossfading
@@ -87,6 +88,7 @@ export class GameScene extends Phaser.Scene {
   private nextStoryHeightCheck = 0;
   private cutsceneDirector!: CutsceneDirector;
   private levelDef?: LevelDef;
+  private clipRecorder?: ClipRecorder;
 
   constructor() { super('Game'); }
 
@@ -379,6 +381,10 @@ export class GameScene extends Phaser.Scene {
     this.juice = new JuiceController(this, this.gameEvents, save, this.player.sprite, this.lava);
     this.audio = new AudioDirector(this, this.gameEvents, save);
 
+    if (save.get().settings.recordClips && ClipRecorder.supported()) {
+      this.clipRecorder = new ClipRecorder(this);
+    }
+
     this.cameras.main.setBounds(0, -1_000_000, TUNING.width, 1_000_000 + TUNING.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.12);
     this.cameras.main.setDeadzone(TUNING.width, 180);
@@ -538,6 +544,7 @@ export class GameScene extends Phaser.Scene {
     if (this.cameras.main.scrollY > maxScroll) this.cameras.main.scrollY = maxScroll;
 
     this.devOverlay?.update();
+    this.clipRecorder?.update(this.time.now);
   }
 
   private handleHit(source: 'enemy' | 'boss'): void {
@@ -571,6 +578,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.dead = true;
+    const clipDone: Promise<ClipResult | null> = this.clipRecorder
+      ? this.clipRecorder.finish(this.time.now)
+      : Promise.resolve(null);
+    void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
 
@@ -619,6 +630,7 @@ export class GameScene extends Phaser.Scene {
         storyStage: this.story.stage(),
         result: 'died' as const,
         levelId: this.levelDef?.id,
+        clipDone,
       };
       const pendingCutscenes = this.cutsceneDirector.pending();
       if (pendingCutscenes.length > 0) {
@@ -658,6 +670,10 @@ export class GameScene extends Phaser.Scene {
   private completeLevel(): void {
     if (this.dead || !this.levelDef) return;
     this.dead = true; // freezes the same lava-catch/enemy-contact checks death does
+    const clipDone: Promise<ClipResult | null> = this.clipRecorder
+      ? this.clipRecorder.finish(this.time.now)
+      : Promise.resolve(null);
+    void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
     const levelDef = this.levelDef;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
@@ -678,6 +694,7 @@ export class GameScene extends Phaser.Scene {
       result: 'cleared' as const,
       levelId: levelDef.id,
       nextLevelId,
+      clipDone,
     };
     const pendingCutscenes = this.cutsceneDirector.pending();
     if (pendingCutscenes.length > 0) {

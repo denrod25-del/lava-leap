@@ -333,3 +333,17 @@ describe('levels save field (v0.11.0)', () => {
     expect(reloaded.get().levels.cleared).toEqual(['level-1']);
   });
 });
+
+describe('recordClips save field (v0.14.0)', () => {
+  it('backfills settings.recordClips=true on saves written before v0.14.0', () => {
+    const store = fakeStore();
+    store.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2, highScore: 5,
+      settings: { musicVol: 3, sfxVol: 4, screenShake: false, reducedMotion: true, controlScheme: 'manual' },
+    }));
+    const s = new SaveData(store);
+    expect(s.get().settings.recordClips).toBe(true);       // backfilled
+    expect(s.get().settings.musicVol).toBe(3);             // existing values preserved
+    expect(s.get().settings.controlScheme).toBe('manual');
+  });
+});

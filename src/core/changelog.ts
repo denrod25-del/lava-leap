@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.14.0', date: '2026-07-21', notes: [
+    'HIGHLIGHT CLIPS: every run auto-records its last 30 seconds — with the music.',
+    "Die (or clear a level) and hit SHARE CLIP: watch the replay, then share straight to TikTok / Instagram / Discord from your phone, or download it on desktop.",
+    'No setup, no buttons mid-run. Turn it off any time in Settings → REC CLIPS.',
+  ]},
   { version: '0.13.0', date: '2026-07-17', notes: [
     'NEW CHARACTER: Kiko the Vaultrunner — 750 coins in the Shop.',
     'Kiko jumps different: a springy TRIPLE jump (three hops, lower arcs).',

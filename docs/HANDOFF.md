@@ -2,9 +2,17 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-17 (v0.13.0)._
+_Last updated: 2026-07-21 (v0.14.0)._
 
 ---
+
+## Current state — v0.14.0 "Highlight Clips + Social Sharing"
+- **Every run auto-records a rolling highlight** (setting `settings.recordClips`, default true, backfilled by the settings deep-merge + migration-tested). On death OR level clear, Game Over shows **▶ SHARE CLIP (C)** → DOM overlay with looping replay, SHARE (native share sheet — only rendered when `navigator.canShare({files})`, i.e. phones), DOWNLOAD (`lava-leap-<score>.mp4|webm`), COPY CAPTION.
+- **Why two recorders:** a MediaRecorder's output is only a valid file from its own start (chunk #1 holds the container header), so "last 30 s of one long recording" yields broken files. `src/core/clipRotation.ts` (pure, unit-tested) leapfrogs two recorders on a 15 s cadence (`SEGMENT_MS`); the OLDER-running one always holds 15–30 s ending now and becomes the clip (`pickWinner`). `src/entities/ClipRecorder.ts` applies the actions to real MediaRecorders over `canvas.captureStream(30)` + a `MediaStreamAudioDestinationNode` tapped off Phaser's `masterVolumeNode` (clip audio = player's mix; HTML5-audio fallback records video-only). Mime pick prefers MP4 (`video/mp4;codecs=avc1`) and falls back to WebM. 2.5 Mbps.
+- **`clipDone` rides `gameOverData`** exactly like v8's `submitDone` — `finish()` is called at death time (NOT inside the 450 ms delayedCall), so encoding overlaps the death animation; GameOverScene `.then()`s the promise and only adds the row on a non-null clip. Survives the Cutscene hop (data object passes through). Recorder errors/timeouts (3 s bail) resolve null and tear down silently — the game never breaks over a clip. Pause pauses recording (clips don't contain the pause screen).
+- **SettingsScene refactored to key-based rows** (`ROW_DEFS` + `RowKey`) because the REC CLIPS row is conditionally present (`ClipRecorder.supported()`), which would have broken the old hard-coded index mapping. Row geometry: `250 + i*40`, tap buttons y 545, hint y 575. Any future conditional row: extend `ROW_DEFS`, never index math.
+- **e2e:** `e2e/clips.spec.ts` — MediaRecorder + captureStream work fine in headless Chromium under the existing SwiftShader flags; the clip test fetches the overlay video's blob URL and asserts >10 KB of real footage. `triggerDeath` poked directly (runtime JS ignores TS `private`).
+- Suite: 232 unit + 26 e2e.
 
 ## What it is
 **Lava Leap** — an endless vertical climber (Phaser 3 + TypeScript + Vite + Vitest). Climb procedurally-generated platforms, outrun rising lava; score = height + coins. Own git repo (`master`), public at **github.com/denrod25-del/lava-leap**. Also packaged as an Android app via Capacitor and deployed to the web on Vercel.

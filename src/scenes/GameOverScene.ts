@@ -4,10 +4,12 @@ import { save, leaderboard } from '../main';
 import { track } from '../core/track';
 import { allTimeBoard, dailyBoard } from '../core/leaderboard';
 import { BEATS, type StoryStage } from '../core/story';
+import { openClipShare } from '../entities/ClipShare';
+import type { ClipResult } from '../entities/ClipRecorder';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
-  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown>; storyStage?: StoryStage; journalUnlocks?: number; result?: 'cleared' | 'died'; levelId?: string; nextLevelId?: string }): void {
+  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown>; storyStage?: StoryStage; journalUnlocks?: number; result?: 'cleared' | 'died'; levelId?: string; nextLevelId?: string; clipDone?: Promise<ClipResult | null> }): void {
     this.sound.stopAll();
     const cx = TUNING.width / 2;
     const cleared = data.result === 'cleared';
@@ -99,5 +101,18 @@ export class GameOverScene extends Phaser.Scene {
         });
       }
     }
+
+    // SHARE CLIP appears only once the recorder has actually produced a clip
+    // (usually <100ms after scene start; never blocks the screen).
+    void (data.clipDone ?? Promise.resolve(null)).then((clip) => {
+      if (!clip || !this.scene.isActive()) return;
+      const open = (): void => {
+        this.sound.play('sfx-ui-select', { volume: 0.35 * (save.get().settings.sfxVol / 10) });
+        openClipShare({ blob: clip.blob, mimeType: clip.mimeType, score: data.score ?? 0 });
+      };
+      this.add.text(cx, 615, '▶ SHARE CLIP (C)', { fontFamily: 'monospace', fontSize: '18px', color: '#3ddc97' })
+        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', open);
+      this.input.keyboard!.on('keydown-C', open);
+    });
   }
 }
