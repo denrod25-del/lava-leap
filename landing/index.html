@@ -205,6 +205,22 @@
   .step h3{font-size:11px;color:#fff;margin-bottom:10px}
   .step p{font-size:13px;color:var(--smoke)}
 
+  /* DEMO SANDBOX */
+  .demo-frame{position:relative;width:min(400px,100%);margin:0 auto;border:2px solid var(--ash-border);
+    box-shadow:8px 8px 0 #000;background:#1b0d0a;line-height:0}
+  .demo-frame canvas{width:100%;height:auto;display:block;image-rendering:pixelated;touch-action:none;
+    cursor:pointer;user-select:none;-webkit-user-select:none}
+  .demo-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;gap:18px;text-align:center;background:rgba(20,10,8,.82);padding:24px;line-height:1.6}
+  .demo-overlay[hidden]{display:none}
+  .demo-title{font-family:'Press Start 2P';font-size:15px;color:var(--molten);text-shadow:3px 3px 0 #000}
+  .demo-sub{font-size:13px;color:var(--crust);max-width:280px}
+  .demo-full{font-family:'Press Start 2P';font-size:10px;color:var(--toxic);text-decoration:underline;padding:8px}
+  .demo-hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
+    padding:12px 14px;pointer-events:none;font-family:'Press Start 2P';font-size:11px;line-height:1;
+    color:#fff;text-shadow:2px 2px 0 #000}
+  .demo-hud #demoBest{color:var(--molten)}
+
   /* LEADERBOARD */
   .lb-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
   .lb-tabs{display:flex;gap:0;margin-bottom:0}
@@ -399,6 +415,26 @@
       <div class="step"><span class="key">SHIFT</span><h3>DASH</h3><p>Burst sideways to cross gaps, dodge hazards, and keep your combo alive.</p></div>
     </div>
     <p style="color:var(--smoke);font-size:13px;margin-top:22px">On mobile: hold the left half of the screen to run, tap the right half to jump — tap again mid-air for double and triple jumps.</p>
+  </div>
+</section>
+
+<!-- DEMO SANDBOX -->
+<section id="demo" style="background:#0e0605" aria-labelledby="demo-h">
+  <div class="wrap reveal">
+    <p class="kicker">TRY IT RIGHT HERE</p>
+    <h2 id="demo-h">The 30-second sandbox</h2>
+    <p class="lede">A bite-size taste of the climb — real sprites, real jump physics, real rising lava. Arrows/A-D to move, Space to jump (twice for a double). On touch: hold to steer, tap to jump. When the lava wins, the full game is one click away.</p>
+    <div class="demo-frame">
+      <canvas id="demoCanvas" width="400" height="520" aria-label="Lava Leap mini demo — playable sandbox"></canvas>
+      <div class="demo-overlay" id="demoOverlay">
+        <p class="demo-title" id="demoOverTitle">MINI SANDBOX</p>
+        <p class="demo-sub" id="demoOverSub">Climb as high as you can before the lava catches you</p>
+        <button class="btn btn-play" id="demoStartBtn" type="button">▶ CLICK TO CLIMB</button>
+        <a class="demo-full" id="demoFullLink" href="https://lava-leap-84pb.vercel.app" target="_blank" rel="noopener noreferrer" hidden>▶ PLAY THE FULL GAME</a>
+      </div>
+      <div class="demo-hud"><span id="demoScore">0</span><span id="demoBest"></span></div>
+    </div>
+    <p style="color:var(--smoke);font-size:12px;margin-top:18px;text-align:center">Sandbox only — no dash, no power-ups, no Titan. The <a href="https://lava-leap-84pb.vercel.app" target="_blank" rel="noopener noreferrer" style="color:var(--molten)">full game</a> has all of it, free.</p>
   </div>
 </section>
 
@@ -885,6 +921,262 @@
     tabAll.addEventListener('click', function () { select(tabAll); });
     tabDaily.addEventListener('click', function () { select(tabDaily); });
     select(tabAll);
+  })();
+
+  // Mini sandbox demo - a tiny vanilla-canvas Lava Leap using the real game's
+  // sprites and jump numbers (gravity 1500, jump 650, double 560, run 220).
+  (function () {
+    var cv = document.getElementById('demoCanvas');
+    var overlay = document.getElementById('demoOverlay');
+    var overTitle = document.getElementById('demoOverTitle');
+    var overSub = document.getElementById('demoOverSub');
+    var startBtn = document.getElementById('demoStartBtn');
+    var fullLink = document.getElementById('demoFullLink');
+    var scoreEl = document.getElementById('demoScore');
+    var bestEl = document.getElementById('demoBest');
+    if (!cv || !overlay) return;
+    var ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    var W = 400, H = 520;
+    var GRAVITY = 1500, JUMP_V = 650, DJUMP_V = 560, RUN = 220, STEER_GAIN = 9;
+    var PLAT_W = 80, PLAT_H = 16, PW = 22, PH = 30, SPRITE = 40;
+    var BEST_KEY = 'lavaleap.demo.best';
+
+    var IMGS = {}, loaded = 0, names = ['run-0','run-1','run-2','run-3','jump-2','idle-0','platform','coin','lava-tile'];
+    names.forEach(function (n) {
+      var im = new Image();
+      im.onload = function () { loaded++; };
+      im.src = 'media/demo/' + n + '.png';
+      IMGS[n] = im;
+    });
+    var lavaPattern = null;
+
+    var state = 'idle'; // idle | playing | dead
+    var player, plats, camY, lavaY, climbed, coins, keys, steerX, jumpsUsed, coyoteMs, facing, animT, raf, lastT;
+
+    function reset() {
+      player = { x: W / 2, y: 440, vx: 0, vy: 0, onGround: false };
+      plats = [{ x: 0, y: 470, w: W, coin: false, got: false }];
+      var y = 470;
+      while (y > -400) { y = spawnAbove(y); }
+      camY = 0; lavaY = 640; climbed = 0; coins = 0;
+      keys = { l: false, r: false }; steerX = null;
+      jumpsUsed = 0; coyoteMs = 0; facing = 1; animT = 0;
+      scoreEl.textContent = '0';
+    }
+
+    function spawnAbove(prevY) {
+      var top = plats[plats.length - 1];
+      var y = prevY - (85 + Math.random() * 45);
+      var x = top.x + (top.w - PLAT_W) / 2 + (Math.random() * 300 - 150);
+      x = Math.max(8, Math.min(W - PLAT_W - 8, x));
+      plats.push({ x: x, y: y, w: PLAT_W, coin: Math.random() < 0.3, got: false });
+      return y;
+    }
+
+    function jump() {
+      if (state !== 'playing') return;
+      if (player.onGround || coyoteMs > 0) {
+        player.vy = -JUMP_V; jumpsUsed = 1; coyoteMs = 0; player.onGround = false;
+      } else if (jumpsUsed < 2) {
+        player.vy = -DJUMP_V; jumpsUsed = 2;
+      }
+    }
+
+    function die() {
+      state = 'dead';
+      var score = Math.floor(climbed) + coins * 25;
+      var best = 0;
+      try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) {}
+      if (score > best) { best = score; try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {} }
+      overTitle.textContent = 'THE LAVA GOT YOU';
+      overSub.textContent = 'SCORE ' + score.toLocaleString() + '  ·  BEST ' + best.toLocaleString();
+      startBtn.textContent = '↻ CLIMB AGAIN';
+      fullLink.hidden = false;
+      overlay.hidden = false;
+      if (window.va) window.va('event', { name: 'demo_run', data: { score: score } });
+    }
+
+    function step(dt) {
+      // input -> velocity
+      if (steerX !== null) {
+        player.vx = Math.max(-RUN, Math.min(RUN, (steerX - player.x) * STEER_GAIN));
+      } else {
+        player.vx = (keys.r ? RUN : 0) - (keys.l ? RUN : 0);
+      }
+      if (player.vx > 20) facing = 1; else if (player.vx < -20) facing = -1;
+
+      player.vy += GRAVITY * dt;
+      if (player.vy > 900) player.vy = 900;
+      var prevBottom = player.y + PH / 2;
+      player.x += player.vx * dt;
+      player.y += player.vy * dt;
+      if (player.x < PW / 2) player.x = PW / 2;
+      if (player.x > W - PW / 2) player.x = W - PW / 2;
+
+      // platform landings (one-way, from above only)
+      player.onGround = false;
+      var bottom = player.y + PH / 2;
+      if (player.vy >= 0) {
+        for (var i = 0; i < plats.length; i++) {
+          var p = plats[i];
+          if (prevBottom <= p.y + 1 && bottom >= p.y &&
+              player.x + PW / 2 > p.x && player.x - PW / 2 < p.x + p.w) {
+            player.y = p.y - PH / 2; player.vy = 0;
+            player.onGround = true; jumpsUsed = 0; coyoteMs = 0.08;
+            break;
+          }
+        }
+      }
+      if (!player.onGround && coyoteMs > 0) coyoteMs -= dt;
+
+      // coins
+      for (var j = 0; j < plats.length; j++) {
+        var q = plats[j];
+        if (q.coin && !q.got) {
+          var cx = q.x + q.w / 2, cy = q.y - 24;
+          if (Math.abs(player.x - cx) < 26 && Math.abs(player.y - cy) < 30) {
+            q.got = true; coins++;
+          }
+        }
+      }
+
+      // climb + camera (camera only moves up, like the game)
+      var height = 440 - player.y;
+      if (height > climbed) climbed = height;
+      var targetCam = player.y - H * 0.42;
+      if (targetCam < camY) camY = targetCam;
+
+      // lava: real base speed 35 + gentle height ramp
+      lavaY -= (35 + climbed * 0.01) * dt;
+      if (player.y + PH / 2 > lavaY + 6) { die(); return; }
+      if (player.y - camY > H + 40) { die(); return; }
+
+      // stream platforms
+      while (plats[plats.length - 1].y > camY - 120) spawnAbove(plats[plats.length - 1].y);
+      plats = plats.filter(function (p) { return p.y < camY + H + 60 && p.y < lavaY + 40 || p.w === W; });
+      if (!plats.length) plats.push({ x: 0, y: camY + H, w: W, coin: false, got: false });
+
+      scoreEl.textContent = (Math.floor(climbed) + coins * 25).toLocaleString();
+      animT += dt;
+    }
+
+    function draw() {
+      // sky gradient, darker as you climb
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#1b0d0a'); g.addColorStop(1, '#3a160c');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+      // platforms
+      for (var i = 0; i < plats.length; i++) {
+        var p = plats[i], sy = Math.round(p.y - camY);
+        if (sy < -20 || sy > H + 20) continue;
+        for (var x = 0; x < p.w; x += 32) {
+          var w = Math.min(32, p.w - x);
+          ctx.drawImage(IMGS['platform'], 0, 0, w, 16, Math.round(p.x + x), sy, w, PLAT_H);
+        }
+        if (p.coin && !p.got) {
+          var bob = Math.sin(animT * 5 + i) * 3;
+          ctx.drawImage(IMGS['coin'], Math.round(p.x + p.w / 2 - 12), Math.round(p.y - camY - 36 + bob), 24, 24);
+        }
+      }
+
+      // player
+      var frame;
+      if (!player.onGround) frame = IMGS['jump-2'];
+      else if (Math.abs(player.vx) > 20) frame = IMGS['run-' + (Math.floor(animT * 10) % 4)];
+      else frame = IMGS['idle-0'];
+      var px = Math.round(player.x), py = Math.round(player.y - camY);
+      ctx.save();
+      ctx.translate(px, py);
+      if (facing < 0) ctx.scale(-1, 1);
+      ctx.drawImage(frame, -SPRITE / 2, PH / 2 - SPRITE, SPRITE, SPRITE);
+      ctx.restore();
+
+      // lava
+      var ly = Math.round(lavaY - camY);
+      if (ly < H) {
+        if (!lavaPattern && IMGS['lava-tile'].complete) lavaPattern = ctx.createPattern(IMGS['lava-tile'], 'repeat');
+        ctx.fillStyle = lavaPattern || '#ff5714';
+        ctx.save(); ctx.translate(0, ly); ctx.fillRect(0, 0, W, H - ly); ctx.restore();
+        ctx.fillStyle = '#ffb703';
+        ctx.fillRect(0, ly - 3, W, 3);
+        ctx.fillStyle = 'rgba(255,120,0,.25)';
+        ctx.fillRect(0, ly - 14, W, 11);
+      }
+    }
+
+    function loop(t) {
+      if (state !== 'playing') return;
+      var dt = Math.min((t - lastT) / 1000, 1 / 30);
+      lastT = t;
+      step(dt);
+      if (state === 'playing') { draw(); raf = requestAnimationFrame(loop); }
+      else { draw(); }
+    }
+
+    function start() {
+      if (loaded < names.length) { setTimeout(start, 120); return; }
+      reset();
+      state = 'playing';
+      overlay.hidden = true;
+      var best = 0;
+      try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) {}
+      bestEl.textContent = best ? 'BEST ' + best.toLocaleString() : '';
+      lastT = performance.now();
+      raf = requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener('click', start);
+
+    window.addEventListener('keydown', function (e) {
+      if (state !== 'playing') return;
+      var k = e.key;
+      if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keys.l = true; e.preventDefault(); }
+      else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keys.r = true; e.preventDefault(); }
+      else if (k === ' ' || k === 'ArrowUp' || k === 'w' || k === 'W') {
+        if (!e.repeat) jump();
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', function (e) {
+      if (!keys) return;
+      var k = e.key;
+      if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.l = false;
+      else if (k === 'ArrowRight' || k === 'd' || k === 'D') keys.r = false;
+    });
+
+    // touch/pointer: tap = jump, hold + drag = follow-finger steer (the game's AUTO feel)
+    function canvasX(e) {
+      var r = cv.getBoundingClientRect();
+      return (e.clientX - r.left) * (W / r.width);
+    }
+    cv.addEventListener('pointerdown', function (e) {
+      if (state !== 'playing') return;
+      e.preventDefault();
+      jump();
+      steerX = canvasX(e);
+      try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    cv.addEventListener('pointermove', function (e) {
+      if (steerX !== null) steerX = canvasX(e);
+    });
+    function endSteer() { steerX = null; }
+    cv.addEventListener('pointerup', endSteer);
+    cv.addEventListener('pointercancel', endSteer);
+
+    // stop the run (back to overlay) if the tab is hidden mid-climb - no unfair lava deaths
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && state === 'playing') { cancelAnimationFrame(raf); die(); }
+    });
+
+    // idle-state backdrop so the frame isn't empty before the first run
+    var idleTimer = setInterval(function () {
+      if (loaded < names.length) return;
+      clearInterval(idleTimer);
+      reset(); draw();
+    }, 150);
   })();
 </script>
 </body>
