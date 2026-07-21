@@ -11,7 +11,7 @@ import { BOSS_DURATION_MS, projectileSchedule, type Projectile } from '../core/b
  */
 export class BossController {
   private active = false;
-  private titan?: Phaser.GameObjects.Sprite;
+  private titan?: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
   private schedule: Projectile[] = [];
   private elapsed = 0;
   private fired = 0;
@@ -30,52 +30,29 @@ export class BossController {
     this.fired = 0;
     this.currentIndex = bossIndex;
     this.schedule = projectileSchedule(bossIndex, seed);
-
-    this.titan = this.scene.add
-      .sprite(TUNING.width / 2, lavaSurfaceY + 8, 'boss-titan-sheet', 0)
-      .setOrigin(0.5, 1)
-      .setDisplaySize(220, 123)
-      .setDepth(4);
-    this.titan.play('boss-titan-idle');
-
+    this.titan = this.scene.textures.exists('boss-titan')
+      ? this.scene.add.image(TUNING.width / 2, lavaSurfaceY, 'boss-titan').setDisplaySize(140, 140).setDepth(4)
+      : this.scene.add.circle(TUNING.width / 2, lavaSurfaceY, 70, 0x7a1020).setDepth(4);
     this.events.emit('bossPhase', { zoneIndex: bossIndex + 1, phase: 'start' });
   }
 
   update(dtMs: number, lavaSurfaceY: number): void {
     if (!this.active) return;
     this.elapsed += dtMs;
-    if (this.titan) this.titan.y = lavaSurfaceY + 8;
-
+    if (this.titan) this.titan.y = lavaSurfaceY;
     while (this.fired < this.schedule.length && this.elapsed >= this.schedule[this.fired].tMs) {
-      this.playAttack();
       this.launch(this.schedule[this.fired].x, lavaSurfaceY);
       this.fired++;
     }
-
     if (this.elapsed >= BOSS_DURATION_MS) this.end();
   }
 
-  private playAttack(): void {
-    if (!this.titan) return;
-    this.titan.play('boss-titan-attack', true);
-    this.titan.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-      if (this.active && this.titan?.active) this.titan.play('boss-titan-idle', true);
-    });
-  }
-
   private launch(x: number, fromY: number): void {
-    const p = this.scene.physics.add
-      .sprite(x, fromY - 8, 'boss-fireball-sheet', 0)
-      .setDisplaySize(52, 12)
-      .setRotation(-Math.PI / 2)
-      .setDepth(5);
-
-    p.play('boss-fireball-fly');
+    const p = this.scene.add.circle(x, fromY, 8, 0xff7b00);
+    this.scene.physics.add.existing(p);
     const body = p.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
     body.setVelocityY(-260);
-    body.setSize(22, 22, true);
-
     this.projectiles.add(p);
     this.events.emit('projectileLaunched', { x });
     this.scene.time.delayedCall(4000, () => p.destroy());
@@ -83,26 +60,15 @@ export class BossController {
 
   private end(): void {
     this.active = false;
-    this.projectiles.clear(true, true);
-
-    if (!this.titan) {
-      this.events.emit('bossPhase', { zoneIndex: this.currentIndex + 1, phase: 'end' });
-      return;
-    }
-
-    const titan = this.titan;
-    titan.play('boss-titan-defeat', true);
-    titan.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => titan.destroy());
-    this.scene.time.delayedCall(900, () => {
-      if (titan.active) titan.destroy();
-    });
+    this.titan?.destroy();
     this.titan = undefined;
+    this.projectiles.clear(true, true);
     this.events.emit('bossPhase', { zoneIndex: this.currentIndex + 1, phase: 'end' });
   }
 
   registerPlayerOverlap(player: Phaser.Physics.Arcade.Sprite, onHit: () => void): void {
     this.scene.physics.add.overlap(player, this.projectiles, (_p, proj) => {
-      (proj as Phaser.GameObjects.Sprite).destroy();
+      (proj as Phaser.GameObjects.Arc).destroy();
       onHit();
     });
   }
