@@ -280,7 +280,17 @@
     .hero-copy{position:static}
     .lava,.plat,.hero-guy,.embers{display:none}
   }
-</style>
+
+  /* v0.13 additions: real gameplay imgs, theme toggle, roster lineup */
+  img.slide-art{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+  .music-btn{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:10px 16px;
+    font-family:'Press Start 2P';font-size:10px;color:#ffd166;background:#1b0d0a;border:2px solid #ffd166;
+    cursor:pointer;box-shadow:3px 3px 0 #000}
+  .music-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  .lineup-wrap{text-align:center;margin-top:26px}
+  .lineup-wrap img{max-width:min(520px,90%);image-rendering:pixelated}
+  .lineup-wrap p{font-family:'Press Start 2P';font-size:10px;color:var(--smoke);margin-top:10px}
+  </style>
 </head>
 <body>
 <a class="skip" href="#play">Skip to content</a>
@@ -293,9 +303,11 @@
     <div class="plat p3" aria-hidden="true"></div>
     <div class="hero-guy" aria-hidden="true"></div>
     <div class="lava" aria-hidden="true" id="lava"></div>
+    <audio id="themeAudio" loop preload="none" src="media/theme.mp3"></audio>
     <div class="hero-copy">
       <p class="eyebrow">▲ FREE BROWSER ARCADE ▲</p>
       <h1>LAVA LEAP</h1>
+      <button class="music-btn" id="musicBtn" type="button" aria-pressed="false"><span aria-hidden="true">♪</span> PLAY THEME</button>
       <p class="tag">Jump fast. Climb higher. Don't let the lava catch you. Scale an endless tower, chain combos, bank coins, and battle the Lava Titan.</p>
       <div class="cta-row">
         <a href="https://lava-leap-84pb.vercel.app" class="btn btn-play" data-cta="play-hero" target="_blank" rel="noopener noreferrer">▶ Play Free in Browser</a>
@@ -323,19 +335,15 @@
     <div class="carousel" role="group" tabindex="0" aria-roledescription="carousel" aria-label="Lava Leap gameplay screenshots">
       <div class="slides" id="slides">
         <figure class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: The Climb">
-          <span class="slide-art" aria-hidden="true" style="background:
-            linear-gradient(180deg,#1b0d0a,#3a160c 60%,#ff5714),
-            repeating-linear-gradient(90deg,#6b3a22 0 60px,transparent 60px 180px)"></span>
+          <img class="slide-art" src="media/shot-climb.png" alt="Real gameplay: climbing past coins and relics as lava rises" loading="lazy">
           <figcaption>THE CLIMB — outrun the rising lava</figcaption>
         </figure>
-        <figure class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: Combo x8">
-          <span class="slide-art" aria-hidden="true" style="background:
-            radial-gradient(circle at 50% 40%,#ffb703,transparent 48%),linear-gradient(180deg,#2a1512,#c81d0a)"></span>
-          <figcaption>COMBO x8 — chain clean leaps</figcaption>
+        <figure class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: Kiko ledge grab">
+          <img class="slide-art" src="media/shot-ledge.png" alt="Real gameplay: Kiko the Vaultrunner hanging from a platform edge" loading="lazy">
+          <figcaption>NEW: KIKO — catch the edge, vault the gap</figcaption>
         </figure>
         <figure class="slide" role="group" aria-roledescription="slide" aria-label="3 of 3: Lava Titan">
-          <span class="slide-art" aria-hidden="true" style="background:
-            radial-gradient(circle at 50% 55%,#8f3437,transparent 58%),linear-gradient(180deg,#1b0d0a,#ff5714)"></span>
+          <img class="slide-art" src="media/shot-titan.png" alt="The Lava Titan boss rising from the lava" loading="lazy">
           <figcaption>LAVA TITAN — survive the boss</figcaption>
         </figure>
       </div>
@@ -343,7 +351,12 @@
       <button class="car-btn car-next" id="carNext" aria-label="Next screenshot">›</button>
       <div class="dots" id="carDots" role="tablist" aria-label="Choose screenshot"></div>
     </div>
-    <p style="color:var(--smoke);font-size:12px;margin-top:16px">Stylized frames — real gameplay captures coming soon.</p>
+    <p style="color:var(--smoke);font-size:12px;margin-top:16px">Real gameplay captures from v0.13.0.</p>
+  
+    <div class="lineup-wrap reveal">
+      <img src="media/lineup.png" alt="The four playable climbers: Ember, Classic, Cole, and Kiko" loading="lazy">
+      <p>FOUR CLIMBERS — EMBER · CLASSIC · COLE · KIKO</p>
+    </div>
   </div>
 </section>
 
@@ -764,6 +777,26 @@
       });
   });
 })();
+
+  // Theme music toggle (browsers require a click to start audio - never autoplays).
+  (function () {
+    var btn = document.getElementById('musicBtn');
+    var audio = document.getElementById('themeAudio');
+    if (!btn || !audio) return;
+    audio.volume = 0.55;
+    btn.addEventListener('click', function () {
+      if (audio.paused) {
+        audio.play().then(function () {
+          btn.innerHTML = '<span aria-hidden="true">♪</span> STOP THEME';
+          btn.setAttribute('aria-pressed', 'true');
+        }).catch(function () { /* play blocked - leave button as-is */ });
+      } else {
+        audio.pause();
+        btn.innerHTML = '<span aria-hidden="true">♪</span> PLAY THEME';
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+  })();
 </script>
 </body>
 </html>
