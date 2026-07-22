@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { waitForScene } from './helpers';
 
 const SEED = {
-  version: 2, tutorialDone: true, lastSeenVersion: '0.16.0',
+  version: 2, tutorialDone: true, lastSeenVersion: '0.17.0',
   analytics: { runs: 5 },
 };
 

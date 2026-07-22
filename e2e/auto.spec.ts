@@ -37,7 +37,7 @@ test.describe('auto controls (touch)', () => {
     const errors = collectErrors(page);
     await page.addInitScript(() => {
       localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-        version: 2, tutorialDone: true, lastSeenVersion: '0.16.0', // suppress popups; scheme omitted → backfills 'auto'
+        version: 2, tutorialDone: true, lastSeenVersion: '0.17.0', // suppress popups; scheme omitted → backfills 'auto'
       }));
     });
     await page.goto('/');
@@ -78,7 +78,7 @@ test.describe('auto controls (touch)', () => {
     const errors = collectErrors(page);
     await page.addInitScript(() => {
       localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-        version: 2, tutorialDone: true, lastSeenVersion: '0.16.0',
+        version: 2, tutorialDone: true, lastSeenVersion: '0.17.0',
         settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'manual' },
       }));
     });

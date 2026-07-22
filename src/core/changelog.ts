@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.17.0', date: '2026-07-22', notes: [
+    'DAILY MISSIONS: three fresh goals every day — same three for everyone, worth up to 160 coins.',
+    'They complete themselves mid-run with an instant payout. Check today\'s from the Menu (M).',
+    'Coins add up fast: Kiko is about five days of full clears away.',
+  ]},
   { version: '0.16.0', date: '2026-07-22', notes: [
     'THE CLIMB HAS SCENERY: four hand-painted environments now rise behind you, changing as you climb.',
     'The menu and the results screen got the full art treatment too.',
