@@ -12,7 +12,8 @@ import { save, leaderboard } from '../main';
 import { GameEvents } from '../core/events';
 import { JuiceController } from '../entities/JuiceController';
 import { AudioDirector } from '../entities/AudioDirector';
-import { zoneForHeight, type ZoneDef } from '../core/zones';
+import { ZONES, zoneForHeight, type ZoneDef } from '../core/zones';
+import { bgScene } from '../core/backgrounds';
 import { AchievementTracker } from '../core/AchievementTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
@@ -53,8 +54,9 @@ export class GameScene extends Phaser.Scene {
   private peakFlowTier = 0;
   private dead = false;
   private booked = false;
-  private bgFar!: Phaser.GameObjects.TileSprite;
+  private bgFar!: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image;
   private bgNear!: Phaser.GameObjects.TileSprite;
+  private bgSceneKey = 0;
   private gameEvents!: GameEvents;
   private juice!: JuiceController;
   private audio!: AudioDirector;
@@ -91,13 +93,35 @@ export class GameScene extends Phaser.Scene {
     return { far: `bg-far-z${zone.index}`, near: `bg-near-z${zone.index}` };
   }
 
+  /** Hand-painted environment art for this zone, if the asset shipped. */
+  private zoneArtKey(zone: ZoneDef): string | null {
+    const key = `bg-z${zone.index}`;
+    return this.textures.exists(key) ? key : null;
+  }
+
+  /**
+   * Far (deepest) background layer. With zone art present it's a static,
+   * screen-filling backdrop; otherwise the procedural gradient tile-sprite,
+   * so the game still runs with no art assets at all.
+   */
+  private makeFarLayer(zone: ZoneDef, alpha: number): Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image {
+    const art = this.zoneArtKey(zone);
+    if (art) {
+      return this.add.image(0, 0, art)
+        .setOrigin(0, 0).setDisplaySize(TUNING.width, TUNING.height)
+        .setScrollFactor(0).setDepth(-10).setAlpha(alpha);
+    }
+    return this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(zone).far)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10).setAlpha(alpha);
+  }
+
   /** Build two procedural parallax background textures for the given zone. */
   private buildBackground(zone: ZoneDef): void {
     const w = TUNING.width;
     const h = TUNING.height;
     const { far, near } = this.bgKeys(zone);
 
-    if (!this.textures.exists(far)) {
+    if (!this.zoneArtKey(zone) && !this.textures.exists(far)) {
       const g = this.make.graphics({ x: 0, y: 0 }, false);
       const top = Phaser.Display.Color.ValueToColor(zone.bgTop);
       const bot = Phaser.Display.Color.ValueToColor(zone.bgBottom);
@@ -137,11 +161,10 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private crossfadeBg(farKey: string, nearKey: string): void {
+  private crossfadeBg(zone: ZoneDef): void {
     const oldFar = this.bgFar, oldNear = this.bgNear;
-    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, farKey)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10).setAlpha(0);
-    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, nearKey)
+    this.bgFar = this.makeFarLayer(zone, 0);
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(zone).near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9).setAlpha(0);
     this.tweens.add({
       targets: [this.bgFar, this.bgNear], alpha: 1, duration: 1200,
@@ -177,11 +200,12 @@ export class GameScene extends Phaser.Scene {
       this.sound.play('sfx-ding', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
     });
 
-    this.buildBackground(startZone);
-    const startZoneKeys = this.bgKeys(startZone);
-    this.bgFar = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.far)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
-    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, startZoneKeys.near)
+    const startBg = bgScene(startHeightOffset, !!this.levelDef);
+    this.bgSceneKey = startBg.key;
+    const startBgZone = ZONES[startBg.zoneIndex];
+    this.buildBackground(startBgZone);
+    this.bgFar = this.makeFarLayer(startBgZone, 1);
+    this.bgNear = this.add.tileSprite(0, 0, TUNING.width, TUNING.height, this.bgKeys(startBgZone).near)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-9);
 
     const seed = this.daily ? dailySeed(new Date()) : Math.floor(Math.random() * 1e9);
@@ -348,7 +372,9 @@ export class GameScene extends Phaser.Scene {
     this.audio.update(this.lava.surfaceY - (this.player.sprite.y + 16), this.player.wallSliding);
 
     // Parallax: scroll background layers at fractions of the camera.
-    this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
+    if (this.bgFar instanceof Phaser.GameObjects.TileSprite) {
+      this.bgFar.tilePositionY = this.cameras.main.scrollY * 0.2;
+    }
     this.bgNear.tilePositionY = this.cameras.main.scrollY * 0.5;
 
     const cameraTopY = this.cameras.main.scrollY;
@@ -418,15 +444,20 @@ export class GameScene extends Phaser.Scene {
     }
     this.registry.set('combo', { multiplier: this.combo.multiplier, remaining01: this.combo.remaining01 });
 
-    // Zone tracking — crossfade background and emit event on zone change.
+    // Zone tracking — emit event on zone change (1000px cadence, unchanged).
     const zone = zoneForHeight(heightClimbed);
     if (zone.index !== this.zoneIndex) {
       this.zoneIndex = zone.index;
-      this.buildBackground(zone);
-      const keys = this.bgKeys(zone);
-      this.crossfadeBg(keys.far, keys.near);
       this.gameEvents.emit('zoneEntered', { zoneIndex: zone.index, name: zone.name });
       this.registry.set('zoneBanner', zone.name);
+    }
+    // Backdrop crossfade runs on its own scene cadence (2000px in endless).
+    const sceneNow = bgScene(heightClimbed, !!this.levelDef);
+    if (sceneNow.key !== this.bgSceneKey) {
+      this.bgSceneKey = sceneNow.key;
+      const bgZone = ZONES[sceneNow.zoneIndex];
+      this.buildBackground(bgZone);
+      this.crossfadeBg(bgZone);
     }
 
     this.tracker.updateHeight(Math.floor(heightClimbed), this.zoneIndex);
