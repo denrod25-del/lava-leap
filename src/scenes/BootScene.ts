@@ -30,6 +30,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image('enemy-drifter', 'assets/enemies/drifter.png');
     this.load.image('boss-titan', 'assets/boss/titan.png');
     this.load.image('boss-titan-roar', 'assets/boss/titan-roar.png');
+    for (let z = 0; z < 4; z++) this.load.image(`bg-z${z}`, `assets/backgrounds/bg-z${z}.jpg`);
+    this.load.image('bg-menu', 'assets/backgrounds/menu.jpg');
+    this.load.image('bg-victory', 'assets/backgrounds/victory.jpg');
+    this.load.image('bg-gameover', 'assets/backgrounds/gameover.jpg');
     this.load.image('watermark', 'assets/watermark.png');
     for (let i = 0; i < 4; i++) this.load.image(`enemy-crawler-${i}`, `assets/enemies/crawler-${i}.png`);
     for (let i = 0; i < 4; i++) this.load.image(`enemy-drifter-${i}`, `assets/enemies/drifter-${i}.png`);
