@@ -33,6 +33,14 @@ export class BossController {
     this.titan = this.scene.textures.exists('boss-titan')
       ? this.scene.add.image(TUNING.width / 2, lavaSurfaceY, 'boss-titan').setDisplaySize(140, 140).setDepth(4)
       : this.scene.add.circle(TUNING.width / 2, lavaSurfaceY, 70, 0x7a1020).setDepth(4);
+    if (this.titan instanceof Phaser.GameObjects.Image && this.scene.textures.exists('boss-titan-roar')) {
+      this.titan.setTexture('boss-titan-roar').setDisplaySize(140, 140);
+      this.scene.time.delayedCall(700, () => {
+        if (this.titan instanceof Phaser.GameObjects.Image && this.titan.active) {
+          this.titan.setTexture('boss-titan').setDisplaySize(140, 140);
+        }
+      });
+    }
     this.events.emit('bossPhase', { zoneIndex: bossIndex + 1, phase: 'start' });
   }
 
