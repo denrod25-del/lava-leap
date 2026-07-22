@@ -35,6 +35,12 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     this.sound.stopAll();
     this.sound.play('sfx-music-menu', { loop: true, volume: (save.get().settings.musicVol / 10) * 0.6 });
+    if (this.textures.exists('bg-menu')) {
+      this.add.image(0, 0, 'bg-menu').setOrigin(0, 0)
+        .setDisplaySize(TUNING.width, TUNING.height).setDepth(-10).setAlpha(0.55);
+      this.add.rectangle(0, 0, TUNING.width, TUNING.height, 0x0a0508, 0.35)
+        .setOrigin(0, 0).setDepth(-9);
+    }
     const cx = TUNING.width / 2;
     // Volcano hub art behind the menu, dimmed so the monospace UI stays legible.
     if (this.textures.exists('bg-menu')) {

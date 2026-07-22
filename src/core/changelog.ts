@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.16.0', date: '2026-07-22', notes: [
+    'THE CLIMB HAS SCENERY: four hand-painted environments now rise behind you, changing as you climb.',
+    'The menu and the results screen got the full art treatment too.',
+    'Endless runs travel through all four worlds, over and over, the higher you go.',
+  ]},
   { version: '0.15.0', date: '2026-07-21', notes: [
     'Deaths are no longer a freeze-frame: your climber chars and crumbles into embers — and your shared clips end on it.',
     'Enemies live now: crawlers actually walk, drifters actually flap.',

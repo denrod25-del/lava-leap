@@ -34,7 +34,7 @@ async function textureKeyAfterStart(page: import('@playwright/test').Page): Prom
 test('default character run uses ember frames', async ({ page }) => {
   const errors = collectErrors(page);
   await page.addInitScript(() => {
-    localStorage.setItem('lavaleap.save.v2', JSON.stringify({ version: 2, tutorialDone: true, lastSeenVersion: '0.15.0' }));
+    localStorage.setItem('lavaleap.save.v2', JSON.stringify({ version: 2, tutorialDone: true, lastSeenVersion: '0.16.0' }));
   });
   const key = await textureKeyAfterStart(page);
   expect(key.startsWith('ember-'), `expected ember-* texture, got '${key}'`).toBe(true);
@@ -45,7 +45,7 @@ test('equipped classic character run uses classic frames', async ({ page }) => {
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.15.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.16.0',
       character: 'classic', ownedCharacters: ['ember', 'classic'],
     }));
   });
