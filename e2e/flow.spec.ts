@@ -60,7 +60,7 @@ test('dash-jump cancel keeps momentum; i-frames only while dashing', async ({ pa
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.16.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.17.0',
     }));
   });
   await page.goto('/');
@@ -112,7 +112,7 @@ test('reduced motion: flow visuals stay quiet and the game runs clean', async ({
       version: 2,
       settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: true },
       tutorialDone: true,
-      lastSeenVersion: '0.16.0',
+      lastSeenVersion: '0.17.0',
     }));
   });
   await page.goto('/');

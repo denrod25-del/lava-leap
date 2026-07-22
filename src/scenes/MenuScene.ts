@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { TUNING } from '../tuning';
 import { save, leaderboard } from '../main';
 import { defaultAnalytics } from '../core/analytics';
+import { dateKey } from '../core/dailySeed';
+import { ensureToday, missionsForDate } from '../core/missions';
 import { APP_VERSION, BUILD_LABEL } from '../core/buildInfo';
 import { DevOverlay } from '../entities/DevOverlay';
 import { promptName } from '../entities/NameEntry';
@@ -70,11 +72,16 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(cx, 260, `High Score: ${hi}`, { fontFamily: 'monospace', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
     this.add.text(cx, 290, `Bank: ${save.get().coinBank} coins`, { fontFamily: 'monospace', fontSize: '16px', color: '#ffd166' }).setOrigin(0.5);
 
+    const dk = dateKey(new Date());
+    const missionsState = ensureToday(save.get().missions, dk);
+    const missionsDone = missionsForDate(dk).filter((d) => missionsState.completed.includes(d.id)).length;
+
     const items: Array<{ line: string; tap: () => void }> = [
       { line: 'SPACE  Climb', tap: () => this.scene.start('Game', { daily: false }) },
       { line: 'D      Daily challenge', tap: () => this.scene.start('Game', { daily: true }) },
       { line: 'C      Shop', tap: () => this.scene.start('Shop') },
       { line: 'J      Journal', tap: () => this.scene.start('Journal') },
+      { line: `M      Missions (${missionsDone}/3)`, tap: () => this.scene.start('Missions') },
       { line: 'K      Levels', tap: () => this.scene.start('LevelSelect') },
       { line: 'A      Achievements', tap: () => this.scene.start('Achievements') },
       { line: 'H      How to play', tap: () => this.scene.start('HowTo') },
@@ -114,6 +121,7 @@ export class MenuScene extends Phaser.Scene {
       if (this.debugPanel) return; // F9 debug panel owns J (copy JSON) while open
       this.scene.start('Journal');
     });
+    kb.once('keydown-M', () => this.scene.start('Missions'));
     kb.once('keydown-A', () => this.scene.start('Achievements'));
     kb.once('keydown-H', () => this.scene.start('HowTo'));
     kb.once('keydown-N', () => this.scene.start('Changelog'));

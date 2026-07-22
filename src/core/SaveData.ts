@@ -1,6 +1,7 @@
 import type { KeyValueStore } from './ScoreTracker';
 import { defaultAnalytics, type AnalyticsState } from './analytics';
 import { DEFAULT_CHARACTER, isCharacter } from './characters';
+import { freshState, defaultMetrics, type MissionsState } from './missions';
 
 export interface Settings {
   musicVol: number;   // 0-10
@@ -54,6 +55,8 @@ export interface SaveBlob {
   };
   /** Levels mode progress. */
   levels: { cleared: string[] };
+  /** Daily missions progress (v0.17.0). dateKey '' forces a reset on first real read. */
+  missions: MissionsState;
 }
 
 const KEY = 'lavaleap.save.v2';
@@ -79,6 +82,7 @@ function defaults(): SaveBlob {
     ownedCharacters: ['ember', 'classic'],
     story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0, pendingCutscenes: [], watchedCutscenes: [], stingSeen: false },
     levels: { cleared: [] },
+    missions: freshState(''),
   };
 }
 
@@ -141,6 +145,12 @@ export class SaveData {
             identity: { ...defaults().identity, ...parsed.identity },
             story: { ...defaults().story, ...parsed.story },
             levels: { ...defaults().levels, ...parsed.levels },
+            missions: {
+              ...freshState(''),
+              ...parsed.missions,
+              metrics: { ...defaultMetrics(), ...parsed.missions?.metrics },
+              completed: Array.isArray(parsed.missions?.completed) ? parsed.missions.completed : [],
+            },
           };
           if (!isCharacter(merged.character)) merged.character = DEFAULT_CHARACTER;
           const ownedRaw = Array.isArray(parsed.ownedCharacters) ? parsed.ownedCharacters : [];

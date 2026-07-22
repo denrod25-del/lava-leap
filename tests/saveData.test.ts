@@ -347,3 +347,25 @@ describe('recordClips save field (v0.14.0)', () => {
     expect(s.get().settings.controlScheme).toBe('manual');
   });
 });
+
+describe('daily missions save field (v0.17.0)', () => {
+  it('backfills missions on saves written before v0.17.0', () => {
+    const store = fakeStore();
+    store.setItem('lavaleap.save.v2', JSON.stringify({ version: 2, highScore: 5 }));
+    const s = new SaveData(store);
+    expect(s.get().missions.dateKey).toBe('');
+    expect(s.get().missions.metrics.coins).toBe(0);
+    expect(s.get().missions.completed).toEqual([]);
+  });
+  it('deep-merges partial persisted missions (future-field safety)', () => {
+    const store = fakeStore();
+    store.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2,
+      missions: { dateKey: '2026-07-22', metrics: { coins: 7 }, completed: ['coins-25'] },
+    }));
+    const s = new SaveData(store);
+    expect(s.get().missions.metrics.coins).toBe(7);
+    expect(s.get().missions.metrics.jumps).toBe(0); // backfilled
+    expect(s.get().missions.completed).toEqual(['coins-25']);
+  });
+});
