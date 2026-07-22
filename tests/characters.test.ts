@@ -60,14 +60,16 @@ describe('animManifest ↔ FRAME_NAMES consistency', () => {
     }
   });
 
-  it('Climber exposes the complete 57-frame production spritesheet map', () => {
+  it('Climber maps its production spritesheet action states (idle anchored to frame 0)', () => {
     const defs = characterAnims(CLIMBER_CHARACTER);
     expect(defs).toHaveLength(13);
     expect(defs.every((d) => d.sheetKey === 'climber-sheet')).toBe(true);
     const unique = new Set(defs.flatMap((d) => d.frames.map(Number)));
-    expect(unique.size).toBe(57);
+    // 51 frames referenced 0..50: the idle def deliberately anchors to [0] alone
+    // (prevents cosmetic vertical bob), leaving source idle frames 1-5 unused.
+    expect(unique.size).toBe(46);
     expect(Math.min(...unique)).toBe(0);
-    expect(Math.max(...unique)).toBe(56);
+    expect(Math.max(...unique)).toBe(50);
   });
 });
 
@@ -114,13 +116,19 @@ describe('death animation roster contract (v0.15.0)', () => {
     expect(FRAME_NAMES).toContain('death-3');
     expect(FRAME_NAMES).toHaveLength(19);
   });
-  it('every character has a death anim def: 4 frames, frameRate 8, repeat 0', () => {
+  it('every character has a one-shot 4-frame death anim def', () => {
     for (const c of CHARACTERS) {
       const def = characterAnims(c.id).find((d) => d.key === `${c.id}-death`);
       expect(def, c.id).toBeDefined();
-      expect(def!.frames).toEqual(['death-0', 'death-1', 'death-2', 'death-3'].map((f) => `${c.id}-${f}`));
-      expect(def!.frameRate).toBe(8);
-      expect(def!.repeat).toBe(0);
+      expect(def!.frames, c.id).toHaveLength(4);
+      expect(def!.repeat, c.id).toBe(0);
+      if (def!.sheetKey) {
+        // Atlas characters (Climber) use numeric spritesheet frames at their own rate.
+        expect(def!.frames.every((f) => typeof f === 'number'), c.id).toBe(true);
+      } else {
+        expect(def!.frames).toEqual(['death-0', 'death-1', 'death-2', 'death-3'].map((f) => `${c.id}-${f}`));
+        expect(def!.frameRate).toBe(8);
+      }
     }
   });
 });
