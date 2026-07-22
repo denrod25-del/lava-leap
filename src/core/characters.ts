@@ -40,14 +40,15 @@ export function resolveMovement(id: string): MovementProfile {
   return CHARACTERS.find((c) => c.id === id)?.movement ?? DEFAULT_MOVEMENT;
 }
 
-export type PlayerState = 'run' | 'jump' | 'fall' | 'idle';
+export type PlayerState = 'run' | 'jump' | 'fall' | 'idle' | 'death';
 
-/** The 15 per-character animation frame files (run-0..5, jump-1..5, idle-0..3).
+/** The 19 per-character animation frame files (run-0..5, jump-1..5, idle-0..3, death-0..3).
  *  The static sprite (player.png → staticKey) is loaded separately. */
 export const FRAME_NAMES: string[] = [
   'run-0', 'run-1', 'run-2', 'run-3', 'run-4', 'run-5',
   'jump-1', 'jump-2', 'jump-3', 'jump-4', 'jump-5',
   'idle-0', 'idle-1', 'idle-2', 'idle-3',
+  'death-0', 'death-1', 'death-2', 'death-3',
 ];
 
 export function staticKey(id: string): string { return `${id}-static`; }

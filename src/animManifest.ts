@@ -19,6 +19,7 @@ const STATE_DEFS: { state: PlayerState; frames: string[]; frameRate: number; rep
   { state: 'jump', frames: ['jump-1', 'jump-2', 'jump-3'], frameRate: 12, repeat: 0 },
   { state: 'fall', frames: ['jump-4', 'jump-5'], frameRate: 8, repeat: 0 },
   { state: 'idle', frames: ['idle-0', 'idle-1', 'idle-2', 'idle-3'], frameRate: 6, repeat: -1 },
+  { state: 'death', frames: ['death-0', 'death-1', 'death-2', 'death-3'], frameRate: 8, repeat: 0 },
 ];
 
 /** Per-character Phaser anim defs, e.g. characterAnims('classic')[0].key === 'classic-run'
