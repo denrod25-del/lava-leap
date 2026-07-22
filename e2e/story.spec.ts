@@ -38,7 +38,7 @@ test('veteran save: no vignette, Journal accessible, Cole locked in Shop', async
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.18.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.18.1',
       analytics: { runs: 5 },
     }));
   });

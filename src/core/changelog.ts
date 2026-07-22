@@ -2,6 +2,9 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.18.1', date: '2026-07-22', notes: [
+    'FIXED: shared clips no longer play fast-forwarded or choppy — recording now captures every rendered frame at a steady 30fps.',
+  ]},
   { version: '0.18.0', date: '2026-07-22', notes: [
     'LEVEL MEDALS: every campaign level now awards BRONZE, SILVER or GOLD by clear time.',
     'Your best times live on the Levels screen — beat the pars to upgrade your medals.',

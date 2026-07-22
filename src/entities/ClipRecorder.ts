@@ -28,10 +28,29 @@ export class ClipRecorder {
     return MIME_CANDIDATES.some((m) => MediaRecorder.isTypeSupported(m));
   }
 
+  private frameTrack: (MediaStreamTrack & { requestFrame?: () => void }) | null = null;
+  private lastCapMs = 0;
+
   constructor(private scene: Phaser.Scene) {
     this.mimeType = MIME_CANDIDATES.find((m) => MediaRecorder.isTypeSupported(m))!;
     const canvas = this.scene.game.canvas as HTMLCanvasElement & { captureStream: (fps?: number) => MediaStream };
-    this.stream = canvas.captureStream(30);
+    // Frame capture is DRIVEN, not timer-sampled: captureStream(0) produces no
+    // automatic frames; we requestFrame() on Phaser's POST_RENDER, the one moment
+    // the WebGL buffer is guaranteed valid. The old captureStream(30) timer read
+    // the buffer between paints (preserveDrawingBuffer was false) and captured
+    // ~9fps with compacted timestamps — clips played fast-forwarded and jerky.
+    this.stream = canvas.captureStream(0);
+    const track = this.stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    if (typeof track.requestFrame === 'function') {
+      this.frameTrack = track;
+      this.scene.game.events.on(Phaser.Core.Events.POST_RENDER, this.onPostRender, this);
+    } else {
+      // No requestFrame (older WebKit): fall back to timer sampling — with
+      // preserveDrawingBuffer now true in the game config, the timer at least
+      // always finds a readable buffer.
+      this.stream.getTracks().forEach((t) => t.stop());
+      this.stream = canvas.captureStream(30);
+    }
     // Tap the game's WebAudio master so the clip carries music/SFX at player volumes.
     // HTML5-audio fallback mode (no WebAudio) records video-only.
     const sm = this.scene.sound;
@@ -44,6 +63,16 @@ export class ClipRecorder {
     this.scene.events.on(Phaser.Scenes.Events.PAUSE, this.onPause, this);
     this.scene.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
+  }
+
+  /** POST_RENDER: push the just-rendered frame into the stream, capped at ~30fps
+   *  so the encoder sees a steady cadence without doubling its load at 60fps. */
+  private onPostRender(): void {
+    if (this.dead || this.paused || !this.frameTrack) return;
+    const now = performance.now();
+    if (now - this.lastCapMs < 30) return;
+    this.lastCapMs = now;
+    this.frameTrack.requestFrame!();
   }
 
   /** Call each frame. Cheap no-op between 15s rotation boundaries.
@@ -127,6 +156,8 @@ export class ClipRecorder {
   }
 
   private teardown(): void {
+    this.scene.game.events.off(Phaser.Core.Events.POST_RENDER, this.onPostRender, this);
+    this.frameTrack = null;
     this.scene.events.off(Phaser.Scenes.Events.PAUSE, this.onPause, this);
     this.scene.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
     for (const k of ['a', 'b'] as const) {
