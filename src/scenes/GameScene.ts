@@ -15,6 +15,7 @@ import { AudioDirector } from '../entities/AudioDirector';
 import { ZONES, zoneForHeight, type ZoneDef } from '../core/zones';
 import { bgScene } from '../core/backgrounds';
 import { AchievementTracker } from '../core/AchievementTracker';
+import { MissionTracker } from '../core/MissionTracker';
 import { recordRunStart, recordDeath, recordBank } from '../core/analytics';
 import { dailySeed, dateKey } from '../core/dailySeed';
 import { allTimeBoard, dailyBoard } from '../core/leaderboard';
@@ -62,6 +63,7 @@ export class GameScene extends Phaser.Scene {
   private audio!: AudioDirector;
   private zoneIndex = 0;
   private tracker!: AchievementTracker;
+  private missions!: MissionTracker;
   private enemies!: EnemyManager;
   private powerups!: PowerupController;
   private boss!: BossController;
@@ -198,6 +200,11 @@ export class GameScene extends Phaser.Scene {
     this.tracker = new AchievementTracker(this.gameEvents, save, (a) => {
       this.registry.set('toast', `${a.name} — ${a.description}`);
       this.sound.play('sfx-ding', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
+    });
+    this.missions = new MissionTracker(this.gameEvents, save, (def, pay) => {
+      this.registry.set('toast', `★ MISSION COMPLETE — ${def.text} (+${pay}c)`);
+      this.sound.play('sfx-kaching', { volume: 0.5 * (save.get().settings.sfxVol / 10) });
+      track('mission_complete', { id: def.id });
     });
 
     const startBg = bgScene(startHeightOffset, !!this.levelDef);
@@ -461,6 +468,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.tracker.updateHeight(Math.floor(heightClimbed), this.zoneIndex);
+    this.missions.updateHeight(Math.floor(heightClimbed));
 
     this.lava.update(delta, heightClimbed);
 
@@ -603,6 +611,7 @@ export class GameScene extends Phaser.Scene {
   public endRunBookkeeping(finalHeight: number): { banked: number; bankTotal: number } {
     if (this.booked) return { banked: 0, bankTotal: save.get().coinBank };
     this.booked = true;
+    this.missions.flushRunEnd();
     const banked = this.score.coins;
     save.update((b) => {
       b.coinBank += banked;
@@ -632,6 +641,7 @@ export class GameScene extends Phaser.Scene {
     save.update((b) => {
       if (!b.levels.cleared.includes(levelDef.id)) b.levels.cleared.push(levelDef.id);
     });
+    this.missions.levelCleared();
     track('level_clear', { id: levelDef.id });
     const idx = LEVELS.findIndex((l) => l.id === levelDef.id);
     const nextLevelId = idx >= 0 && idx + 1 < LEVELS.length ? LEVELS[idx + 1].id : undefined;
