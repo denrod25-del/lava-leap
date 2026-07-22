@@ -51,6 +51,13 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game',
   backgroundColor: '#10101a',
   pixelArt: true, // crisp upscaling of the pixel-art sprites
+  render: {
+    // Keep the WebGL buffer readable between frames: the clip recorder (and any
+    // captureStream fallback path) reads the canvas outside the render tick.
+    // Without this, timer-sampled captures caught ~9fps of valid frames and
+    // clips played fast-forwarded (v0.18.1 encoder fix).
+    preserveDrawingBuffer: true,
+  },
   scale: {
     mode: Phaser.Scale.FIT, // scale the 480x720 design space up to fill the window
     // The #game flexbox centers the canvas. Phaser's autoCenter would ALSO add

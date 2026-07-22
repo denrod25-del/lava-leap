@@ -12,7 +12,7 @@ test('Journal: an unlocked page with a pending, unwatched cutscene shows a Watch
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.18.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.18.1',
       analytics: { runs: 5 },
       story: {
         unlockedPages: ['oath', 'titan', 'freed'],
