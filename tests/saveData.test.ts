@@ -369,3 +369,16 @@ describe('daily missions save field (v0.17.0)', () => {
     expect(s.get().missions.completed).toEqual(['coins-25']);
   });
 });
+
+describe('level medals save field (v0.18.0)', () => {
+  it('backfills medals/bestTimes on a legacy levels save', () => {
+    const store = fakeStore();
+    store.setItem('lavaleap.save.v2', JSON.stringify({
+      version: 2, levels: { cleared: ['level-1'] },
+    }));
+    const s = new SaveData(store);
+    expect(s.get().levels.cleared).toEqual(['level-1']);
+    expect(s.get().levels.medals).toEqual({});
+    expect(s.get().levels.bestTimes).toEqual({});
+  });
+});
