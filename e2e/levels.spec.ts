@@ -28,7 +28,7 @@ test('Level Select shows correct locked/cleared/play status from save state', as
     const ls = (window as any).__game.scene.keys.LevelSelect;
     return ls.rows.map((r: { text: string }) => r.text);
   });
-  expect(rows[0]).toContain('CLEARED');
+  expect(rows[0]).toContain('BRONZE');   // was 'CLEARED' — retro bronze for legacy clears
   expect(rows[1]).toContain('PLAY');
   expect(rows[2]).toContain('LOCKED');
   expect(rows[3]).toContain('LOCKED');
