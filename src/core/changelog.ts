@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.15.0', date: '2026-07-21', notes: [
+    'Deaths are no longer a freeze-frame: your climber chars and crumbles into embers — and your shared clips end on it.',
+    'Enemies live now: crawlers actually walk, drifters actually flap.',
+    'The Lava Titan ROARS when a boss fight begins.',
+  ]},
   { version: '0.14.1', date: '2026-07-21', notes: [
     'Shared clips now carry the Lava Leap emblem — everyone watching knows where the climb happened.',
   ]},
