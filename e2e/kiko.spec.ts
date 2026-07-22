@@ -7,7 +7,7 @@ test('Kiko: shop purchase, triple jump on keyboard, ledge grab→vault refunds j
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.15.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.16.0',
       analytics: { runs: 5 }, coinBank: 1000,
     }));
   });
