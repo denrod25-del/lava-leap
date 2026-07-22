@@ -35,6 +35,7 @@ export class Player {
   /** AUTO control scheme: bounce off the ground automatically each landing. */
   autoJump = false;
   private charId = DEFAULT_CHARACTER;
+  private deathPlayed = false;
 
   get wallSliding(): boolean { return this._wallSliding; }
 
@@ -316,7 +317,18 @@ export class Player {
     this.refreshDash();
   }
 
+  /** Play the burn-up. pickAnimation is suppressed afterward so nothing overrides it. */
+  playDeath(): void {
+    this.deathPlayed = true;
+    const key = animKey(this.charId, 'death');
+    if (this.scene.anims.exists(key)) {
+      this.sprite.anims.stop();
+      this.sprite.anims.play(key);
+    }
+  }
+
   private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
+    if (this.deathPlayed) return;
     if (!this.scene.anims.exists(animKey(this.charId, 'run'))) return; // frames not built — static fallback
     let state: PlayerState;
     if (!onGround) state = vy < 0 ? 'jump' : 'fall';
