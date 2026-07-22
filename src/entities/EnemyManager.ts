@@ -11,6 +11,8 @@ interface EnemyView {
   platTopY: number;
   dir: 1 | -1;     // crawler patrol direction
   phase: number;   // drifter sine-bob phase offset
+  frameIdx: number; // current animation frame index (texture cycling)
+  frameMs: number;  // ms accumulated toward the next frame step
 }
 
 /** Spawns/despawns crawler + drifter enemies from platform descriptors, drives their
@@ -18,9 +20,15 @@ interface EnemyView {
  *  on every kill so juice/audio/achievements hook in via the event spine. */
 export class EnemyManager {
   private views = new Map<number, EnemyView>();
+  private crawlerFrames = 0;
+  private drifterFrames = 0;
 
   constructor(private scene: Phaser.Scene, private events: GameEvents) {
     this.ensureTextures();
+    // Animated mode: count the loaded frame textures (0 = fall back to the static sprite).
+    // Must run AFTER ensureTextures so the code-drawn fallbacks exist either way.
+    while (this.scene.textures.exists(`enemy-crawler-${this.crawlerFrames}`)) this.crawlerFrames++;
+    while (this.scene.textures.exists(`enemy-drifter-${this.drifterFrames}`)) this.drifterFrames++;
   }
 
   private ensureTextures(): void {
@@ -59,6 +67,7 @@ export class EnemyManager {
     this.views.set(desc.id, {
       desc, sprite, platLeft, platRight, platTopY, dir: 1,
       phase: (desc.id % 8) / 8 * Math.PI * 2, // deterministic per-platform phase, no Math.random
+      frameIdx: 0, frameMs: 0,
     });
   }
 
@@ -84,6 +93,20 @@ export class EnemyManager {
         v.sprite.x = (v.platLeft + v.platRight) / 2;
         v.sprite.y = v.platTopY - ENEMY.drifterHoverH
           + Math.sin(time / 1000 * ENEMY.drifterFreq * Math.PI * 2 + v.phase) * ENEMY.drifterAmplitude;
+      }
+      // Frame cycling — crawler walks at 8 fps, drifter flaps at 6 fps.
+      // Zero detected frames = static fallback, byte-identical behavior.
+      const frames = v.desc.enemy!.kind === 'crawler' ? this.crawlerFrames : this.drifterFrames;
+      if (frames > 1) {
+        const stepMs = v.desc.enemy!.kind === 'crawler' ? 125 : 167;
+        v.frameMs += dtMs;
+        if (v.frameMs >= stepMs) {
+          v.frameMs -= stepMs;
+          v.frameIdx = (v.frameIdx + 1) % frames;
+          const prefix = v.desc.enemy!.kind === 'crawler' ? 'enemy-crawler-' : 'enemy-drifter-';
+          v.sprite.setTexture(prefix + v.frameIdx);
+          v.sprite.setDisplaySize(ENEMY.bodyW * 1.4, ENEMY.bodyH * 1.4); // re-assert after texture swap
+        }
       }
     }
   }

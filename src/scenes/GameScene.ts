@@ -578,10 +578,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.dead = true;
-    const clipDone: Promise<ClipResult | null> = this.clipRecorder
-      ? this.clipRecorder.finish(this.time.now)
-      : Promise.resolve(null);
-    void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
+    this.player.playDeath();
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const finalScore = this.score.score;
 
@@ -615,6 +612,12 @@ export class GameScene extends Phaser.Scene {
     if (finalScore > save.get().highScore) save.update((b) => { b.highScore = finalScore; });
     this.gameEvents.emit('death', { height: Math.floor(heightClimbed), zoneIndex: this.zoneIndex });
     this.time.delayedCall(450, () => {
+      // Finish the clip HERE (not at death time) so the recorder keeps rolling
+      // through the 450ms death animation and the clip ends on the burn-up.
+      const clipDone: Promise<ClipResult | null> = this.clipRecorder
+        ? this.clipRecorder.finish(this.time.now)
+        : Promise.resolve(null);
+      void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
       const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
       save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex, source));
       this.scene.stop('Hud');

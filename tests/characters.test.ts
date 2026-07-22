@@ -36,8 +36,8 @@ describe('key helpers', () => {
 });
 
 describe('FRAME_NAMES', () => {
-  it('lists the 15 legacy per-character frame files', () => {
-    expect(FRAME_NAMES).toHaveLength(15);
+  it('lists the 19 legacy per-character frame files', () => {
+    expect(FRAME_NAMES).toHaveLength(19);
     expect(FRAME_NAMES).toContain('run-0');
     expect(FRAME_NAMES).toContain('run-5');
     expect(FRAME_NAMES).toContain('jump-1');
@@ -105,6 +105,23 @@ describe('movement profiles (v0.13.0)', () => {
     expect(KIKO_MOVEMENT.jumpVelocity).toBeLessThan(TUNING.jumpVelocity);
     expect(KIKO_MOVEMENT.airJumpVelocity).toBeLessThan(TUNING.doubleJumpVelocity);
     expect(KIKO_MOVEMENT.ledgeGrab).toBe(true);
+  });
+});
+
+describe('death animation roster contract (v0.15.0)', () => {
+  it('FRAME_NAMES includes the 4 death frames (19 total)', () => {
+    expect(FRAME_NAMES).toContain('death-0');
+    expect(FRAME_NAMES).toContain('death-3');
+    expect(FRAME_NAMES).toHaveLength(19);
+  });
+  it('every character has a death anim def: 4 frames, frameRate 8, repeat 0', () => {
+    for (const c of CHARACTERS) {
+      const def = characterAnims(c.id).find((d) => d.key === `${c.id}-death`);
+      expect(def, c.id).toBeDefined();
+      expect(def!.frames).toEqual(['death-0', 'death-1', 'death-2', 'death-3'].map((f) => `${c.id}-${f}`));
+      expect(def!.frameRate).toBe(8);
+      expect(def!.repeat).toBe(0);
+    }
   });
 });
 

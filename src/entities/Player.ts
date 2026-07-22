@@ -31,6 +31,7 @@ export class Player {
   flowSpeedNudge = 0;
   autoJump = false;
   private charId = DEFAULT_CHARACTER;
+  private deathPlayed = false;
 
   get wallSliding(): boolean { return this._wallSliding; }
   get dashing(): boolean { return this.dashTimer > 0; }
@@ -265,6 +266,17 @@ export class Player {
     this.refreshDash();
   }
 
+  /** Play the burn-up. pickAnimation is suppressed afterward so nothing overrides it.
+   *  Works for the Climber too — its atlas exposes a 'death' action state. */
+  playDeath(): void {
+    this.deathPlayed = true;
+    const key = animKey(this.charId, 'death');
+    if (this.scene.anims.exists(key)) {
+      this.sprite.anims.stop();
+      this.sprite.anims.play(key);
+    }
+  }
+
   private playTransient(state: PlayerState, durationMs: number): void {
     if (this.charId !== CLIMBER_CHARACTER || !this.scene.anims.exists(animKey(this.charId, state))) return;
     this.actionAnimState = state;
@@ -281,6 +293,7 @@ export class Player {
   }
 
   private pickAnimation(onGround: boolean, moving: boolean, vy: number): void {
+    if (this.deathPlayed) return;
     if (!this.scene.anims.exists(animKey(this.charId, 'run'))) return;
     if (this.charId === CLIMBER_CHARACTER) {
       if (this.actionAnimState && this.scene.time.now < this.actionAnimUntil) {
