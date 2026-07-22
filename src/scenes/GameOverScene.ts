@@ -4,12 +4,14 @@ import { save, leaderboard } from '../main';
 import { track } from '../core/track';
 import { allTimeBoard, dailyBoard } from '../core/leaderboard';
 import { BEATS, type StoryStage } from '../core/story';
+import { type Medal, MEDAL_COLORS, formatMs } from '../core/medals';
+import { LEVELS } from '../core/levels';
 import { openClipShare } from '../entities/ClipShare';
 import type { ClipResult } from '../entities/ClipRecorder';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
-  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown>; storyStage?: StoryStage; journalUnlocks?: number; result?: 'cleared' | 'died'; levelId?: string; nextLevelId?: string; clipDone?: Promise<ClipResult | null> }): void {
+  create(data: { score: number; banked?: number; bankTotal?: number; daily?: boolean; dailyBest?: number; earned?: string[]; playerId?: string; submitDone?: Promise<unknown>; storyStage?: StoryStage; journalUnlocks?: number; result?: 'cleared' | 'died'; levelId?: string; nextLevelId?: string; clearMs?: number; medal?: Medal; newBest?: boolean; clipDone?: Promise<ClipResult | null> }): void {
     this.sound.stopAll();
     const cx = TUNING.width / 2;
     const cleared = data.result === 'cleared';
@@ -56,6 +58,20 @@ export class GameOverScene extends Phaser.Scene {
       }).setOrigin(0.5);
     }
     if (cleared) {
+      if (data.medal && data.clearMs !== undefined) {
+        this.add.text(cx, 384, `${data.medal.toUpperCase()} — ${formatMs(data.clearMs)}${data.newBest ? '  NEW BEST' : ''}`, {
+          fontFamily: 'monospace', fontSize: '20px', color: MEDAL_COLORS[data.medal],
+        }).setOrigin(0.5);
+        if (data.medal !== 'gold') {
+          const def = LEVELS.find((l) => l.id === data.levelId);
+          if (def) {
+            const hook = data.medal === 'silver'
+              ? `Gold under ${formatMs(def.parGoldMs)}`
+              : `Silver under ${formatMs(def.parSilverMs)}`;
+            this.add.text(cx, 440, hook, { fontFamily: 'monospace', fontSize: '14px', color: '#8a93a3' }).setOrigin(0.5);
+          }
+        }
+      }
       const sfxMult = save.get().settings.sfxVol / 10;
       const goNext = () => {
         this.sound.play('sfx-ui-select', { volume: 0.35 * sfxMult });

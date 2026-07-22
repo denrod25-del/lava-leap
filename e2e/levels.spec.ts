@@ -12,7 +12,7 @@ test('Level Select shows correct locked/cleared/play status from save state', as
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.17.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.18.0',
       analytics: { runs: 5 },
       levels: { cleared: ['level-1'] },
     }));
@@ -28,7 +28,7 @@ test('Level Select shows correct locked/cleared/play status from save state', as
     const ls = (window as any).__game.scene.keys.LevelSelect;
     return ls.rows.map((r: { text: string }) => r.text);
   });
-  expect(rows[0]).toContain('CLEARED');
+  expect(rows[0]).toContain('BRONZE');   // was 'CLEARED' — retro bronze for legacy clears
   expect(rows[1]).toContain('PLAY');
   expect(rows[2]).toContain('LOCKED');
   expect(rows[3]).toContain('LOCKED');
@@ -39,7 +39,7 @@ test('clearing a level (forced boss survival) marks it cleared, unlocks the next
   const errors = collectErrors(page);
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.17.0',
+      version: 2, tutorialDone: true, lastSeenVersion: '0.18.0',
       analytics: { runs: 5 },
     }));
   });

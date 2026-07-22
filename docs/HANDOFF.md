@@ -2,11 +2,20 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-22 (v0.17.0)._
+_Last updated: 2026-07-22 (v0.18.0)._
 
 ---
 
-## Current state — v0.17.0 "Daily Missions"
+## Current state — v0.18.0 "Level Medals"
+- **Bronze/silver/gold per campaign level by clear time.** `src/core/medals.ts` is the whole rule set, pure and unit-tested: `medalForClear(def, clearMs)` awards **strictly-under** the par (`clearMs < parGoldMs` → gold, `< parSilverMs` → silver, else bronze — exactly AT a par earns the tier below), `betterMedal` never downgrades a stored medal, `formatMs` renders `m:ss.d` (floor on the deciseconds), `MEDAL_COLORS` is the single color source (gold `#ffd166` / silver `#c0c8d0` / bronze `#cd7f32`).
+- **Retro bronze is read-time, not a migration write:** `effectiveMedal(levels, id)` returns the stored medal, else bronze if the id is in the legacy `cleared` array, else null. Nothing rewrites old saves — a pre-v0.18 clear simply *reads* as bronze forever (and upgrades normally on a faster re-clear). The `levels.spec.ts` seeded test doubles as the retro-bronze e2e on purpose (its seed stays legacy-shaped `{cleared:['level-1']}` and asserts `BRONZE`).
+- **Par tuning levers:** `parSilverMs`/`parGoldMs` live on each `LevelDef` in `src/core/levels.ts` (level-1 150s/100s, level-2 160s/110s, level-3 170s/120s, level-4 180s/130s — initial estimates, tune freely). A levels unit test locks sanity only (`0 < gold < silver`), so retuning never breaks tests; the strictly-under rule means par edits shift boundaries predictably.
+- **Recording:** `GameScene.completeLevel()` computes `clearMs` from `time.now - runStartMs`, stores `betterMedal(...)` + `Math.min` best time in `save.levels.{medals,bestTimes}` (both `Record<string, ...>`, backfilled by the SaveData deep-merge, migration-tested), tracks `level_clear {id, ms, medal}`, and rides `clearMs/medal/newBest` on `gameOverData`. GameOverScene's cleared branch shows `GOLD — 1:37.4  NEW BEST` (y=384) plus a next-tier hook (`Gold under 1:40.0`, y=440) for non-gold clears; LevelSelect rows become a scoreboard (`[GOLD 1:37.4]` in medal color via `effectiveMedal`) with a par line for the selected level at y=340.
+- **e2e (`e2e/medals.spec.ts`):** forces a ~5s clear by rewinding `g.runStartMs = g.time.now - 5000` then the levels.spec bossPhase poke; asserts GOLD on the GameOver text, `medals['level-1'] === 'gold'` and a 3–20s best time in the persisted save.
+- **The v0.16→v0.18 arc (backgrounds → daily missions → level medals) is COMPLETE.**
+- Suite: 256 unit + 35 e2e.
+
+## Previous state — v0.17.0 "Daily Missions"
 - **Three date-seeded daily missions** (easy 30c / medium 50c / hard 80c — `PAYOUTS`), the same three for every player: `src/core/missions.ts` is pure content+state — a 12-template pool (4 per tier, stable `id`s that key progress storage), `missionsForDate(dk)` picks one per tier via FNV-1a on `` `${dk}:${tier}` `` (same hash family as `dailySeed`, salted per tier), so rotation is deterministic and identical for everyone with zero server involvement. Unit tests lock pool shape, payouts, rotation determinism, and 30-day coverage of all 12 templates.
 - **Auto-claim + persistence batching:** `src/core/MissionTracker.ts` (mirrors `AchievementTracker`'s event-subscription shape) subscribes to the event spine (coins/dashes/jumps incl. double+wall/stomps/powerups, `bossPhase 'end'` = Titan survival, `flowTier 3` = BLAZING) plus scene-called `updateHeight`/`levelCleared`/`flushRunEnd`. Save writes happen ONLY on mission completion (`coinBank += payout` and state in one `save.update`) and at run end (`flushRunEnd` folds the per-run coin peak into `bestRunCoins` then persists) — never per event. Completion fires the toast + kaching + `track('mission_complete')` via the constructor callback in GameScene.
 - **Daily reset is lazy:** `ensureToday(state, dk)` returns the same object same-day and a `freshState(dk)` on a new day; the tracker persists the reset immediately when construction detects rollover. `SaveBlob.missions` deep-merges with `defaultMetrics()` backfill + array-guarded `completed` (migration-tested), `dateKey: ''` default forces a reset on first real read.

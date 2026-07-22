@@ -3,17 +3,20 @@ import { TUNING } from '../tuning';
 import { save } from '../main';
 import { LEVELS, isLevelUnlocked } from '../core/levels';
 import { track } from '../core/track';
+import { effectiveMedal, formatMs, MEDAL_COLORS } from '../core/medals';
 
 /** Level Select: a vertical list (same idiom as Journal/Shop) — one row per
- *  LEVELS entry, showing CLEARED/PLAY/LOCKED status from save.levels.cleared. */
+ *  LEVELS entry, showing medal/best-time (or PLAY/LOCKED) from save.levels. */
 export class LevelSelectScene extends Phaser.Scene {
   private idx = 0;
   private rows: Phaser.GameObjects.Text[] = [];
+  private parText?: Phaser.GameObjects.Text;
 
   constructor() { super('LevelSelect'); }
 
   create(): void {
     this.idx = 0;
+    this.parText = undefined; // scene instances are reused; last visit's text is destroyed
     const cx = TUNING.width / 2;
     this.add.text(cx, 60, 'LEVELS', { fontFamily: 'monospace', fontSize: '32px', color: '#ffd166' }).setOrigin(0.5);
     this.add.text(cx, 96, 'The Last Ember — Campaign', { fontFamily: 'monospace', fontSize: '14px', color: '#8a93a3' }).setOrigin(0.5);
@@ -44,14 +47,27 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   private render(): void {
-    const clearedIds = save.get().levels.cleared;
+    const levels = save.get().levels;
     LEVELS.forEach((lvl, i) => {
       const cursor = i === this.idx ? '> ' : '  ';
-      const isCleared = clearedIds.includes(lvl.id);
-      const unlocked = isLevelUnlocked(lvl.id, clearedIds);
-      const status = isCleared ? '[CLEARED ★]' : unlocked ? '[PLAY]' : '[LOCKED 🔒]';
+      const unlocked = isLevelUnlocked(lvl.id, levels.cleared);
+      const medal = effectiveMedal(levels, lvl.id);
+      const best = levels.bestTimes[lvl.id];
+      const status = medal
+        ? `[${medal.toUpperCase()}${best !== undefined ? ' ' + formatMs(best) : ''}]`
+        : unlocked ? '[PLAY]' : '[LOCKED 🔒]';
       this.rows[i].setText(`${cursor}${i + 1}. ${lvl.title.padEnd(18)} ${status}`)
-        .setColor(unlocked ? '#e8e2d8' : '#555555').setAlpha(unlocked ? 1 : 0.6);
+        .setColor(medal ? MEDAL_COLORS[medal] : unlocked ? '#e8e2d8' : '#555555')
+        .setAlpha(unlocked ? 1 : 0.6);
     });
+    const sel = LEVELS[this.idx];
+    const parLine = `Silver under ${formatMs(sel.parSilverMs)} · Gold under ${formatMs(sel.parGoldMs)}`;
+    if (!this.parText) {
+      this.parText = this.add.text(TUNING.width / 2, 340, parLine, {
+        fontFamily: 'monospace', fontSize: '13px', color: '#8a93a3',
+      }).setOrigin(0.5);
+    } else {
+      this.parText.setText(parLine);
+    }
   }
 }

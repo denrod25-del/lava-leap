@@ -2,6 +2,7 @@ import type { KeyValueStore } from './ScoreTracker';
 import { defaultAnalytics, type AnalyticsState } from './analytics';
 import { DEFAULT_CHARACTER, isCharacter } from './characters';
 import { freshState, defaultMetrics, type MissionsState } from './missions';
+import type { Medal } from './medals';
 
 export interface Settings {
   musicVol: number;   // 0-10
@@ -54,7 +55,7 @@ export interface SaveBlob {
     stingSeen: boolean;
   };
   /** Levels mode progress. */
-  levels: { cleared: string[] };
+  levels: { cleared: string[]; medals: Record<string, Medal>; bestTimes: Record<string, number> };
   /** Daily missions progress (v0.17.0). dateKey '' forces a reset on first real read. */
   missions: MissionsState;
 }
@@ -81,7 +82,7 @@ function defaults(): SaveBlob {
     character: DEFAULT_CHARACTER,
     ownedCharacters: ['ember', 'classic'],
     story: { unlockedPages: [], vignetteSeen: false, titanDefeats: 0, pendingCutscenes: [], watchedCutscenes: [], stingSeen: false },
-    levels: { cleared: [] },
+    levels: { cleared: [], medals: {}, bestTimes: {} },
     missions: freshState(''),
   };
 }
@@ -144,7 +145,11 @@ export class SaveData {
             upgrades: { ...defaults().upgrades, ...parsed.upgrades },
             identity: { ...defaults().identity, ...parsed.identity },
             story: { ...defaults().story, ...parsed.story },
-            levels: { ...defaults().levels, ...parsed.levels },
+            levels: {
+              cleared: Array.isArray(parsed.levels?.cleared) ? parsed.levels.cleared : [],
+              medals: { ...parsed.levels?.medals },
+              bestTimes: { ...parsed.levels?.bestTimes },
+            },
             missions: {
               ...freshState(''),
               ...parsed.missions,

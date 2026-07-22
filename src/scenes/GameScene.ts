@@ -38,6 +38,7 @@ import { COLE_PAGE_ID, type StoryPage } from '../core/story';
 import { CutsceneDirector } from '../core/CutsceneDirector';
 import { StingController } from '../entities/StingController';
 import { LEVELS, type LevelDef } from '../core/levels';
+import { medalForClear, betterMedal } from '../core/medals';
 import { isCharacter, DEFAULT_CHARACTER, resolveMovement } from '../core/characters';
 import { ClipRecorder, type ClipResult } from '../entities/ClipRecorder';
 
@@ -688,12 +689,18 @@ export class GameScene extends Phaser.Scene {
     void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
     const levelDef = this.levelDef;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
+    const clearMs = Math.max(0, Math.round(this.time.now - this.runStartMs));
+    const medal = medalForClear(levelDef, clearMs);
+    const prevBest = save.get().levels.bestTimes[levelDef.id];
+    const newBest = prevBest === undefined || clearMs < prevBest;
     const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
     save.update((b) => {
       if (!b.levels.cleared.includes(levelDef.id)) b.levels.cleared.push(levelDef.id);
+      b.levels.medals[levelDef.id] = betterMedal(b.levels.medals[levelDef.id], medal);
+      b.levels.bestTimes[levelDef.id] = Math.min(b.levels.bestTimes[levelDef.id] ?? Infinity, clearMs);
     });
     this.missions.levelCleared();
-    track('level_clear', { id: levelDef.id });
+    track('level_clear', { id: levelDef.id, ms: clearMs, medal });
     const idx = LEVELS.findIndex((l) => l.id === levelDef.id);
     const nextLevelId = idx >= 0 && idx + 1 < LEVELS.length ? LEVELS[idx + 1].id : undefined;
     this.scene.stop('Hud');
@@ -707,6 +714,7 @@ export class GameScene extends Phaser.Scene {
       result: 'cleared' as const,
       levelId: levelDef.id,
       nextLevelId,
+      clearMs, medal, newBest,
       clipDone,
     };
     const pendingCutscenes = this.cutsceneDirector.pending();

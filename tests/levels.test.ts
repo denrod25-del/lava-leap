@@ -22,6 +22,12 @@ describe('LEVELS content', () => {
   it('levels 1-3 reuse the existing endless boss boundaries; level 4 uses a new one', () => {
     expect(LEVELS.map((l) => l.bossTriggerHeight)).toEqual([1000, 2000, 3000, 4000]);
   });
+  it('every level has sane par times (0 < gold < silver)', () => {
+    for (const l of LEVELS) {
+      expect(l.parGoldMs).toBeGreaterThan(0);
+      expect(l.parSilverMs).toBeGreaterThan(l.parGoldMs);
+    }
+  });
 });
 
 describe('isLevelUnlocked', () => {

@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.18.0', date: '2026-07-22', notes: [
+    'LEVEL MEDALS: every campaign level now awards BRONZE, SILVER or GOLD by clear time.',
+    'Your best times live on the Levels screen — beat the pars to upgrade your medals.',
+    'Already cleared a level? Its bronze is yours, retroactively.',
+  ]},
   { version: '0.17.0', date: '2026-07-22', notes: [
     'DAILY MISSIONS: three fresh goals every day — same three for everyone, worth up to 160 coins.',
     'They complete themselves mid-run with an instant payout. Check today\'s from the Menu (M).',
