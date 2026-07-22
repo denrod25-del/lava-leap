@@ -14,13 +14,16 @@ export interface LevelDef {
   bossTriggerHeight: number;
   /** Matches a BOSS_TEMPLATES[].id. */
   bossTemplateId: string;
+  /** Medal par times (v0.18.0) — initial estimates, tune freely. */
+  parSilverMs: number;
+  parGoldMs: number;
 }
 
 export const LEVELS: LevelDef[] = [
-  { id: 'level-1', title: 'The Magma Vault', zoneIndex: 0, startHeight: 0,    bossTriggerHeight: 1000, bossTemplateId: 'titan-1' },
-  { id: 'level-2', title: 'The Forge',       zoneIndex: 1, startHeight: 1000, bossTriggerHeight: 2000, bossTemplateId: 'titan-2' },
-  { id: 'level-3', title: 'Ashfall',         zoneIndex: 2, startHeight: 2000, bossTriggerHeight: 3000, bossTemplateId: 'titan-3' },
-  { id: 'level-4', title: 'Obsidian Crown',  zoneIndex: 3, startHeight: 3000, bossTriggerHeight: 4000, bossTemplateId: 'titan-4' },
+  { id: 'level-1', title: 'The Magma Vault', zoneIndex: 0, startHeight: 0,    bossTriggerHeight: 1000, bossTemplateId: 'titan-1', parSilverMs: 150_000, parGoldMs: 100_000 },
+  { id: 'level-2', title: 'The Forge',       zoneIndex: 1, startHeight: 1000, bossTriggerHeight: 2000, bossTemplateId: 'titan-2', parSilverMs: 160_000, parGoldMs: 110_000 },
+  { id: 'level-3', title: 'Ashfall',         zoneIndex: 2, startHeight: 2000, bossTriggerHeight: 3000, bossTemplateId: 'titan-3', parSilverMs: 170_000, parGoldMs: 120_000 },
+  { id: 'level-4', title: 'Obsidian Crown',  zoneIndex: 3, startHeight: 3000, bossTriggerHeight: 4000, bossTemplateId: 'titan-4', parSilverMs: 180_000, parGoldMs: 130_000 },
 ];
 
 /** Level 1 is always unlocked; level N unlocks once level N-1's id is in `clearedIds`. */
