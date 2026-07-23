@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { waitForScene, surviveClimb, clipVideoDuration } from './helpers';
 
 const SEED = {
-  version: 2, tutorialDone: true, lastSeenVersion: '0.18.1',
+  version: 2, tutorialDone: true, lastSeenVersion: '0.19.0',
   analytics: { runs: 5 },
 };
 
@@ -87,6 +87,7 @@ test('recordClips=false: no SHARE CLIP row on Game Over', async ({ page }) => {
 // test asserted clip duration vs recording time, so it shipped. This locks it:
 // an uninterrupted ~8s run must yield a clip whose duration tracks wall clock.
 test('clip duration tracks wall-clock recording time (encoder regression)', async ({ page }) => {
+  await page.addInitScript(() => { (window as unknown as { dataLayer: unknown[] }).dataLayer = []; });
   await page.addInitScript((seed) => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify(seed));
   }, SEED);
@@ -135,4 +136,16 @@ test('clip duration tracks wall-clock recording time (encoder regression)', asyn
   // regression lands far outside it (v0.14 measured ~3.4x compression).
   expect(durationSec).toBeGreaterThan(recWallSec * 0.6);
   expect(durationSec).toBeLessThan(recWallSec * 1.4);
+
+  // Telemetry: the ratio event flowed through the track chain (dataLayer path;
+  // the network sink stays dormant under .env.test's blank creds).
+  const clipEvent = await page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const dl = (window as any).dataLayer as Array<Record<string, unknown>>;
+    return dl.find((e) => e.event === 'clip_ready') ?? null;
+  });
+  expect(clipEvent).not.toBeNull();
+  expect(clipEvent!.recorded_ms as number).toBeGreaterThan(5000);
+  expect(clipEvent!.ratio_pct as number).toBeGreaterThan(60);
+  expect(clipEvent!.ratio_pct as number).toBeLessThan(140);
 });

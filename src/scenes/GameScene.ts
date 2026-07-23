@@ -28,6 +28,7 @@ import { BossController } from '../entities/BossController';
 import { TutorialOverlay, type TutorialControlType } from '../entities/TutorialOverlay';
 import { bossBoundaryCrossed } from '../core/boss';
 import { track } from '../core/track';
+import { measureBlobDurationMs } from '../core/clipProbe';
 import { BOSS_TEMPLATES } from '../core/bossTemplates';
 import { DevOverlay } from '../entities/DevOverlay';
 import type { InputSource } from '../core/InputState';
@@ -626,7 +627,17 @@ export class GameScene extends Phaser.Scene {
       const clipDone: Promise<ClipResult | null> = this.clipRecorder
         ? this.clipRecorder.finish(this.time.now)
         : Promise.resolve(null);
-      void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
+      void clipDone.then(async (c) => {
+        if (!c) return;
+        const mediaMs = await measureBlobDurationMs(c.blob);
+        track('clip_ready', {
+          bytes: c.blob.size,
+          recorded_ms: c.recordedMs,
+          ...(mediaMs !== null
+            ? { media_ms: mediaMs, ratio_pct: Math.round((mediaMs / Math.max(1, c.recordedMs)) * 100) }
+            : {}),
+        });
+      });
       const { banked, bankTotal } = this.endRunBookkeeping(Math.floor(heightClimbed));
       save.update((b) => recordDeath(b.analytics, Math.floor(heightClimbed), this.zoneIndex, source));
       this.scene.stop('Hud');
@@ -686,7 +697,17 @@ export class GameScene extends Phaser.Scene {
     const clipDone: Promise<ClipResult | null> = this.clipRecorder
       ? this.clipRecorder.finish(this.time.now)
       : Promise.resolve(null);
-    void clipDone.then((c) => { if (c) track('clip_ready', { bytes: c.blob.size }); });
+    void clipDone.then(async (c) => {
+      if (!c) return;
+      const mediaMs = await measureBlobDurationMs(c.blob);
+      track('clip_ready', {
+        bytes: c.blob.size,
+        recorded_ms: c.recordedMs,
+        ...(mediaMs !== null
+          ? { media_ms: mediaMs, ratio_pct: Math.round((mediaMs / Math.max(1, c.recordedMs)) * 100) }
+          : {}),
+      });
+    });
     const levelDef = this.levelDef;
     const heightClimbed = Math.max(0, TUNING.groundY - this.player.sprite.y);
     const clearMs = Math.max(0, Math.round(this.time.now - this.runStartMs));

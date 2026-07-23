@@ -19,6 +19,9 @@ import { MissionsScene } from './scenes/MissionsScene';
 import { SaveData } from './core/SaveData';
 import { createLeaderboard } from './core/leaderboard';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './core/leaderboardConfig';
+import { createTelemetry } from './core/telemetry';
+import { setTrackFanout } from './core/track';
+import { APP_VERSION } from './core/buildInfo';
 
 /** Single shared save — all scenes import this. */
 export const save = new SaveData(window.localStorage);
@@ -26,6 +29,27 @@ export const save = new SaveData(window.localStorage);
 /** Single shared leaderboard client — disabled (no-op) unless VITE_SUPABASE_* are set. */
 export const leaderboard = createLeaderboard({
   url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, fetchImpl: window.fetch.bind(window),
+});
+
+/** Write-only quality telemetry — same env gate as the leaderboard; dormant without it. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const telemetry = createTelemetry({
+  url: SUPABASE_URL,
+  anonKey: SUPABASE_ANON_KEY,
+  fetchImpl: fetch.bind(globalThis),
+  appVersion: APP_VERSION,
+  // Lazy: the id is minted on first leaderboard use; send null until it exists.
+  playerId: () => {
+    const id = save.get().identity.playerId;
+    return UUID_RE.test(id) ? id : null;
+  },
+});
+setTrackFanout((e) => {
+  const { event, ts: _ts, ...props } = e;
+  telemetry.push(String(event), props);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') telemetry.flush();
 });
 
 let crashShown = false;

@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { advance, initialState, pickWinner, type RotationState } from '../core/clipRotation';
 import { track } from '../core/track';
 
-export interface ClipResult { blob: Blob; mimeType: string }
+export interface ClipResult { blob: Blob; mimeType: string; recordedMs: number }
 
 const MIME_CANDIDATES = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
 
@@ -103,6 +103,8 @@ export class ClipRecorder {
     const slot = this.slots[winner];
     const rec = slot.rec;
     if (!rec || rec.state === 'inactive') { this.teardown(); return Promise.resolve(null); }
+    const startedAt = winner === 'a' ? this.state.aStartedAt : this.state.bStartedAt;
+    const recordedMs = Math.max(0, Math.round(performance.now() - (startedAt ?? performance.now())));
     return new Promise((resolve) => {
       // Belt & braces: never leave GameScene hanging on a stuck encoder.
       const bail = setTimeout(() => { this.teardown(); resolve(null); }, 3000);
@@ -110,7 +112,7 @@ export class ClipRecorder {
         clearTimeout(bail);
         const blob = new Blob(slot.chunks, { type: this.mimeType });
         this.teardown();
-        resolve(blob.size > 0 ? { blob, mimeType: this.mimeType } : null);
+        resolve(blob.size > 0 ? { blob, mimeType: this.mimeType, recordedMs } : null);
       };
       try { rec.stop(); } catch { clearTimeout(bail); this.teardown(); resolve(null); }
     });
