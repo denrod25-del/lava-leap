@@ -2,11 +2,22 @@
 
 A snapshot of project state and hard-won context, so a fresh session (or another dev) can continue without re-deriving everything.
 
-_Last updated: 2026-07-22 (v0.18.0)._
+_Last updated: 2026-07-22 (v0.19.0)._
 
 ---
 
-## Current state — v0.18.1 "Clip Encoder Fix"
+## Current state — v0.19.0 "Clip-Health Telemetry"
+- **Goal: live players are the encoder-health sensor.** `clip_ready` now carries `recorded_ms` (wall-clock recording window, computed in `ClipRecorder.finish()` from the winner's `startedAt`), `media_ms` (real decoded blob duration via `src/core/clipProbe.ts`'s `measureBlobDurationMs` — the seek-past-the-end workaround for MediaRecorder's Infinity duration, 5s bail, never throws), and `ratio_pct = round(media_ms / recorded_ms * 100)`. **Semantics: healthy ≈ 100; the v0.14 fast-forward bug would have read ≈ 29.** Both GameScene `clipDone.then` sites (triggerDeath's 450ms delayedCall + completeLevel) emit it; `media_ms`/`ratio_pct` are omitted (not null) when the probe fails.
+- **Delivery is fanout, NOT the sink:** `setTrackFanout` in `src/core/track.ts` is a secondary delivery invoked for EVERY event *in addition to* the main chain — the injected sink stays exclusive within the chain, preserving its existing test contract (tests inject a sink and assert exact delivery; making telemetry a sink would have broken that or silently swallowed dataLayer delivery). A throwing fanout is caught inside `track()` — telemetry must never break the game.
+- **`src/core/telemetry.ts` mirrors `leaderboard.ts`:** raw fetch to `POST /rest/v1/rpc/log_events`, env-gated (`VITE_SUPABASE_URL`/`ANON_KEY` — same gate as the leaderboard; without them `enabled=false` and every call is a no-op, which is exactly what `.env.test`'s blank creds give e2e), graceful-disable, `keepalive: true` on every batch. **Whitelist** (9 events, locked by a sorted-array unit test so accidental growth fails a test): clip_ready, clip_share, clip_error, death, level_clear, mission_complete, start_game, boss_start, boss_clear. **Batching:** send at 10 buffered or 15s timer, whichever first; explicit `flush()` on `visibilitychange→hidden` (main.ts); hard cap 20 batches/session; fetch failures drop silently. Player id is UUID-guarded and lazy — null until the leaderboard mints one.
+- **User-side SQL step (BLOCKING for live data):** `supabase/migrations/0002_telemetry.sql` must be run in the Supabase SQL editor. Write-only table `telemetry` (RLS on, deliberately zero policies → anon can neither select nor insert directly); the only path in is the `security definer` RPC `log_events(p_player_id, p_app_version, p_events)` — validates array shape (1–20 events), event-name regex `^[a-z0-9_]{1,40}$`, props ≤ 2048 chars, and rate-limits to one accepted batch per player per 10s (NULL-player batches skip that check; accepted risk, bounded by the client session cap).
+- **Retention is manual:** if it ever matters, `delete from telemetry where created_at < now() - interval '90 days';`.
+- **The health query:** `select app_version, count(*), avg((props->>'ratio_pct')::numeric) from telemetry where event='clip_ready' group by 1;`
+- **e2e:** the encoder-regression test in `e2e/clips.spec.ts` now also pre-seeds `window.dataLayer` (init script BEFORE the save seed) and asserts the `clip_ready` event arrived with `recorded_ms > 5000` and `ratio_pct` in (60, 140) — the network sink stays dormant under test creds, so the dataLayer chain is the observable.
+- **Post-push verification (Task 6 Step 7, main session):** after the user runs the SQL — curl the RPC (valid batch lands, immediate second batch same player rate-limited, bad event name skipped), then play a live run and select the `clip_ready` row.
+- Suite: 265 unit + 36 e2e.
+
+## Previous state — v0.18.1 "Clip Encoder Fix"
 - **User-reported bug confirmed real: clips played fast-forwarded/choppy.** Root cause: `canvas.captureStream(30)` samples on its own timer while Phaser renders with `preserveDrawingBuffer: false` — the timer often reads an invalidated WebGL buffer, so only sparse frames get captured AND Chromium stamps them at the nominal rate (compacted timeline → fast-forward playback). Quantified pre-fix under software rendering: ~9fps real capture stamped as 30fps.
 - **Fix (ClipRecorder + main.ts):** capture is now DRIVEN, not sampled — `captureStream(0)` + `track.requestFrame()` on `Phaser.Core.Events.POST_RENDER` (the one moment the buffer is guaranteed valid), throttled to ~30fps via `lastCapMs`. `preserveDrawingBuffer: true` added to the game config both as a safety net and for the fallback path (browsers without `requestFrame` fall back to the old `captureStream(30)` timer, which now at least always finds a readable buffer).
 - **Measured post-fix (real GPU, headed):** 12.3s uninterrupted run → 12.79s clip, 381 frames (29.8fps, tight 33ms deltas); with 6x CPU throttle (game at 42fps): 14.57s run → 14.65s clip. Duration tracks wall clock in both.
