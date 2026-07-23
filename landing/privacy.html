@@ -45,7 +45,7 @@
   <div class="wrap">
     <a class="back" href="/">‹ BACK TO HOME</a>
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: July 6, 2026</p>
+    <p class="updated">Last updated: July 23, 2026</p>
   </div>
   <div class="lava-strip" aria-hidden="true"></div>
 </header>
@@ -60,6 +60,9 @@
 
     <h2>What we collect</h2>
     <p><strong>Waitlist email (optional).</strong> If you submit your email to the waitlist, we store that email address and the date you joined. That's it — no name, no password, no profile.</p>
+    <p><strong>A random player ID (in-game).</strong> The game generates a random identifier on your device the first time an online feature is used. It is not linked to you, your device identity, or any account, and we have no way to connect it to a real person. Clearing the game's data (or uninstalling the app) discards it.</p>
+    <p><strong>Leaderboard entries (in-game).</strong> Your best scores and the display name you choose in Settings are submitted with that random ID so global rankings work. Display names are free text you pick — please don't put personal information in one.</p>
+    <p><strong>Anonymous quality telemetry (in-game).</strong> Small technical events — things like "a run started", "a level was cleared", and whether a gameplay recording encoded at the correct speed — with the app version and the same random ID, so we can catch bugs that affect real players. <strong>Recorded gameplay clips themselves are never uploaded:</strong> they exist only on your device, and only you decide whether to share or download them.</p>
     <p><strong>Anonymous usage analytics.</strong> We use Vercel Web Analytics to understand how many people visit and which buttons get used. It is privacy-friendly by design: it does not use cookies, does not collect personally identifiable information, and does not track you across other websites. We may record aggregated, anonymous events such as a page view, a "play" click, or a waitlist signup — never tied to your identity.</p>
     <p><strong>Server logs.</strong> Our host (Vercel) and our database provider (Supabase) automatically process technical data such as IP address and browser type to serve the page and protect against abuse. This is standard for any website and is handled under their infrastructure.</p>
 
@@ -75,16 +78,16 @@
     <p>If you join the waitlist, we use your email <strong>only</strong> to send occasional updates about Lava Leap — new features, the Android release, and leaderboard seasons. We will not send you unrelated marketing or pass your address to third parties.</p>
 
     <h2>Where your data lives</h2>
-    <p>Waitlist emails are stored in a Supabase (PostgreSQL) database protected by row-level security, so the list cannot be read from the public website. Analytics are processed by Vercel. Both are reputable infrastructure providers with their own security and privacy programs.</p>
+    <p>Your game progress (coins, medals, settings, unlocks) is stored locally on your device and never leaves it. Waitlist emails, leaderboard entries, and telemetry events are stored in a Supabase (PostgreSQL) database protected by row-level security — telemetry is write-only (nobody can read it from the public internet), and only leaderboard rankings are publicly readable. Analytics for this website are processed by Vercel. Both are reputable infrastructure providers with their own security and privacy programs.</p>
 
     <h2>The Android app</h2>
-    <p>The Android APK is distributed through <a href="https://github.com/denrod25-del/lava-leap/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>. Download it only from that official page — avoid third-party mirrors, which we cannot vouch for. The app itself does not require an account.</p>
+    <p>The Android app is distributed through Google Play and through <a href="https://github.com/denrod25-del/lava-leap/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>. Download it only from those official sources — avoid third-party mirrors, which we cannot vouch for. The app requires no account, shows no ads, contains no purchases, and collects exactly the same minimal data as the web game described above.</p>
 
     <h2>Your choices &amp; rights</h2>
     <ul>
       <li><strong>Unsubscribe</strong> from waitlist emails at any time using the link in any message we send.</li>
-      <li><strong>Deletion:</strong> ask us to remove your email from the waitlist and we will delete it.</li>
-      <li><strong>Access:</strong> ask what we hold about you (for the waitlist, it's just your email and join date).</li>
+      <li><strong>Deletion:</strong> ask us to remove your email from the waitlist and we will delete it. For leaderboard or telemetry rows, email us your leaderboard display name and we'll remove them; clearing the game's local data also permanently disconnects anything on our servers from your device.</li>
+      <li><strong>Access:</strong> ask what we hold about you (for the waitlist, it's just your email and join date; in-game, it's scores under a random ID).</li>
     </ul>
     <p>To exercise any of these, email <a href="mailto:hello@bsymbolic.com">hello@bsymbolic.com</a>.</p>
 
