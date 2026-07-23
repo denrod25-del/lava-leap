@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForScene } from './helpers';
 
-const SEED = { version: 2, tutorialDone: true, lastSeenVersion: '0.19.0', analytics: { runs: 5 } };
+const SEED = { version: 2, tutorialDone: true, lastSeenVersion: '0.19.1', analytics: { runs: 5 } };
 
 async function boot(page: import('@playwright/test').Page): Promise<void> {
   await page.addInitScript((seed) => {

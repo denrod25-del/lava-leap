@@ -143,8 +143,8 @@ describe('SaveData', () => {
     expect(s.get().dailyBest['2026-06-01']).toBeUndefined();
   });
 
-  it('defaults settings.controlScheme to auto and backfills it on an old save', () => {
-    expect(new SaveData(fakeStore()).get().settings.controlScheme).toBe('auto');
+  it('defaults settings.controlScheme to manual (v0.19.1) and backfills it on an old save', () => {
+    expect(new SaveData(fakeStore()).get().settings.controlScheme).toBe('manual');
     const legacy = {
       version: 2, highScore: 9, coinBank: 2, equippedCosmetic: 'default', ownedCosmetics: ['default'],
       achievements: {}, dailyBest: {},
@@ -154,7 +154,7 @@ describe('SaveData', () => {
       upgrades: { powerupDuration: 0, startShield: 0, revive: 0 }, tutorialDone: true, lastSeenVersion: '0.6.0',
     };
     const s = new SaveData(fakeStore({ 'lavaleap.save.v2': JSON.stringify(legacy) }));
-    expect(s.get().settings.controlScheme).toBe('auto'); // backfilled by the deep-merge
+    expect(s.get().settings.controlScheme).toBe('manual'); // backfilled by the deep-merge
     expect(s.get().settings.musicVol).toBe(3);           // existing nested values preserved
     expect(s.get().settings.reducedMotion).toBe(true);
   });
