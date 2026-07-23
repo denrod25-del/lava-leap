@@ -49,7 +49,6 @@ export class BootScene extends Phaser.Scene {
     for (const k of ['music-menu', 'rumble', 'scrape', 'crack', 'swell', 'ding', 'kaching', 'ui-move', 'ui-select', 'stomp', 'hit', 'pickup', 'expire', 'boss-roar', 'projectile']) {
       this.load.audio(`sfx-${k}`, `assets/sfx/${k}.wav`);
     }
-    // Custom gameplay track (user-supplied). OGG first, MP3 fallback for iOS/Safari.
     this.load.audio('sfx-music-game', ['assets/music/gameplay.ogg', 'assets/music/gameplay.mp3']);
   }
 
@@ -65,9 +64,15 @@ export class BootScene extends Phaser.Scene {
         });
       }
     }
-    // First-ever boot (no runs yet, vignette never seen) opens on the story
-    // opening cutscene; everyone else goes straight to the Menu (replay lives
-    // in the Journal).
+
+    // Dedicated showcase links can jump straight into the cinematic demo entry
+    // without changing the normal player boot flow or first-run story behavior.
+    const showcase = new URLSearchParams(window.location.search).get('showcase') === '1';
+    if (showcase) {
+      this.scene.start('Showcase');
+      return;
+    }
+
     const b = save.get();
     const freshPlayer = b.analytics.runs === 0 && !b.tutorialDone;
     if (!b.story.vignetteSeen && freshPlayer) {

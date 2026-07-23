@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { TUNING } from './tuning';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { ShowcaseScene } from './scenes/ShowcaseScene';
 import { GameScene } from './scenes/GameScene';
 import { HudScene } from './scenes/HudScene';
 import { GameOverScene } from './scenes/GameOverScene';
@@ -74,30 +75,20 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
   backgroundColor: '#10101a',
-  pixelArt: true, // crisp upscaling of the pixel-art sprites
+  pixelArt: true,
   render: {
-    // Keep the WebGL buffer readable between frames: the clip recorder (and any
-    // captureStream fallback path) reads the canvas outside the render tick.
-    // Without this, timer-sampled captures caught ~9fps of valid frames and
-    // clips played fast-forwarded (v0.18.1 encoder fix).
     preserveDrawingBuffer: true,
   },
   scale: {
-    mode: Phaser.Scale.FIT, // scale the 480x720 design space up to fill the window
-    // The #game flexbox centers the canvas. Phaser's autoCenter would ALSO add
-    // centering margins on top of that, double-centering and pushing the canvas
-    // off to the right — so we let flex own centering and disable Phaser's.
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.NO_CENTER,
     width: TUNING.width,
     height: TUNING.height,
   },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: TUNING.gravityY }, debug: false } },
-  scene: [BootScene, MenuScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, ChangelogScene, PauseScene, SettingsScene, LeaderboardScene, JournalScene, CutsceneScene, LevelSelectScene, MissionsScene],
+  scene: [BootScene, MenuScene, ShowcaseScene, GameScene, HudScene, GameOverScene, ShopScene, AchievementsScene, HowToScene, ChangelogScene, PauseScene, SettingsScene, LeaderboardScene, JournalScene, CutsceneScene, LevelSelectScene, MissionsScene],
 };
 
-// Defensive stale-build protection: this app has no service worker (deliberate),
-// so any registration or CacheStorage entry is a leftover from an older deploy
-// or another app on the same origin — unregister and clear, non-blocking.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations()
     .then((regs) => regs.forEach((r) => { void r.unregister(); }))
@@ -111,22 +102,17 @@ if ('caches' in window) {
 
 const game = new Phaser.Game(config);
 
-// Drop the static HTML pre-loader once Phaser is up (canvas created, first
-// scene starting) — BootScene's own progress bar takes over from here.
 game.events.once(Phaser.Core.Events.READY, () => {
   const pre = document.getElementById('preloader');
   if (!pre) return;
-  pre.classList.add('done'); // CSS opacity fade
+  pre.classList.add('done');
   setTimeout(() => pre.remove(), 300);
 });
 
-// Dispose the game on HMR so editing source during development doesn't
-// stack multiple Phaser.Game instances into #game.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => game.destroy(true));
 }
 
-// Expose the game in dev for debugging/automated verification (stripped in prod build).
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game }).__game = game;
 }
