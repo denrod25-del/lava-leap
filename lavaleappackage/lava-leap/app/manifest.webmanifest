@@ -1,0 +1,18 @@
+{
+  "name": "Lava Leap",
+  "short_name": "Lava Leap",
+  "description": "The floor is lava. Bounce Kip up the volcano before the rising lava catches you. How high can you leap?",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0d0508",
+  "theme_color": "#0d0508",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

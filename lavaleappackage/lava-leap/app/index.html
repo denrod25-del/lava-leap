@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The floor is lava. Bounce Kip up the volcano before the rising lava catches you. How high can you leap?">
+<meta name="theme-color" content="#0d0508">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-180.png">
+<title>Lava Leap</title>
+<style>
+  :root {
+    --obsidian: #0d0508;
+    --magma-deep: #3a0d08;
+    --lava: #ff5a1f;
+    --lava-hot: #ffb347;
+    --ember: #ffe08a;
+    --ink: #ffeee2;
+    --ink-dim: #b78d7a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(120% 90% at 50% 110%, #2a0b06 0%, var(--obsidian) 55%, #070304 100%);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+  #frame {
+    position: relative;
+    height: 100dvh;
+    max-height: 100dvh;
+    aspect-ratio: 9 / 16;
+    max-width: 100vw;
+    overflow: hidden;
+    background: #120607;
+  }
+  @media (min-aspect-ratio: 9/16) {
+    #frame {
+      border-left: 1px solid #2b1109;
+      border-right: 1px solid #2b1109;
+      box-shadow: 0 0 80px rgba(255, 90, 31, .12), 0 0 12px rgba(0,0,0,.8);
+    }
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .hud {
+    position: absolute;
+    top: max(10px, env(safe-area-inset-top));
+    left: 0; right: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 6px 14px 0;
+    pointer-events: none;
+  }
+  #score {
+    font-size: clamp(28px, 9vmin, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 12px rgba(255, 90, 31, .35);
+    line-height: 1;
+  }
+  #score small { font-size: .45em; font-weight: 600; color: var(--ink-dim); margin-left: 2px; }
+  #best {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  #mute {
+    pointer-events: auto;
+    background: rgba(20, 8, 6, .55);
+    border: 1px solid rgba(255, 138, 74, .25);
+    color: var(--ink);
+    border-radius: 999px;
+    width: 40px; height: 40px;
+    font-size: 17px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  #mute:focus-visible { outline: 2px solid var(--lava-hot); outline-offset: 2px; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(13,5,8,.25) 0%, rgba(13,5,8,.66) 60%, rgba(13,5,8,.25) 100%);
+    transition: opacity .25s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .title {
+    font-size: clamp(44px, 15vmin, 76px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: .92;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--ember) 0%, var(--lava-hot) 38%, var(--lava) 72%, #c22a08 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 4px 22px rgba(255, 90, 31, .45));
+    text-wrap: balance;
+  }
+  .tagline {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .hint {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+    opacity: .85;
+    max-width: 30ch;
+  }
+  .cta {
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ember);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .cta { animation: none; } }
+  #finalScore {
+    font-size: clamp(56px, 20vmin, 96px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 4px 24px rgba(255, 90, 31, .4);
+  }
+  #finalScore small { font-size: .3em; font-weight: 700; color: var(--ink-dim); }
+  #newBest {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ember);
+    display: none;
+  }
+  #tutor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .4s ease;
+  }
+  #tutor.show { opacity: 1; }
+  .tap-hint {
+    position: absolute;
+    bottom: 20%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ember);
+    text-shadow: 0 2px 10px rgba(255, 90, 31, .5);
+  }
+  .tap-hint.left { left: 10%; }
+  .tap-hint.right { right: 10%; }
+  .tap-hint .ring {
+    width: 36px; height: 36px;
+    border: 2px solid var(--ember);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    animation: tapRing 1.1s ease-out infinite;
+  }
+  @keyframes tapRing {
+    0% { transform: scale(.7); opacity: .95; }
+    70% { transform: scale(1.12); opacity: .35; }
+    100% { transform: scale(1.18); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tap-hint .ring { animation: none; } }
+  .demo-tag {
+    position: absolute;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    opacity: .65;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="frame">
+  <canvas id="game"></canvas>
+
+  <div class="hud">
+    <div>
+      <div id="score">0<small>m</small></div>
+      <div id="best">best 0m</div>
+    </div>
+    <button id="mute" aria-label="Toggle sound">🔊</button>
+  </div>
+
+  <div class="overlay" id="menu">
+    <div class="title">Lava<br>Leap</div>
+    <div class="tagline">The floor is lava</div>
+    <p class="hint" id="controlsHint">Tap the left or right side to steer — quick taps aim better than holding. You bounce on your own.</p>
+    <div class="cta">Tap to leap</div>
+  </div>
+
+  <div class="overlay hidden" id="gameover">
+    <div class="tagline">The lava got you at</div>
+    <div id="finalScore">0<small>m</small></div>
+    <div id="newBest">★ New best ★</div>
+    <div class="cta">Tap to try again</div>
+  </div>
+
+  <div id="tutor" aria-hidden="true">
+    <div class="tap-hint left"><span class="ring">◄</span>tap</div>
+    <div class="tap-hint right"><span class="ring">►</span>tap</div>
+  </div>
+
+  <div class="demo-tag">Lava Leap · showcase demo</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- setup ----------
+  const frame = document.getElementById('frame');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const finalEl = document.getElementById('finalScore');
+  const newBestEl = document.getElementById('newBest');
+  const menuEl = document.getElementById('menu');
+  const overEl = document.getElementById('gameover');
+  const muteBtn = document.getElementById('mute');
+  const hintEl = document.getElementById('controlsHint');
+  const tutorEl = document.getElementById('tutor');
+
+  const W = 420, H = 746;          // logical portrait playfield
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = frame.getBoundingClientRect();
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  if (!coarse) hintEl.textContent = 'Steer with ← → or A / D. You bounce on your own — just don’t stop climbing.';
+
+  // ---------- audio ----------
+  let audio = null;
+  let muted = localStorage.getItem('ll_muted') === '1';
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  function ensureAudio() {
+    if (!audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; }
+    }
+    if (audio && audio.state === 'suspended') audio.resume();
+  }
+  function beep(freq0, freq1, dur, type, vol) {
+    if (muted || !audio) return;
+    const t = audio.currentTime;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq0, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(freq1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(audio.destination);
+    o.start(t); o.stop(t + dur);
+  }
+  function noiseBurst(dur, vol, lp) {
+    if (muted || !audio) return;
+    const t = audio.currentTime;
+    const n = Math.floor(audio.sampleRate * dur);
+    const buf = audio.createBuffer(1, n, audio.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    const f = audio.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = lp;
+    const g = audio.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(audio.destination);
+    src.start(t);
+  }
+  const sfx = {
+    jump:   () => beep(300, 640, 0.12, 'sine', 0.18),
+    spring: () => beep(420, 1100, 0.2, 'square', 0.09),
+    crumble:() => noiseBurst(0.16, 0.14, 900),
+    death:  () => { noiseBurst(0.55, 0.3, 500); beep(220, 40, 0.6, 'sawtooth', 0.12); },
+    mile:   () => beep(880, 1320, 0.16, 'triangle', 0.12),
+  };
+  muteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    muted = !muted;
+    localStorage.setItem('ll_muted', muted ? '1' : '0');
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+    if (!muted) { ensureAudio(); sfx.jump(); }
+  });
+
+  // ---------- state ----------
+  const GRAV = 2100;
+  const JUMP_V = -940;
+  const SPRING_V = -1460;
+  const MOVE_ACC = 3400;
+  const MOVE_MAX = 430;
+
+  let state = 'menu';               // menu | play | dead
+  let player, plats, particles, embers, cam, lavaY, lavaSpeed, score, maxY, shake, deadTimer, milestone;
+  let best = parseInt(localStorage.getItem('ll_best') || '0', 10);
+  bestEl.textContent = 'best ' + best + 'm';
+
+  // first-run steering tutor: pulsing tap zones until the player lands 6 bounces
+  let tut = localStorage.getItem('ll_tut') !== '1';
+  let tutLands = 0;
+  function hideTutor(learned) {
+    tutorEl.classList.remove('show');
+    if (learned) { tut = false; localStorage.setItem('ll_tut', '1'); }
+  }
+
+  let seedId = 0;
+  function makePlatform(y, height) {
+    const m = height;                       // meters climbed so far, for difficulty
+    let type = 'rock';
+    const r = Math.random();
+    if (m > 60 && r < 0.15) type = 'crumble';
+    else if (m > 30 && r < 0.38) type = 'move';
+    const w = type === 'crumble' ? 66 : 78 - Math.min(18, m * 0.06);
+    return {
+      id: seedId++,
+      x: 14 + Math.random() * (W - 28 - w),
+      y, w, h: 16, type,
+      spring: type === 'rock' && Math.random() < 0.08,
+      dir: Math.random() < 0.5 ? -1 : 1,
+      speed: 60 + Math.random() * 60 + Math.min(80, m * 0.35),
+      falling: false, vy: 0, wobble: 0,
+    };
+  }
+
+  function reset() {
+    player = { x: W / 2, y: H - 90, vx: 0, vy: 0, r: 16, sq: 1, face: 1 };
+    plats = [{ id: seedId++, x: W / 2 - 55, y: H - 60, w: 110, h: 16, type: 'rock', spring: false, dir: 1, speed: 0, falling: false, vy: 0, wobble: 0 }];
+    let y = H - 60;
+    while (y > -H * 3) {
+      const climbed = Math.max(0, Math.floor((H - 60 - y) / 10));
+      y -= 62 + Math.random() * (58 + Math.min(52, climbed * 0.35));
+      plats.push(makePlatform(y, climbed));
+    }
+    particles = [];
+    embers = [];
+    for (let i = 0; i < 26; i++) embers.push(newEmber(true));
+    cam = 0;
+    lavaY = H + 140;
+    lavaSpeed = 26;
+    score = 0; maxY = player.y;
+    shake = 0; deadTimer = 0; milestone = 100;
+    scoreEl.firstChild.nodeValue = '0';
+  }
+
+  function newEmber(anywhere) {
+    return {
+      x: Math.random() * W,
+      y: cam + (anywhere ? Math.random() * H : H + 10),
+      vx: (Math.random() - 0.5) * 14,
+      vy: -18 - Math.random() * 30,
+      r: 0.8 + Math.random() * 1.8,
+      a: 0.25 + Math.random() * 0.5,
+      tw: Math.random() * Math.PI * 2,
+    };
+  }
+
+  function burst(x, y, n, colors, spread, up) {
+    if (reduceMotion) n = Math.ceil(n / 3);
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = spread * (0.3 + Math.random() * 0.7);
+      particles.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - up,
+        r: 2 + Math.random() * 3.5,
+        life: 1,
+        decay: 1.4 + Math.random() * 1.6,
+        c: colors[(Math.random() * colors.length) | 0],
+      });
+    }
+  }
+
+  // ---------- input ----------
+  const keys = { left: false, right: false };
+  let touchDir = 0;
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if ((state !== 'play') && (e.code === 'Space' || e.code === 'Enter')) startFromUI();
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  });
+  function pointerDir(e) {
+    const r = frame.getBoundingClientRect();
+    return (e.clientX - r.left) < r.width / 2 ? -1 : 1;
+  }
+  frame.addEventListener('pointerdown', (e) => {
+    if (e.target === muteBtn) return;
+    ensureAudio();
+    if (state !== 'play') { startFromUI(); return; }
+    touchDir = pointerDir(e);
+  });
+  frame.addEventListener('pointermove', (e) => { if (touchDir !== 0) touchDir = pointerDir(e); });
+  window.addEventListener('pointerup', () => { touchDir = 0; });
+  window.addEventListener('pointercancel', () => { touchDir = 0; });
+
+  function startFromUI() {
+    if (state === 'dead' && deadTimer < 0.5) return;   // don't restart on the death tap itself
+    reset();
+    state = 'play';
+    menuEl.classList.add('hidden');
+    overEl.classList.add('hidden');
+    tutLands = 0;
+    if (tut) tutorEl.classList.add('show');
+  }
+
+  // ---------- update ----------
+  function die() {
+    state = 'dead';
+    deadTimer = 0;
+    hideTutor(false);    // hide during death, but keep teaching next run until learned
+    shake = reduceMotion ? 0 : 16;
+    sfx.death();
+    burst(player.x, Math.min(player.y, lavaY), 46, ['#ff5a1f', '#ffb347', '#ffe08a', '#7a2410'], 420, 260);
+    const s = score;
+    finalEl.firstChild.nodeValue = String(s);
+    const isBest = s > best;
+    if (isBest) {
+      best = s;
+      localStorage.setItem('ll_best', String(best));
+      bestEl.textContent = 'best ' + best + 'm';
+    }
+    newBestEl.style.display = isBest && s > 0 ? 'block' : 'none';
+    setTimeout(() => overEl.classList.remove('hidden'), 550);
+  }
+
+  function update(dt) {
+    // embers drift always (menu too)
+    for (const e of embers) {
+      e.x += e.vx * dt; e.y += e.vy * dt; e.tw += dt * 3;
+      if (e.y < cam - 20 || e.x < -10 || e.x > W + 10) Object.assign(e, newEmber(false));
+    }
+
+    if (state === 'menu') return;
+
+    if (state === 'dead') {
+      deadTimer += dt;
+      shake = Math.max(0, shake - dt * 30);
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += GRAV * 0.5 * dt;
+        p.life -= p.decay * dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+      lavaY -= lavaSpeed * 0.4 * dt;
+      return;
+    }
+
+    // ---- play ----
+    const dir = (keys.left ? -1 : 0) + (keys.right ? 1 : 0) + touchDir;
+    const d = Math.max(-1, Math.min(1, dir));
+    if (d !== 0) { player.vx += MOVE_ACC * d * dt; player.face = d; }
+    else player.vx *= Math.pow(0.0008, dt);
+    player.vx = Math.max(-MOVE_MAX, Math.min(MOVE_MAX, player.vx));
+
+    const prevY = player.y;
+    player.vy += GRAV * dt;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+    player.sq += (1 - player.sq) * Math.min(1, dt * 10);
+
+    // wrap horizontally
+    if (player.x < -player.r) player.x = W + player.r;
+    if (player.x > W + player.r) player.x = -player.r;
+
+    // platforms
+    for (const p of plats) {
+      if (p.type === 'move' && !p.falling) {
+        p.x += p.dir * p.speed * dt;
+        if (p.x < 8) { p.x = 8; p.dir = 1; }
+        if (p.x + p.w > W - 8) { p.x = W - 8 - p.w; p.dir = -1; }
+      }
+      if (p.falling) { p.vy += GRAV * 0.9 * dt; p.y += p.vy * dt; }
+      if (p.wobble > 0) p.wobble = Math.max(0, p.wobble - dt * 4);
+
+      // land only while falling, crossing the top edge
+      if (player.vy > 0 && !p.falling &&
+          prevY + player.r <= p.y + 6 && player.y + player.r >= p.y &&
+          player.x > p.x - player.r * 0.6 && player.x < p.x + p.w + player.r * 0.6) {
+        player.y = p.y - player.r;
+        if (p.spring) {
+          player.vy = SPRING_V; sfx.spring();
+          burst(player.x, p.y, 14, ['#ffe08a', '#ffb347'], 200, 180);
+          shake = reduceMotion ? 0 : Math.max(shake, 5);
+        } else {
+          player.vy = JUMP_V; sfx.jump();
+        }
+        player.sq = 0.55;
+        p.wobble = 1;
+        if (tut && ++tutLands >= 6) hideTutor(true);
+        if (p.type === 'crumble') {
+          p.falling = true; p.vy = 40; sfx.crumble();
+          burst(player.x, p.y + 8, 10, ['#7a5a4a', '#4a3230', '#ffb347'], 160, 60);
+        }
+      }
+    }
+
+    // camera follows highest point
+    maxY = Math.min(maxY, player.y);
+    const targetCam = maxY - H * 0.42;
+    cam += (targetCam - cam) * Math.min(1, dt * 6);
+
+    // spawn ahead, drop far-below
+    let top = Infinity;
+    for (const p of plats) top = Math.min(top, p.y);
+    while (top > cam - H) {
+      const climbed = Math.max(0, Math.floor((H - 60 - top) / 10));
+      top -= 62 + Math.random() * (58 + Math.min(52, climbed * 0.35));
+      plats.push(makePlatform(top, climbed));
+    }
+    plats = plats.filter(p => p.y < lavaY + 80);
+
+    // score
+    const s = Math.max(0, Math.floor((H - 90 - maxY) / 10));
+    if (s !== score) {
+      score = s;
+      scoreEl.firstChild.nodeValue = String(score);
+      if (score >= milestone) { milestone += 100; sfx.mile(); }
+    }
+
+    // lava rises, and never lags too far behind
+    lavaSpeed = 26 + Math.min(120, score * 0.55);
+    lavaY -= lavaSpeed * dt;
+    lavaY = Math.min(lavaY, cam + H + 240);
+
+    // particles
+    for (const p of particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += GRAV * 0.5 * dt;
+      p.life -= p.decay * dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+
+    shake = Math.max(0, shake - dt * 40);
+
+    // death: lava touch or fell off screen bottom
+    if (player.y + player.r > lavaY || player.y - cam > H + 60) die();
+  }
+
+  // ---------- render ----------
+  function render(t) {
+    const sx = canvas.width / W, sy = canvas.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+
+    // sky
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#0a0406');
+    sky.addColorStop(0.65, '#1c0a10');
+    sky.addColorStop(1, '#3a0d08');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    let ox = 0, oy = 0;
+    if (shake > 0) { ox = (Math.random() - 0.5) * shake; oy = (Math.random() - 0.5) * shake; }
+    ctx.translate(ox, oy - 0);
+
+    // parallax rock silhouettes
+    for (let layer = 0; layer < 2; layer++) {
+      const par = layer === 0 ? 0.18 : 0.36;
+      const yOff = ((-cam * par) % 500 + 500) % 500;
+      ctx.fillStyle = layer === 0 ? 'rgba(26,10,12,0.9)' : 'rgba(38,14,13,0.85)';
+      for (let i = -1; i < 3; i++) {
+        const by = yOff + i * 500;
+        drawRidge(by, layer);
+      }
+    }
+
+    ctx.save();
+    ctx.translate(0, -cam);
+
+    // platforms
+    for (const p of plats) {
+      if (p.y < cam - 40 || p.y > cam + H + 60) continue;
+      drawPlatform(p, t);
+    }
+
+    // player
+    if (state !== 'dead' || deadTimer < 0.08) drawPlayer(t);
+
+    // particles
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // lava
+    drawLava(t);
+
+    // embers (world space)
+    for (const e of embers) {
+      const a = e.a * (0.6 + 0.4 * Math.sin(e.tw));
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#ffb347';
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // vignette
+    const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(5,2,3,0.45)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawRidge(by, layer) {
+    ctx.beginPath();
+    ctx.moveTo(0, by + 500);
+    const n = 6;
+    for (let i = 0; i <= n; i++) {
+      const x = (i / n) * W;
+      const h = 40 + 90 * Math.abs(Math.sin(i * 2.7 + layer * 5 + by * 0.01));
+      ctx.lineTo(x, by + 500 - (layer === 0 ? h : h * 0.6));
+    }
+    ctx.lineTo(W, by + 500);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawPlatform(p, t) {
+    const wob = p.wobble ? Math.sin(p.wobble * Math.PI) * 3 : 0;
+    const y = p.y + wob;
+    ctx.save();
+    if (p.falling) ctx.globalAlpha = 0.85;
+
+    // rock body
+    const g = ctx.createLinearGradient(0, y, 0, y + p.h);
+    if (p.type === 'crumble') {
+      g.addColorStop(0, '#6e4a3a'); g.addColorStop(1, '#3a241f');
+    } else if (p.type === 'move') {
+      g.addColorStop(0, '#5f4a55'); g.addColorStop(1, '#2b1c26');
+    } else {
+      g.addColorStop(0, '#5a4a52'); g.addColorStop(1, '#2b1c20');
+    }
+    ctx.fillStyle = g;
+    roundRect(p.x, y, p.w, p.h, 7);
+    ctx.fill();
+
+    // molten underlight
+    ctx.fillStyle = 'rgba(255,90,31,0.35)';
+    roundRect(p.x + 3, y + p.h - 4, p.w - 6, 3, 2);
+    ctx.fill();
+
+    // top highlight
+    ctx.fillStyle = 'rgba(255,238,226,0.16)';
+    roundRect(p.x + 2, y, p.w - 4, 3, 2);
+    ctx.fill();
+
+    if (p.type === 'crumble' && !p.falling) {
+      ctx.strokeStyle = 'rgba(20,8,6,0.7)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(p.x + p.w * 0.3, y + 2); ctx.lineTo(p.x + p.w * 0.42, y + p.h - 3);
+      ctx.moveTo(p.x + p.w * 0.66, y + 3); ctx.lineTo(p.x + p.w * 0.58, y + p.h - 2);
+      ctx.stroke();
+    }
+    if (p.spring) {
+      const bounce = 1 + Math.sin(t * 0.006 + p.id) * 0.08;
+      const gx = p.x + p.w / 2;
+      const gg = ctx.createRadialGradient(gx, y - 6, 1, gx, y - 6, 11 * bounce);
+      gg.addColorStop(0, '#ffe08a');
+      gg.addColorStop(0.5, '#ff8a2a');
+      gg.addColorStop(1, 'rgba(255,90,31,0)');
+      ctx.fillStyle = gg;
+      ctx.beginPath();
+      ctx.arc(gx, y - 6, 11 * bounce, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer(t) {
+    const { x, y, r, sq, face } = player;
+    ctx.save();
+    ctx.translate(x, y);
+    const sqx = 2 - sq, sqy = sq;
+    ctx.scale(sqx * 0.75 + 0.25, sqy * 0.75 + 0.25);
+
+    // glow
+    const gl = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 2.2);
+    gl.addColorStop(0, 'rgba(255,179,71,0.5)');
+    gl.addColorStop(1, 'rgba(255,90,31,0)');
+    ctx.fillStyle = gl;
+    ctx.beginPath(); ctx.arc(0, 0, r * 2.2, 0, Math.PI * 2); ctx.fill();
+
+    // body — molten blob
+    const bg = ctx.createLinearGradient(0, -r, 0, r);
+    bg.addColorStop(0, '#ffe08a');
+    bg.addColorStop(0.45, '#ffb347');
+    bg.addColorStop(1, '#ff5a1f');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // flame tuft
+    const fl = 4 + Math.sin(t * 0.02) * 1.6;
+    ctx.fillStyle = '#ff8a2a';
+    ctx.beginPath();
+    ctx.moveTo(-4, -r + 2);
+    ctx.quadraticCurveTo(0, -r - fl - 6, 4, -r + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // eyes
+    ctx.fillStyle = '#2b1208';
+    const ex = face * 3;
+    ctx.beginPath(); ctx.arc(-5 + ex, -3, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(6 + ex, -3, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-5.8 + ex, -3.8, 0.9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5.2 + ex, -3.8, 0.9, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawLava(t) {
+    if (lavaY > cam + H + 200) return;
+    const surf = lavaY;
+
+    // glow above the surface
+    const glow = ctx.createLinearGradient(0, surf - 90, 0, surf);
+    glow.addColorStop(0, 'rgba(255,90,31,0)');
+    glow.addColorStop(1, 'rgba(255,90,31,0.35)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, surf - 90, W, 90);
+
+    // body
+    const depth = cam + H - surf + 80;
+    const lg = ctx.createLinearGradient(0, surf, 0, surf + Math.max(depth, 120));
+    lg.addColorStop(0, '#ffe08a');
+    lg.addColorStop(0.12, '#ffb347');
+    lg.addColorStop(0.4, '#ff5a1f');
+    lg.addColorStop(1, '#8a1c06');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(0, surf + 6);
+    for (let x = 0; x <= W; x += 12) {
+      const y = surf
+        + Math.sin(x * 0.045 + t * 0.0025) * 5
+        + Math.sin(x * 0.013 - t * 0.0016) * 8;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, cam + H + 80);
+    ctx.lineTo(0, cam + H + 80);
+    ctx.closePath();
+    ctx.fill();
+
+    // bright crest
+    ctx.strokeStyle = 'rgba(255,238,200,0.85)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 12) {
+      const y = surf
+        + Math.sin(x * 0.045 + t * 0.0025) * 5
+        + Math.sin(x * 0.013 - t * 0.0016) * 8;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // bubbles
+    for (let i = 0; i < 5; i++) {
+      const bx = ((i * 97 + Math.floor(t * 0.05)) % W);
+      const ph = (t * 0.003 + i * 1.7) % 1;
+      ctx.globalAlpha = 0.5 * (1 - ph);
+      ctx.fillStyle = '#ffe08a';
+      ctx.beginPath();
+      ctx.arc(bx, surf + 14 - ph * 10, 2 + ph * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    update(dt);
+    render(now);
+    requestAnimationFrame(loop);
+  }
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
