@@ -16,7 +16,6 @@ export class ShowcaseScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#050203');
 
     const cx = TUNING.width / 2;
-    const cy = TUNING.height / 2;
 
     if (this.textures.exists('bg-menu')) {
       this.add.image(0, 0, 'bg-menu')
@@ -51,7 +50,7 @@ export class ShowcaseScene extends Phaser.Scene {
 
     const prompt = this.add.text(cx, 525, '▶  START THE SHOWCASE  ◀', {
       fontFamily: 'monospace', fontSize: '19px', color: '#ffd166',
-    }).setOrigin(0.5).setAlpha(0).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setAlpha(0);
 
     const skip = this.add.text(cx, 665, 'SPACE / TAP — enter demo     ESC — back', {
       fontFamily: 'monospace', fontSize: '11px', color: '#697180',
@@ -79,7 +78,8 @@ export class ShowcaseScene extends Phaser.Scene {
       });
     };
 
-    prompt.on('pointerdown', launch);
+    // Single full-width hit area handles taps/clicks; it covers the prompt text,
+    // so the prompt itself carries no handler (it would never receive the event).
     this.add.rectangle(0, 0, TUNING.width, TUNING.height - 80, 0xffffff, 0)
       .setOrigin(0, 0)
       .setInteractive({ useHandCursor: true })
@@ -88,6 +88,10 @@ export class ShowcaseScene extends Phaser.Scene {
     const kb = this.input.keyboard!;
     kb.once('keydown-SPACE', launch);
     kb.once('keydown-ENTER', launch);
-    kb.once('keydown-ESC', () => this.scene.start('Menu'));
+    kb.once('keydown-ESC', () => {
+      if (this.launched) return;
+      this.launched = true;
+      this.scene.start('Menu');
+    });
   }
 }
