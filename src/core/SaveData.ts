@@ -10,14 +10,14 @@ export interface Settings {
   screenShake: boolean;
   /** Accessibility: skip camera shake and the death slow-mo when true. */
   reducedMotion: boolean;
-  /** Mobile control scheme: 'auto' (steer + tap-dash, jumping automatic — default)
-   *  or 'manual' (two-thumb: run joystick + tap-jump + DASH button). */
+  /** Mobile control scheme: 'manual' (two-thumb: run joystick + tap-jump + DASH
+   *  button — default since v0.19.1) or 'auto' (steer + tap-dash, jumping automatic). */
   controlScheme: 'auto' | 'manual';
   /** Auto-record a rolling highlight clip during runs (v0.14.0). */
   recordClips: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto', recordClips: true };
+export const DEFAULT_SETTINGS: Settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'manual', recordClips: true };
 
 export interface SaveBlob {
   version: 2;

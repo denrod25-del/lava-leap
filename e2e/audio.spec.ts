@@ -13,7 +13,7 @@ test('audio decodes, unlocks on gesture, and plays in menu + run', async ({ page
   // this test lands on the Menu (where menu music plays) as it always did.
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.19.0', analytics: { runs: 1 },
+      version: 2, tutorialDone: true, lastSeenVersion: '0.19.1', analytics: { runs: 1 },
     }));
   });
   await page.goto('/');

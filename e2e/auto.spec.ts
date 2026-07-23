@@ -33,11 +33,12 @@ async function startRunByTap(page: import('@playwright/test').Page, box: { x: nu
 test.describe('auto controls (touch)', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('AUTO is the touch default: bounces, taps dash, flow rises', async ({ page }) => {
+  test('AUTO scheme via the save: bounces, taps dash, flow rises', async ({ page }) => {
     const errors = collectErrors(page);
     await page.addInitScript(() => {
       localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-        version: 2, tutorialDone: true, lastSeenVersion: '0.19.0', // suppress popups; scheme omitted → backfills 'auto'
+        version: 2, tutorialDone: true, lastSeenVersion: '0.19.1',
+        settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' },
       }));
     });
     await page.goto('/');
@@ -57,7 +58,7 @@ test.describe('auto controls (touch)', () => {
       const s = g?.scene.keys['Game'] as { player?: { autoJump?: boolean } } | undefined;
       return s?.player?.autoJump;
     });
-    expect(auto, 'auto scheme should be the touch default').toBe(true);
+    expect(auto, 'auto scheme from the save should enable autoJump').toBe(true);
 
     // Taps → dashes (the player is airborne almost constantly under auto-jump).
     for (let i = 0; i < 6; i++) {
@@ -74,12 +75,11 @@ test.describe('auto controls (touch)', () => {
     expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
   });
 
-  test('MANUAL stays selectable via the save', async ({ page }) => {
+  test('MANUAL is the touch default (v0.19.1): scheme omitted backfills manual', async ({ page }) => {
     const errors = collectErrors(page);
     await page.addInitScript(() => {
       localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-        version: 2, tutorialDone: true, lastSeenVersion: '0.19.0',
-        settings: { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'manual' },
+        version: 2, tutorialDone: true, lastSeenVersion: '0.19.1', // scheme omitted -> backfills 'manual'
       }));
     });
     await page.goto('/');
@@ -94,7 +94,7 @@ test.describe('auto controls (touch)', () => {
       const s = g?.scene.keys['Game'] as { player?: { autoJump?: boolean } } | undefined;
       return s?.player?.autoJump;
     });
-    expect(auto, 'manual scheme must not enable autoJump').toBe(false);
+    expect(auto, 'manual (the default) must not enable autoJump').toBe(false);
     expect(errors, 'console/page errors:\n' + errors.join('\n')).toHaveLength(0);
   });
 });

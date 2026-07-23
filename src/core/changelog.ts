@@ -2,6 +2,11 @@ export interface ChangelogEntry { version: string; date: string; notes: string[]
 
 /** Newest-first. Shown in the What's New modal; the top entry auto-pops on version change. */
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: '0.19.1', date: '2026-07-22', notes: [
+    'Two-thumb MANUAL controls are now the default on mobile — run stick + tap to jump, full control.',
+    'Prefer the one-finger AUTO mode? It\'s still right there: Settings → CONTROLS.',
+    'Existing players keep whichever scheme they already have.',
+  ]},
   { version: '0.19.0', date: '2026-07-22', notes: [
     'Under the hood: anonymous quality telemetry, so recording bugs get caught before you ever see them.',
     'No accounts, no personal data — just health signals like "did that clip encode at the right speed".',

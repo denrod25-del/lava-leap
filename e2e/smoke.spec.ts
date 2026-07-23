@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('lavaleap.save.v2', JSON.stringify({
-      version: 2, tutorialDone: true, lastSeenVersion: '0.19.0', analytics: { runs: 1 },
+      version: 2, tutorialDone: true, lastSeenVersion: '0.19.1', analytics: { runs: 1 },
     }));
   });
 });
@@ -100,6 +100,16 @@ test("What's New opens and closes without errors", async ({ page }) => {
 
 test.describe('touch', () => {
   test.use({ hasTouch: true, isMobile: true });
+
+  // These two exercise the AUTOPILOT touch path specifically; since v0.19.1 the
+  // default scheme is manual, so pin auto explicitly (runs after the global seed).
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const blob = JSON.parse(localStorage.getItem('lavaleap.save.v2') ?? '{}');
+      blob.settings = { musicVol: 7, sfxVol: 7, screenShake: true, reducedMotion: false, controlScheme: 'auto' };
+      localStorage.setItem('lavaleap.save.v2', JSON.stringify(blob));
+    });
+  });
 
   test('tapping the screen steers without errors', async ({ page }) => {
     const errors: string[] = [];
