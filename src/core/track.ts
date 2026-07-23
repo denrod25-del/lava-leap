@@ -8,8 +8,15 @@ let sink: TrackSink | null = null;
 /** Inject a delivery target (tests, or a native bridge later). Pass null to clear. */
 export function setTrackSink(s: TrackSink | null): void { sink = s; }
 
+let fanout: ((e: Record<string, unknown>) => void) | null = null;
+
+/** Secondary delivery invoked for EVERY event in addition to the main chain
+ *  (the injected sink remains exclusive within the chain — its test contract). */
+export function setTrackFanout(f: ((e: Record<string, unknown>) => void) | null): void { fanout = f; }
+
 export function track(event: string, props: Record<string, unknown> = {}): void {
   const payload = { event, ...props, ts: Date.now() };
+  if (fanout) { try { fanout(payload); } catch { /* telemetry must never break the game */ } }
   if (sink) { sink.push(payload); return; }
   const g = globalThis as { dataLayer?: Record<string, unknown>[] };
   if (Array.isArray(g.dataLayer)) { g.dataLayer.push(payload); return; }

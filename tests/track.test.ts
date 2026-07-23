@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { track, adShown, setTrackSink } from '../src/core/track';
+import { track, adShown, setTrackSink, setTrackFanout } from '../src/core/track';
 
 afterEach(() => setTrackSink(null));
 
@@ -33,5 +33,25 @@ describe('track', () => {
 
   it('never throws with no sink and no dataLayer', () => {
     expect(() => track('restart')).not.toThrow();
+  });
+});
+
+describe('fanout (v0.19.0)', () => {
+  it('fanout receives every event IN ADDITION to the sink', () => {
+    const seenSink: Record<string, unknown>[] = [];
+    const seenFan: Record<string, unknown>[] = [];
+    setTrackSink({ push: (e) => seenSink.push(e) });
+    setTrackFanout((e) => seenFan.push(e));
+    track('death', { height: 5 });
+    expect(seenSink).toHaveLength(1);
+    expect(seenFan).toHaveLength(1);
+    expect(seenFan[0].event).toBe('death');
+    setTrackSink(null);
+    setTrackFanout(null);
+  });
+  it('a throwing fanout never breaks track()', () => {
+    setTrackFanout(() => { throw new Error('boom'); });
+    expect(() => track('death', {})).not.toThrow();
+    setTrackFanout(null);
   });
 });
